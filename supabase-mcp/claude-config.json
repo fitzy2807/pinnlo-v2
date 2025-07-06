@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "node",
+      "args": ["/Users/matthewfitzpatrick/pinnlo-v2/supabase-mcp/dist/index.js"]
+    }
+  }
+}

@@ -1,0 +1,262 @@
+/* PINNLO Design System Base Styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Typography */
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Focus styles */
+  *:focus-visible {
+    outline: 2px solid theme('colors.gray.900');
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Card Component System */
+  .card {
+    @apply bg-white border border-gray-200 rounded-lg p-4 transition-all duration-200 shadow-sm;
+  }
+
+  .card:hover {
+    @apply border-gray-300 shadow-md -translate-y-0.5;
+  }
+
+  .card-selected {
+    @apply border-gray-900 bg-gray-50 ring-2 ring-gray-900 ring-opacity-10;
+  }
+
+  .card-highlight {
+    @apply bg-gray-50 border-gray-300;
+  }
+
+  .card-compact {
+    @apply p-3 rounded-md;
+  }
+
+  .card-large {
+    @apply p-6 rounded-xl;
+  }
+
+  /* Button System */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-gray-900 text-white hover:bg-gray-800 hover:-translate-y-0.5 hover:shadow-md focus:ring-gray-900;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 focus:ring-gray-900;
+  }
+
+  .btn-ghost {
+    @apply text-gray-600 hover:bg-gray-100 focus:ring-gray-900;
+  }
+
+  .btn-sm {
+    @apply px-2.5 py-1.5 text-xs;
+  }
+
+  .btn-md {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .btn-lg {
+    @apply px-4 py-2 text-base;
+  }
+
+  /* Input System */
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md text-sm transition-all duration-200;
+    @apply focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900 focus:ring-opacity-20;
+  }
+
+  .input-sm {
+    @apply px-2.5 py-1.5 text-xs;
+  }
+
+  .input-lg {
+    @apply px-3 py-2 text-sm;
+  }
+
+  /* Badge System */
+  .badge {
+    @apply inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-error {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .badge-neutral {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+  /* Form System */
+  .form-group {
+    @apply mb-3;
+  }
+
+  .form-label {
+    @apply block text-xs font-medium text-gray-900 mb-1.5;
+  }
+
+  .form-error {
+    @apply text-red-600 text-xs mt-1;
+  }
+
+  /* Layout Components */
+  .sidebar {
+    @apply w-64 bg-gray-50 border-r border-gray-200;
+  }
+
+  .panel {
+    @apply w-80 bg-gray-50 border-l border-gray-200;
+  }
+
+  .header {
+    @apply h-16 bg-black text-white border-b border-gray-200;
+  }
+
+  .container-main {
+    @apply max-w-7xl mx-auto px-6;
+  }
+
+  /* Grid Systems */
+  .card-grid {
+    @apply grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .card-grid-auto {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+
+  /* Loading States */
+  .skeleton {
+    @apply bg-gray-200 animate-pulse rounded;
+  }
+
+  .shimmer {
+    @apply relative overflow-hidden;
+  }
+
+  .shimmer::before {
+    content: '';
+    @apply absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white to-transparent;
+    opacity: 0.4;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Text Utilities - REDUCED BY 25% */
+  .text-h1 {
+    @apply text-2xl font-bold text-gray-900;  /* Was text-4xl (36px) -> now text-2xl (24px) */
+  }
+
+  .text-h2 {
+    @apply text-xl font-semibold text-gray-900;  /* Was text-2xl (24px) -> now text-xl (20px) */
+  }
+
+  .text-h3 {
+    @apply text-lg font-semibold text-gray-900;  /* Was text-xl (20px) -> now text-lg (18px) */
+  }
+
+  .text-h4 {
+    @apply text-base font-medium text-gray-900;  /* Was text-lg (18px) -> now text-base (16px) */
+  }
+
+  .text-body {
+    @apply text-sm text-gray-600;  /* Was text-base (16px) -> now text-sm (14px) */
+  }
+
+  .text-small {
+    @apply text-xs text-gray-600;  /* Was text-sm (14px) -> now text-xs (12px) */
+  }
+
+  .text-caption {
+    @apply text-xs text-gray-500;  /* Was text-xs (12px) -> stays text-xs (12px) - minimum size */
+  }
+
+  /* Interactive States */
+  .interactive {
+    @apply transition-all duration-200 cursor-pointer;
+  }
+
+  .interactive:hover {
+    @apply -translate-y-0.5;
+  }
+
+  /* Status Indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-active {
+    @apply bg-green-500;
+  }
+
+  .status-warning {
+    @apply bg-yellow-500;
+  }
+
+  .status-error {
+    @apply bg-red-500;
+  }
+
+  .status-neutral {
+    @apply bg-gray-400;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom focus ring */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2;
+  }
+
+  /* Truncate text variations */
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
