@@ -5,7 +5,7 @@ export const roadmapConfig: BlueprintConfig = {
   name: 'Roadmap',
   description: 'Plan timeline and milestones for strategy execution',
   category: 'Planning & Execution',
-  icon: 'Calendar',
+  icon: '📅',
   fields: [
     {
       id: 'roadmapType',

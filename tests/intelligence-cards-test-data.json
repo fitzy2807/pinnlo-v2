@@ -1,0 +1,212 @@
+{
+  "intelligenceCards": [
+    {
+      "category": "market",
+      "title": "Global SaaS Market Growth Accelerates",
+      "summary": "The global SaaS market is projected to reach $908.21 billion by 2030, growing at a CAGR of 18.7% from 2023-2030.",
+      "intelligence_content": "Recent market analysis reveals significant acceleration in SaaS adoption across all enterprise segments. Key drivers include digital transformation initiatives, remote work normalization, and increased focus on operational efficiency. Small and medium businesses are showing the highest growth rates in new SaaS adoption, particularly in collaboration tools and productivity software. The Asia-Pacific region is emerging as the fastest-growing market, with a projected CAGR of 21.2%.",
+      "key_findings": [
+        "Enterprise SaaS spending increased 24% YoY in Q4 2024",
+        "AI-powered SaaS tools showing 3x faster adoption rates",
+        "Security and compliance features now top decision criteria",
+        "Vertical SaaS solutions gaining market share over horizontal platforms"
+      ],
+      "source_reference": "https://www.gartner.com/en/newsroom/saas-market-forecast-2024",
+      "date_accessed": "2025-01-07T10:00:00Z",
+      "credibility_score": 9,
+      "relevance_score": 8,
+      "relevant_blueprint_pages": ["Market Analysis", "Growth Strategy"],
+      "strategic_implications": "Strong market tailwinds support aggressive growth strategies. Focus on AI integration and vertical specialization could provide competitive advantage.",
+      "recommended_actions": "1. Accelerate AI feature development\n2. Explore vertical market opportunities\n3. Strengthen security certifications\n4. Consider APAC expansion",
+      "tags": ["market-growth", "saas", "trends", "ai", "expansion"]
+    },
+    {
+      "category": "competitor",
+      "title": "Major Competitor Launches AI-Powered Analytics Suite",
+      "summary": "CompetitorX unveiled their new AI analytics platform, claiming 10x faster insights generation compared to traditional tools.",
+      "intelligence_content": "CompetitorX's new 'InsightAI' platform leverages advanced machine learning to automate data analysis and generate predictive insights. The platform includes natural language querying, automated anomaly detection, and prescriptive recommendations. Initial customer feedback indicates significant time savings in report generation. Pricing starts at $299/month for small teams, with enterprise pricing available. Beta customers report 85% reduction in time-to-insight.",
+      "key_findings": [
+        "Natural language interface eliminates need for SQL knowledge",
+        "Pre-built industry templates accelerate deployment",
+        "Real-time collaboration features included",
+        "Aggressive pricing undercuts market leaders by 40%"
+      ],
+      "source_reference": "https://techcrunch.com/2025/01/competitorx-ai-analytics-launch",
+      "date_accessed": "2025-01-06T14:30:00Z",
+      "credibility_score": 8,
+      "relevance_score": 9,
+      "relevant_blueprint_pages": ["Competitive Analysis", "Product Roadmap"],
+      "strategic_implications": "CompetitorX's aggressive pricing and AI capabilities pose direct threat to our analytics offerings. Their go-to-market strategy targets our core SMB segment.",
+      "recommended_actions": "1. Fast-track our AI roadmap\n2. Review and adjust pricing strategy\n3. Enhance our natural language features\n4. Launch competitive upgrade campaign",
+      "tags": ["competitor", "ai", "analytics", "pricing", "threat"]
+    },
+    {
+      "category": "trends",
+      "title": "Voice-First UI Gaining Traction in Enterprise Software",
+      "summary": "42% of enterprise users now prefer voice commands for routine tasks, driving major UI/UX shifts across B2B platforms.",
+      "intelligence_content": "User behavior studies show dramatic shift toward voice-first interactions in enterprise environments. Key use cases include data queries, report generation, task management, and navigation. Adoption highest among mobile workers and field service teams. Major platforms like Salesforce and Microsoft already integrating advanced voice capabilities. Users report 3x faster task completion for common workflows. Privacy and accuracy remain primary concerns for sensitive data handling.",
+      "key_findings": [
+        "Voice commands reduce task time by average 67%",
+        "Highest adoption in sales and field service roles",
+        "Multi-language support now table stakes",
+        "Ambient computing driving hands-free requirements"
+      ],
+      "source_reference": "https://uxdesign.cc/voice-ui-enterprise-trends-2025",
+      "date_accessed": "2025-01-05T09:15:00Z",
+      "credibility_score": 7,
+      "relevance_score": 7,
+      "relevant_blueprint_pages": ["UX Strategy", "Product Innovation"],
+      "strategic_implications": "Voice UI represents significant opportunity for differentiation and improved user satisfaction. Early adoption could provide competitive advantage in key segments.",
+      "recommended_actions": "1. Prototype voice features for top use cases\n2. Partner with voice AI providers\n3. Conduct user research on voice preferences\n4. Develop voice UI guidelines",
+      "tags": ["ux", "voice-ui", "trends", "innovation", "user-experience"]
+    },
+    {
+      "category": "technology",
+      "title": "Next-Gen Vector Databases Enable 100x Faster Semantic Search",
+      "summary": "Breakthrough in vector database technology promises to revolutionize how applications handle unstructured data and semantic search.",
+      "intelligence_content": "New vector database architectures achieving unprecedented performance for similarity search and retrieval-augmented generation (RAG) applications. Technologies like Pinecone, Weaviate, and Qdrant reporting 100x speed improvements over traditional approaches. Cost per query dropping 90% year-over-year. Integration with LLMs becoming seamless with new middleware solutions. Early adopters seeing dramatic improvements in search relevance and user satisfaction.",
+      "key_findings": [
+        "Query latency reduced from seconds to milliseconds",
+        "Storage costs decreased 80% with new compression",
+        "Native multi-modal support (text, image, audio)",
+        "Horizontal scaling now cost-effective"
+      ],
+      "source_reference": "https://arxiv.org/abs/2025.01.vector-db-advances",
+      "date_accessed": "2025-01-04T16:45:00Z",
+      "credibility_score": 8,
+      "relevance_score": 9,
+      "relevant_blueprint_pages": ["Technical Architecture", "Search Strategy"],
+      "strategic_implications": "Vector databases could transform our search and recommendation capabilities. Early adoption essential for maintaining technical leadership.",
+      "recommended_actions": "1. POC with leading vector DB providers\n2. Identify high-impact use cases\n3. Benchmark performance gains\n4. Plan migration strategy",
+      "tags": ["technology", "vector-database", "search", "ai", "infrastructure"]
+    },
+    {
+      "category": "stakeholder",
+      "title": "Board Prioritizes AI Ethics and Governance Framework",
+      "summary": "Board of directors mandates comprehensive AI ethics framework following regulatory pressure and stakeholder concerns.",
+      "intelligence_content": "In latest board meeting, directors unanimously approved initiative to establish industry-leading AI governance framework. Decision driven by upcoming EU AI Act compliance requirements and investor ESG concerns. Framework to include ethics review board, algorithmic bias testing, transparency requirements, and regular audits. Budget approved for dedicated AI ethics officer and team. Timeline aggressive with Q2 2025 implementation target.",
+      "key_findings": [
+        "AI ethics now board-level priority",
+        "$2M budget allocated for governance program",
+        "Quarterly reporting to board required",
+        "External advisory committee being formed"
+      ],
+      "source_reference": "Internal Board Meeting Minutes - January 2025",
+      "date_accessed": "2025-01-03T11:00:00Z",
+      "credibility_score": 10,
+      "relevance_score": 10,
+      "relevant_blueprint_pages": ["Governance", "AI Strategy", "Compliance"],
+      "strategic_implications": "AI governance framework will impact product development velocity but essential for long-term sustainability and market access. Competitive advantage in trust and compliance.",
+      "recommended_actions": "1. Recruit AI ethics officer immediately\n2. Audit current AI practices\n3. Develop ethics training program\n4. Establish vendor assessment criteria",
+      "tags": ["governance", "ai-ethics", "compliance", "board", "esg"]
+    },
+    {
+      "category": "consumer",
+      "title": "User Frustration with Complex Onboarding Reaches Critical Level",
+      "summary": "68% of trial users abandon product during onboarding, citing complexity and time requirements as primary factors.",
+      "intelligence_content": "Recent user research reveals critical issues with current onboarding process. Average time to first value: 47 minutes (industry standard: 10 minutes). Users report confusion with initial configuration, too many required fields, and unclear value proposition. Heatmap analysis shows 73% drop-off at integration setup step. Competitor analysis reveals simplified onboarding as key differentiator. Support tickets related to onboarding increased 156% QoQ.",
+      "key_findings": [
+        "47-minute average onboarding time vs 10-minute target",
+        "Integration setup causes 73% drop-off",
+        "Mobile onboarding completion rate only 12%",
+        "Video tutorials have 89% skip rate"
+      ],
+      "source_reference": "Q4 2024 User Experience Research Report",
+      "date_accessed": "2025-01-02T13:20:00Z",
+      "credibility_score": 9,
+      "relevance_score": 10,
+      "relevant_blueprint_pages": ["User Experience", "Conversion Optimization"],
+      "strategic_implications": "Complex onboarding directly impacting conversion rates and CAC. Immediate action required to remain competitive. Simplified onboarding could improve trial-to-paid by 40%.",
+      "recommended_actions": "1. Implement progressive onboarding\n2. Reduce required fields by 80%\n3. Add skip options for advanced features\n4. Create interactive product tour",
+      "tags": ["onboarding", "user-experience", "conversion", "churn", "critical"]
+    },
+    {
+      "category": "risk",
+      "title": "New Data Privacy Regulations Impact 40% of Revenue Base",
+      "summary": "Upcoming privacy regulations in key markets require significant product changes by Q3 2025 or face operational restrictions.",
+      "intelligence_content": "Three major markets announcing enhanced data privacy regulations affecting SaaS providers. Requirements include data localization, enhanced consent mechanisms, right to AI explanation, and automated compliance reporting. Non-compliance penalties up to 6% of global revenue. Competitors already announcing compliance roadmaps. Legal team estimates 6-month implementation timeline. Infrastructure changes alone estimated at $1.2M investment.",
+      "key_findings": [
+        "Affects operations in US, EU, and APAC markets",
+        "Data localization required by July 2025",
+        "AI transparency rules most complex requirement",
+        "Competitors gaining first-mover advantage"
+      ],
+      "source_reference": "https://www.privacyregulation.org/global-updates-2025",
+      "date_accessed": "2025-01-01T08:00:00Z",
+      "credibility_score": 10,
+      "relevance_score": 9,
+      "relevant_blueprint_pages": ["Risk Management", "Compliance", "Legal"],
+      "strategic_implications": "Regulatory compliance critical for continued market access. Delay risks significant revenue impact and competitive disadvantage. Opportunity to build trust through privacy leadership.",
+      "recommended_actions": "1. Form compliance task force immediately\n2. Engage specialized legal counsel\n3. Accelerate data architecture changes\n4. Develop compliance marketing strategy",
+      "tags": ["regulation", "privacy", "compliance", "risk", "urgent"]
+    },
+    {
+      "category": "opportunities",
+      "title": "Untapped SMB Segment Shows 200% Growth Potential",
+      "summary": "Market analysis reveals underserved SMB segment with specific needs perfectly aligned to our core capabilities.",
+      "intelligence_content": "Comprehensive market study identifies 50,000+ SMBs in target verticals actively seeking solutions. Current solutions overpriced or too complex for this segment. Our technology stack allows 70% lower operational cost to serve. Simplified feature set addressing 90% of segment needs identified. Channel partnerships could accelerate penetration. Competitive landscape fragmented with no dominant player. Price sensitivity analysis shows $99-199/month sweet spot.",
+      "key_findings": [
+        "50,000+ addressable SMBs identified",
+        "Current solutions 3x overpriced for segment",
+        "Our tech enables 70% lower serve cost",
+        "No dominant competitor in space"
+      ],
+      "source_reference": "SMB Market Opportunity Analysis - December 2024",
+      "date_accessed": "2024-12-28T14:00:00Z",
+      "credibility_score": 8,
+      "relevance_score": 9,
+      "relevant_blueprint_pages": ["Market Expansion", "Pricing Strategy"],
+      "strategic_implications": "SMB segment represents significant growth opportunity with minimal cannibalization risk. First-mover advantage available. Aligns with board's growth mandate.",
+      "recommended_actions": "1. Develop SMB-specific pricing tier\n2. Create simplified onboarding flow\n3. Build channel partner program\n4. Launch targeted marketing campaign",
+      "tags": ["opportunity", "smb", "growth", "market-expansion", "revenue"]
+    }
+  ],
+  "testScenarios": {
+    "cardLifecycle": {
+      "description": "Test complete card lifecycle from creation to deletion",
+      "steps": [
+        "Create new intelligence card in market category",
+        "Verify card appears in market category list",
+        "Edit card to update findings",
+        "Save card to saved section",
+        "Verify card appears in saved section",
+        "Archive card",
+        "Verify card appears in archive section",
+        "Restore card to active",
+        "Delete card permanently"
+      ]
+    },
+    "filteringAndSearch": {
+      "description": "Test search and filtering capabilities",
+      "steps": [
+        "Search for 'AI' across all cards",
+        "Filter by credibility score >= 8",
+        "Filter by relevance score >= 9",
+        "Combine search and filters",
+        "Clear all filters",
+        "Sort by date, relevance, credibility"
+      ]
+    },
+    "categoryManagement": {
+      "description": "Test category-specific views and counts",
+      "steps": [
+        "Navigate through each category",
+        "Verify card counts update correctly",
+        "Create card in specific category",
+        "Verify category pre-selection in editor",
+        "Move cards between active/saved/archived"
+      ]
+    },
+    "edgeCases": {
+      "description": "Test edge cases and error handling",
+      "steps": [
+        "Create card with minimal required fields",
+        "Create card with all fields populated",
+        "Test validation on required fields",
+        "Test score validation (1-10 range)",
+        "Test very long content in text fields",
+        "Test special characters in tags"
+      ]
+    }
+  }
+}

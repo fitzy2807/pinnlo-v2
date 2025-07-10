@@ -10,13 +10,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
-  Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { createClient } from '@supabase/supabase-js';
-import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards } from './tools/strategy-creator-tools.js';
-import { intelligenceTools, handleAnalyzeUrl, handleProcessIntelligenceText } from './tools/ai-generation.js';
-import { developmentBankTools, handleGenerateTechStackRecommendations, handleGenerateTechnicalSpecification, handleGenerateTestScenarios, handleGenerateTaskList } from './tools/development-bank-tools.js';
 
+// Simplified server without external tool imports for now
 interface SupabaseConfig {
   url: string;
   serviceKey: string;
@@ -41,276 +38,88 @@ class SupabaseMCPServer {
       }
     );
 
-    this.setupToolHandlers();
+    this.setupHandlers();
   }
 
-  private setupToolHandlers() {
-    // List available tools
+  private setupHandlers() {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: this.getAvailableTools(),
+        tools: [
+          {
+            name: 'supabase_connect',
+            description: 'Connect to a Supabase project',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                url: {
+                  type: 'string',
+                  description: 'Supabase project URL',
+                },
+                serviceKey: {
+                  type: 'string',
+                  description: 'Supabase service role key (for admin operations)',
+                },
+                anonKey: {
+                  type: 'string',
+                  description: 'Supabase anon key (optional)',
+                },
+              },
+              required: ['url', 'serviceKey'],
+            },
+          },
+          {
+            name: 'generate_executive_summary',
+            description: 'Generate executive summary from cards',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                cards: {
+                  type: 'array',
+                  description: 'Array of cards to summarize',
+                },
+                blueprint_type: {
+                  type: 'string',
+                  description: 'Type of blueprint',
+                },
+              },
+              required: ['cards', 'blueprint_type'],
+            },
+          },
+        ],
       };
     });
 
-    // Handle tool calls
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
-      try {
-        switch (name) {
-          case 'supabase_connect':
-            return await this.connect(args as any);
-          
-          case 'supabase_execute_sql':
-            return await this.executeSql(args as any);
-          
-          case 'supabase_get_tables':
-            return await this.getTables();
-          
-          case 'supabase_get_table_schema':
-            return await this.getTableSchema(args as any);
-          
-          case 'supabase_enable_rls':
-            return await this.enableRLS(args as any);
-          
-          case 'supabase_create_policy':
-            return await this.createPolicy(args as any);
-          
-          case 'supabase_insert_data':
-            return await this.insertData(args as any);
-          
-          case 'supabase_update_data':
-            return await this.updateData(args as any);
-          
-          case 'supabase_query_data':
-            return await this.queryData(args as any);
-          
-          case 'generate_context_summary':
-            return await handleGenerateContextSummary(args);
-          
-          case 'generate_strategy_cards':
-            return await handleGenerateStrategyCards(args);
-
-          case 'generate_tech_stack_recommendations':
-            return await handleGenerateTechStackRecommendations(args);
-
-          case 'generate_technical_specification':
-            return await handleGenerateTechnicalSpecification(args);
-
-          case 'generate_test_scenarios':
-            return await handleGenerateTestScenarios(args);
-
-          case 'generate_task_list':
-            return await handleGenerateTaskList(args);
-
-          case 'analyze_url':
-            return await handleAnalyzeUrl(args, this.supabase);
-          
-          case 'process_intelligence_text':
-            return await handleProcessIntelligenceText(args, this.supabase);
-
-          default:
-            throw new Error(`Unknown tool: ${name}`);
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Error executing ${name}: ${errorMessage}`,
-            },
-          ],
-          isError: true,
-        };
+      switch (name) {
+        case 'supabase_connect':
+          return this.handleConnect(args as SupabaseConfig);
+        case 'generate_executive_summary':
+          return this.handleGenerateExecutiveSummary(args);
+        default:
+          throw new Error(`Unknown tool: ${name}`);
       }
     });
   }
 
-  private getAvailableTools(): Tool[] {
-    return [
-      ...strategyCreatorTools,
-      ...intelligenceTools,
-      ...developmentBankTools,
-      {
-        name: 'supabase_connect',
-        description: 'Connect to a Supabase project',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            url: {
-              type: 'string',
-              description: 'Supabase project URL',
-            },
-            serviceKey: {
-              type: 'string',
-              description: 'Supabase service role key (for admin operations)',
-            },
-            anonKey: {
-              type: 'string',
-              description: 'Supabase anon key (optional)',
-            },
-          },
-          required: ['url', 'serviceKey'],
-        },
-      },
-      {
-        name: 'supabase_execute_sql',
-        description: 'Execute raw SQL against the Supabase database',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            sql: {
-              type: 'string',
-              description: 'SQL query to execute',
-            },
-          },
-          required: ['sql'],
-        },
-      },
-      {
-        name: 'supabase_get_tables',
-        description: 'List all tables in the database',
-        inputSchema: {
-          type: 'object',
-          properties: {},
-        },
-      },
-      {
-        name: 'supabase_get_table_schema',
-        description: 'Get schema information for a specific table',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            tableName: {
-              type: 'string',
-              description: 'Name of the table',
-            },
-          },
-          required: ['tableName'],
-        },
-      },
-      {
-        name: 'supabase_enable_rls',
-        description: 'Enable Row Level Security on a table',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            tableName: {
-              type: 'string',
-              description: 'Name of the table',
-            },
-          },
-          required: ['tableName'],
-        },
-      },
-      {
-        name: 'supabase_create_policy',
-        description: 'Create an RLS policy on a table',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            tableName: {
-              type: 'string',
-              description: 'Name of the table',
-            },
-            policyName: {
-              type: 'string',
-              description: 'Name of the policy',
-            },
-            operation: {
-              type: 'string',
-              enum: ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'ALL'],
-              description: 'SQL operation to apply policy to',
-            },
-            expression: {
-              type: 'string',
-              description: 'Policy expression (e.g., "auth.uid() = user_id")',
-            },
-          },
-          required: ['tableName', 'policyName', 'operation', 'expression'],
-        },
-      },
-      {
-        name: 'supabase_insert_data',
-        description: 'Insert data into a table',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            tableName: {
-              type: 'string',
-              description: 'Name of the table',
-            },
-            data: {
-              type: 'object',
-              description: 'Data to insert',
-            },
-          },
-          required: ['tableName', 'data'],
-        },
-      },
-      {
-        name: 'supabase_update_data',
-        description: 'Update data in a table',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            tableName: {
-              type: 'string',
-              description: 'Name of the table',
-            },
-            data: {
-              type: 'object',
-              description: 'Data to update',
-            },
-            where: {
-              type: 'object',
-              description: 'Where conditions',
-            },
-          },
-          required: ['tableName', 'data', 'where'],
-        },
-      },
-      {
-        name: 'supabase_query_data',
-        description: 'Query data from a table',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            tableName: {
-              type: 'string',
-              description: 'Name of the table',
-            },
-            select: {
-              type: 'string',
-              description: 'Columns to select (default: *)',
-            },
-            where: {
-              type: 'object',
-              description: 'Where conditions (optional)',
-            },
-            limit: {
-              type: 'number',
-              description: 'Limit number of results (optional)',
-            },
-          },
-          required: ['tableName'],
-        },
-      },
-    ];
-  }
-
-  private async connect(args: SupabaseConfig) {
+  private async handleConnect(config: SupabaseConfig) {
     try {
-      this.config = args;
-      this.supabase = createClient(args.url, args.serviceKey);
+      this.config = config;
+      this.supabase = createClient(config.url, config.serviceKey);
       
-      // Simple connection test - just store the config
+      // Test connection
+      const { data, error } = await this.supabase.from('users').select('count').limit(1);
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "relation does not exist" which is fine
+        throw new Error(error.message);
+      }
+
       return {
         content: [
           {
             type: 'text',
-            text: `✅ Successfully connected to Supabase project: ${args.url}`,
+            text: '✅ Connected to Supabase successfully!',
           },
         ],
       };
@@ -319,211 +128,37 @@ class SupabaseMCPServer {
     }
   }
 
-  private async executeSql(args: { sql: string }) {
-    if (!this.supabase) {
-      throw new Error('Not connected to Supabase. Use supabase_connect first.');
-    }
-
-    try {
-      // Use direct query for simpler SQL operations
-      const { data, error } = await this.supabase
-        .from('dummy')
-        .select('*')
-        .limit(0); // This will fail but test the connection
-      
-      // For actual SQL execution, we'll use a different approach
-      throw new Error('Direct SQL execution not available in this MCP implementation. Use specific CRUD operations instead.');
-    } catch (error) {
-      throw new Error(`SQL execution failed: ${error}`);
-    }
-  }
-
-  private async getTables() {
-    if (!this.supabase) {
-      throw new Error('Not connected to Supabase. Use supabase_connect first.');
-    }
-
-    try {
-      const { data, error } = await this.supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public');
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const tableNames = data.map((row: any) => row.table_name);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `📋 Tables in database:\n${tableNames.join('\n')}`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(`Failed to get tables: ${error}`);
-    }
-  }
-
-  private async getTableSchema(args: { tableName: string }) {
-    if (!this.supabase) {
-      throw new Error('Not connected to Supabase. Use supabase_connect first.');
-    }
-
-    try {
-      const { data, error } = await this.supabase
-        .from('information_schema.columns')
-        .select('column_name, data_type, is_nullable, column_default')
-        .eq('table_name', args.tableName)
-        .eq('table_schema', 'public');
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `📊 Schema for table "${args.tableName}":\n\n${JSON.stringify(data, null, 2)}`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(`Failed to get table schema: ${error}`);
-    }
-  }
-
-  private async enableRLS(args: { tableName: string }) {
-    return await this.executeSql({
-      sql: `ALTER TABLE ${args.tableName} ENABLE ROW LEVEL SECURITY;`
-    });
-  }
-
-  private async createPolicy(args: { 
-    tableName: string; 
-    policyName: string; 
-    operation: string; 
-    expression: string;
-  }) {
-    const sql = `
-      CREATE POLICY "${args.policyName}" ON ${args.tableName}
-      FOR ${args.operation} USING (${args.expression});
-    `;
+  private async handleGenerateExecutiveSummary(args: any) {
+    // Simple mock implementation for now
+    const { cards, blueprint_type } = args;
     
-    return await this.executeSql({ sql });
-  }
-
-  private async insertData(args: { tableName: string; data: any }) {
-    if (!this.supabase) {
-      throw new Error('Not connected to Supabase. Use supabase_connect first.');
-    }
-
-    try {
-      const { data, error } = await this.supabase
-        .from(args.tableName)
-        .insert(args.data)
-        .select();
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ Data inserted successfully:\n\n${JSON.stringify(data, null, 2)}`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(`Failed to insert data: ${error}`);
-    }
-  }
-
-  private async updateData(args: { tableName: string; data: any; where: any }) {
-    if (!this.supabase) {
-      throw new Error('Not connected to Supabase. Use supabase_connect first.');
-    }
-
-    try {
-      let query = this.supabase.from(args.tableName).update(args.data);
-      
-      // Apply where conditions
-      Object.entries(args.where).forEach(([key, value]) => {
-        query = query.eq(key, value);
-      });
-
-      const { data, error } = await query.select();
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ Data updated successfully:\n\n${JSON.stringify(data, null, 2)}`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(`Failed to update data: ${error}`);
-    }
-  }
-
-  private async queryData(args: { 
-    tableName: string; 
-    select?: string; 
-    where?: any; 
-    limit?: number;
-  }) {
-    if (!this.supabase) {
-      throw new Error('Not connected to Supabase. Use supabase_connect first.');
-    }
-
-    try {
-      let query = this.supabase.from(args.tableName).select(args.select || '*');
-      
-      // Apply where conditions
-      if (args.where) {
-        Object.entries(args.where).forEach(([key, value]) => {
-          query = query.eq(key, value);
-        });
-      }
-
-      // Apply limit
-      if (args.limit) {
-        query = query.limit(args.limit);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `📊 Query results:\n\n${JSON.stringify(data, null, 2)}`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(`Failed to query data: ${error}`);
-    }
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            themes: [
+              `Key theme 1 from ${cards.length} ${blueprint_type} cards`,
+              `Key theme 2 from analysis`,
+              `Key theme 3 from insights`
+            ],
+            implications: [
+              `Strategic implication 1`,
+              `Strategic implication 2`,
+              `Strategic implication 3`
+            ],
+            summary: `Executive summary for ${blueprint_type} based on ${cards.length} cards`
+          }, null, 2),
+        },
+      ],
+    };
   }
 
   async run() {
+    console.log('🚀 Starting Supabase MCP Server...');
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
+    console.log('✅ MCP Server running and ready for connections');
   }
 }
 

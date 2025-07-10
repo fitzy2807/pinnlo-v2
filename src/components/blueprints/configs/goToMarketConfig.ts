@@ -5,7 +5,7 @@ export const goToMarketConfig: BlueprintConfig = {
   name: 'Go-to-Market Strategy',
   description: 'Plan how to bring your product or service to market',
   category: 'Planning & Execution',
-  icon: 'Rocket',
+  icon: '🚀',
   fields: [
     {
       id: 'launchType',

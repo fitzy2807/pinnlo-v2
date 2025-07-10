@@ -2,11 +2,10 @@
 
 import React, { useState } from 'react'
 import { X, Building2, ArrowRight, Check, FileCode, Sparkles, TestTube, ListTodo } from 'lucide-react'
-import { useSession } from '@supabase/auth-helpers-react'
+import { useAuth } from '@/providers/AuthProvider'
 import { useStrategies } from '@/hooks/useStrategies'
 import DevelopmentBank from './DevelopmentBank'
 import SpecificationDisplay from './SpecificationDisplay'
-import { createClient } from '@supabase/supabase-js'
 import type { DevBankAsset } from '@/services/developmentBankService'
 
 interface DevelopmentBankModalProps {
@@ -20,7 +19,7 @@ export default function DevelopmentBankModal({
   onClose, 
   strategyId 
 }: DevelopmentBankModalProps) {
-  const session = useSession()
+  const { user } = useAuth()
   const { strategies, loading: strategiesLoading } = useStrategies()
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>(strategyId || '')
   const [generatingSpec, setGeneratingSpec] = useState(false)
@@ -33,10 +32,7 @@ export default function DevelopmentBankModal({
   const [cards, setCards] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<string>('tech-stack')
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+
 
   const generateSpecification = async () => {
     if (!selectedStack || cards.length === 0) return

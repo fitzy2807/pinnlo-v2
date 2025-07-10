@@ -92,11 +92,10 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
 export const BLUEPRINT_CATEGORIES: Record<string, string[]> = {
   'Core Strategy': ['strategic-context', 'vision', 'value-proposition', 'strategic-bet'],
   'Research & Analysis': ['personas', 'customer-journey', 'swot-analysis', 'competitive-analysis', 'market-insight', 'experiment'],
-  'Planning & Execution': ['okrs', 'business-model', 'go-to-market', 'risk-assessment', 'roadmap', 'problem-statement', 'workstream', 'epic', 'feature', 'gtm-play'],
+  'Planning & Execution': ['okrs', 'problem-statement', 'workstream', 'epic', 'feature', 'business-model', 'go-to-market', 'gtm-play', 'risk-assessment', 'roadmap'],
   'User Experience': ['user-journey', 'experience-section', 'service-blueprint'],
   'Organizational & Technical': ['organisational-capability', 'tech-stack', 'technical-requirement'],
-  'Measurement': ['kpis', 'financial-projections', 'cost-driver', 'revenue-driver'],
-  'Management': [] // Will add workspace-settings, etc.
+  'Measurement': ['cost-driver', 'revenue-driver', 'kpis', 'financial-projections']
 }
 
 // Mandatory blueprints (always enabled)

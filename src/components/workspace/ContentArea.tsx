@@ -1,6 +1,10 @@
 'use client'
 
-import { MoreHorizontal, Clock, CheckCircle } from 'lucide-react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { Plus } from 'lucide-react'
+import MasterCard from '@/components/cards/MasterCard'
+import { useCards } from '@/hooks/useCards'
+import { CardData } from '@/types/card'
 
 interface Blueprint {
   id: string
@@ -11,116 +15,151 @@ interface Blueprint {
 
 interface ContentAreaProps {
   blueprint?: Blueprint
+  strategyId?: string
 }
 
-// Sample data for Strategic Context cards
-const strategicContextCards = [
-  {
-    id: 1,
-    title: "Market Analysis Framework",
-    description: "Comprehensive analysis of market trends, competitive landscape, and opportunities for strategic positioning.",
-    updatedAt: "2h ago",
-    status: "active"
-  },
-  {
-    id: 2,
-    title: "Competitive Intelligence",
-    description: "Deep dive into competitor strategies, market positioning, and potential threats to our market share.",
-    updatedAt: "2h ago", 
-    status: "active"
-  },
-  {
-    id: 3,
-    title: "Customer Insights Research",
-    description: "Primary research findings on customer needs, pain points, and decision-making processes.",
-    updatedAt: "2h ago",
-    status: "active"
-  },
-  {
-    id: 4,
-    title: "Technology Landscape",
-    description: "Assessment of current technology trends and their impact on our strategic direction.",
-    updatedAt: "2h ago",
-    status: "active"
-  },
-  {
-    id: 5,
-    title: "Regulatory Environment",
-    description: "Analysis of regulatory changes and compliance requirements affecting our industry.",
-    updatedAt: "2h ago",
-    status: "active"
-  },
-  {
-    id: 6,
-    title: "Internal Capabilities Audit",
-    description: "Evaluation of internal strengths, weaknesses, and capabilities to execute strategy.",
-    updatedAt: "2h ago",
-    status: "active"
-  }
-]
+// Expose methods to parent component
+export interface ContentAreaRef {
+  createCard: (title?: string, description?: string) => Promise<void>
+}
 
-export default function ContentArea({ blueprint }: ContentAreaProps) {
+const ContentArea = forwardRef<ContentAreaRef, ContentAreaProps>(function ContentArea({ blueprint, strategyId }, ref) {
+  const [availableCards, setAvailableCards] = useState<Array<{ id: string; title: string; cardType: string }>>([])
+  
+  // Only use useCards hook if we have a strategyId
+  const cardsHook = strategyId ? useCards(Number(strategyId)) : null
+  const { cards = [], loading = false, error = null, createCard, updateCard, deleteCard, duplicateCard } = cardsHook || {}
+
   if (!blueprint) return null
 
-  const getCardsForBlueprint = () => {
-    switch (blueprint.id) {
-      case 'strategic-context':
-        return strategicContextCards
-      default:
-        return []
+  // Filter cards by blueprint type
+  const blueprintCards = cards.filter(card => card.cardType === blueprint.id)
+
+  // Prepare available cards for relationships
+  useEffect(() => {
+    if (cards.length > 0) {
+      const cardOptions = cards.map(card => ({
+        id: card.id,
+        title: card.title,
+        cardType: card.cardType
+      }))
+      setAvailableCards(cardOptions)
+    }
+  }, [cards])
+
+  const handleCreateCard = async (title?: string, description?: string) => {
+    console.log('🎯 handleCreateCard called with:', { title, description });
+    console.log('Blueprint:', blueprint);
+    console.log('CreateCard function:', createCard);
+    
+    if (!createCard) {
+      console.error('❌ No createCard function available');
+      return;
+    }
+
+    if (!blueprint) {
+      console.error('❌ No blueprint available');
+      return;
+    }
+
+    const newCardData: Partial<CardData> = {
+      title: title || `New ${blueprint.name} Card`,
+      description: description || '',
+      cardType: blueprint.id,
+      priority: 'Medium',
+      confidenceLevel: 'Medium',
+      tags: [],
+      relationships: []
+    }
+
+    console.log('📝 Creating card with data:', newCardData);
+    
+    try {
+      await createCard(newCardData);
+      console.log('✅ Card created successfully');
+    } catch (error) {
+      console.error('❌ Error creating card:', error);
     }
   }
 
-  const cards = getCardsForBlueprint()
+  // Expose createCard method to parent via ref
+  useImperativeHandle(ref, () => ({
+    createCard: handleCreateCard
+  }), [handleCreateCard, blueprint, createCard])
+
+  const handleUpdateCard = async (updatedCard: Partial<CardData>) => {
+    if (!updateCard || !updatedCard.id) return
+    await updateCard(updatedCard.id, updatedCard)
+  }
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (!deleteCard) return
+    if (confirm('Are you sure you want to delete this card?')) {
+      await deleteCard(cardId)
+    }
+  }
+
+  const handleDuplicateCard = async (cardId: string) => {
+    if (!duplicateCard) return
+    await duplicateCard(cardId)
+  }
+
+  const handleAIEnhance = async () => {
+    // AI enhancement is handled within MasterCard component
+    console.log('AI enhance triggered')
+  }
+
+  if (loading) {
+    return (
+      <div className="p-4">
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="card animate-pulse">
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded mb-1"></div>
+              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-4">
+        <div className="text-red-600 text-sm">
+          Error loading cards: {error}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4">
-      {/* Stacked Card Layout - Full Width */}
+      {/* Real Cards using MasterCard component */}
       <div className="space-y-4">
-        {cards.map((card, index) => (
-          <div key={card.id} className="card group cursor-pointer">
-            {/* Card Header */}
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center space-x-1.5">
-                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                  #{index + 1}
-                </span>
-              </div>
-              <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded">
-                <MoreHorizontal size={14} className="text-gray-400" />
-              </button>
-            </div>
-
-            {/* Card Content */}
-            <div className="space-y-2">
-              <h3 className="font-semibold text-gray-900 text-sm leading-tight">
-                {card.title}
-              </h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                {card.description}
-              </p>
-            </div>
-
-            {/* Card Footer */}
-            <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
-              <div className="flex items-center space-x-1.5 text-xs text-gray-500">
-                <Clock size={10} />
-                <span>Updated {card.updatedAt}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                <span className="text-xs font-medium text-green-700">Active</span>
-              </div>
-            </div>
-          </div>
+        {blueprintCards.map((card) => (
+          <MasterCard
+            key={card.id}
+            cardData={card}
+            onUpdate={handleUpdateCard}
+            onDelete={() => handleDeleteCard(card.id)}
+            onDuplicate={() => handleDuplicateCard(card.id)}
+            onAIEnhance={handleAIEnhance}
+            availableCards={availableCards}
+          />
         ))}
 
         {/* Add New Card */}
-        <div className="card border-2 border-dashed border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 cursor-pointer group">
+        <div 
+          className="card border-2 border-dashed border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 cursor-pointer group"
+          onClick={handleCreateCard}
+        >
           <div className="flex items-center justify-center text-center py-8">
             <div className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center group-hover:bg-gray-300 transition-colors">
-                <span className="text-lg text-gray-400 group-hover:text-gray-500">+</span>
+                <Plus size={16} className="text-gray-400 group-hover:text-gray-500" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-700 group-hover:text-gray-800 text-sm">
@@ -136,4 +175,7 @@ export default function ContentArea({ blueprint }: ContentAreaProps) {
       </div>
     </div>
   )
-}
+})
+
+ContentArea.displayName = 'ContentArea'
+export default ContentArea

@@ -5,7 +5,7 @@ export const swotConfig: BlueprintConfig = {
   name: 'SWOT Analysis',
   description: 'Analyze strengths, weaknesses, opportunities, and threats',
   category: 'Research & Analysis',
-  icon: 'Grid3X3',
+  icon: '⚖️',
   fields: [
     {
       id: 'analysisScope',

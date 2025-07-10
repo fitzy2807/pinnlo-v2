@@ -5,7 +5,7 @@ export const financialProjectionsConfig: BlueprintConfig = {
   name: 'Financial Projections',
   description: 'Create financial forecasts and projections',
   category: 'Measurement',
-  icon: 'TrendingUp',
+  icon: '📊',
   fields: [
     {
       id: 'projectionType',

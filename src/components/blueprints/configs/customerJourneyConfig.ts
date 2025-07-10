@@ -5,7 +5,7 @@ export const customerJourneyConfig: BlueprintConfig = {
   name: 'Customer Journey',
   description: 'Map the customer experience from awareness to advocacy',
   category: 'Research & Analysis',
-  icon: 'Route',
+  icon: '🗺️',
   fields: [
     {
       id: 'journeyType',

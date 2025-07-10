@@ -2,12 +2,16 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/providers/AuthProvider'
-import { ChevronDown, Home, BarChart3, Building2, Database, Settings } from 'lucide-react'
+import { ChevronDown, Home, BarChart3, Building2, Database, Settings, Sparkles, Brain } from 'lucide-react'
 import DevelopmentBankModal from '@/components/development-bank/DevelopmentBankModal'
+import StrategyCreator from '@/components/strategy-creator/StrategyCreator'
+import IntelligenceBank from '@/components/intelligence-bank/IntelligenceBank'
 
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [developmentBankOpen, setDevelopmentBankOpen] = useState(false)
+  const [strategyCreatorOpen, setStrategyCreatorOpen] = useState(false)
+  const [intelligenceBankOpen, setIntelligenceBankOpen] = useState(false)
   const { user, signOut } = useAuth()
 
   const getInitials = (email: string) => {
@@ -49,6 +53,20 @@ export default function Header() {
             >
               <Building2 size={14} />
               <span className="text-xs font-medium">Development Bank</span>
+            </button>
+            <button
+              onClick={() => setStrategyCreatorOpen(true)}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
+            >
+              <Sparkles size={14} />
+              <span className="text-xs font-medium">Strategy Creator</span>
+            </button>
+            <button
+              onClick={() => setIntelligenceBankOpen(true)}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
+            >
+              <Brain size={14} />
+              <span className="text-xs font-medium">Intelligence Bank</span>
             </button>
           </nav>
         </div>
@@ -115,6 +133,18 @@ export default function Header() {
       <DevelopmentBankModal
         isOpen={developmentBankOpen}
         onClose={() => setDevelopmentBankOpen(false)}
+      />
+      
+      {/* Strategy Creator Modal */}
+      <StrategyCreator
+        isOpen={strategyCreatorOpen}
+        onClose={() => setStrategyCreatorOpen(false)}
+      />
+      
+      {/* Intelligence Bank Modal */}
+      <IntelligenceBank
+        isOpen={intelligenceBankOpen}
+        onClose={() => setIntelligenceBankOpen(false)}
       />
     </header>
   )

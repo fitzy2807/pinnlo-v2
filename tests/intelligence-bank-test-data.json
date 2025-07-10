@@ -1,0 +1,281 @@
+{
+  "testScenarios": {
+    "minimalProfile": {
+      "description": "Minimal valid profile with only required sections filled",
+      "data": {
+        "businessModel": ["B2B", "SaaS"],
+        "industrySector": ["SaaS"],
+        "stageOfGrowth": "Growth (1–3 yrs)",
+        "strategicHorizon": "1–3 years",
+        "primaryStrategicGoals": ["Launch new product"]
+      }
+    },
+    "startupProfile": {
+      "description": "Early-stage startup focused on product-market fit",
+      "data": {
+        "businessModel": ["B2C", "Freemium", "Subscription"],
+        "industrySector": ["Consumer Tech", "AI/ML"],
+        "stageOfGrowth": "Startup (0–1 yrs)",
+        "strategicHorizon": "0–6 months",
+        "primaryStrategicGoals": ["Launch new product", "Raise funding", "Increase retention"],
+        "targetGeographies": ["North America"],
+        "marketType": "Emerging",
+        "marketInsightsPriority": ["Consumer demand shifts", "Venture funding"],
+        "preferredSources": ["CB Insights", "News APIs"],
+        "directCompetitors": ["Competitor A", "Competitor B"],
+        "watchCategories": ["Product Launches", "Funding"],
+        "businessModelMatch": "Freemium",
+        "competitiveIntensity": "Medium",
+        "designTrends": ["Dark mode", "Minimalism"],
+        "behaviouralTrends": ["Chat-based UX"],
+        "contentMediaTrends": ["Short-form video"],
+        "relevantTimeframe": "Current",
+        "techCategories": ["Frontend", "AI/ML"],
+        "specificTechnologies": ["React", "OpenAI", "Next.js"],
+        "adoptionStrategy": "Fast follower",
+        "techStackBias": ["Open-source", "Cloud-native"],
+        "internalStakeholders": ["Product", "Engineering"],
+        "strategicThemes": ["Innovation", "Speed to Market"],
+        "governancePriority": "Low (autonomous)",
+        "feedbackChannels": ["Surveys", "App Store Reviews"],
+        "topUserFrictions": ["Complex onboarding", "Feature discovery"],
+        "behaviourTriggers": ["Trial abandonment"],
+        "riskTypes": ["Financial", "Technical Debt"],
+        "complianceFrameworks": [],
+        "jurisdictionalFocus": ["US"],
+        "riskAppetite": "High",
+        "opportunityCategories": ["New segments", "Product extensions"],
+        "innovationAppetite": "Blue-sky"
+      }
+    },
+    "enterpriseProfile": {
+      "description": "Mature enterprise with compliance focus",
+      "data": {
+        "businessModel": ["B2B", "SaaS", "Platform"],
+        "industrySector": ["Fintech", "SaaS"],
+        "stageOfGrowth": "Enterprise",
+        "strategicHorizon": "3–5 years",
+        "primaryStrategicGoals": ["Expand to new market", "Achieve compliance", "Reduce cost base"],
+        "targetGeographies": ["North America", "UK", "EU", "APAC"],
+        "marketType": "Established",
+        "marketInsightsPriority": ["M&A activity", "Regulatory shifts", "Growth projections"],
+        "preferredSources": ["McKinsey", "BCG", "Government data"],
+        "directCompetitors": ["Microsoft", "Salesforce", "Oracle", "SAP"],
+        "watchCategories": ["Pricing Changes", "Partnerships", "Executive Hiring", "Product Launches"],
+        "businessModelMatch": "Enterprise SaaS",
+        "competitiveIntensity": "High",
+        "designTrends": ["Personalisation", "Adaptive Layouts"],
+        "behaviouralTrends": ["Voice input", "Micro-interactions"],
+        "contentMediaTrends": ["Interactive learning"],
+        "relevantTimeframe": "3–5 year outlook",
+        "techCategories": ["Backend", "Database", "Security", "DevOps"],
+        "specificTechnologies": ["AWS", "Kubernetes", "PostgreSQL", "Terraform", "DataDog"],
+        "adoptionStrategy": "Cautious adopter",
+        "techStackBias": ["Cloud-native", "Self-hosted"],
+        "internalStakeholders": ["Executive", "Finance", "Legal", "Product", "Engineering", "Sales"],
+        "strategicThemes": ["Risk Mitigation", "Efficiency", "Talent Retention"],
+        "governancePriority": "High (regulated)",
+        "feedbackChannels": ["Support Tickets", "NPS", "Interviews"],
+        "topUserFrictions": ["Integration complexity", "Performance at scale", "Training requirements"],
+        "behaviourTriggers": ["Drop-off points", "Time-on-task issues"],
+        "riskTypes": ["Legal", "Regulatory", "Security", "Reputational"],
+        "complianceFrameworks": ["SOC2", "GDPR", "ISO27001", "HIPAA"],
+        "jurisdictionalFocus": ["US", "UK", "EU", "Global"],
+        "riskAppetite": "Low",
+        "opportunityCategories": ["New geographies", "Workflow integration", "Monetisation"],
+        "innovationAppetite": "Incremental innovation"
+      }
+    },
+    "scaleupProfile": {
+      "description": "Growing company expanding internationally",
+      "data": {
+        "businessModel": ["B2B", "B2C", "Marketplace"],
+        "industrySector": ["Ecommerce", "Retail"],
+        "stageOfGrowth": "Scaling (3–7 yrs)",
+        "strategicHorizon": "1–3 years",
+        "primaryStrategicGoals": ["Expand to new market", "Improve differentiation", "Increase retention"],
+        "targetGeographies": ["North America", "UK", "EU"],
+        "marketType": "Disrupted",
+        "marketInsightsPriority": ["Consumer demand shifts", "Growth projections", "M&A activity"],
+        "preferredSources": ["CB Insights", "Statista", "LinkedIn Pulse"],
+        "directCompetitors": ["Amazon", "Shopify", "eBay", "Etsy"],
+        "watchCategories": ["Product Launches", "Pricing Changes", "Messaging & Positioning"],
+        "businessModelMatch": "Product-led",
+        "competitiveIntensity": "High",
+        "designTrends": ["Dark mode", "3D/Neumorphism", "Personalisation"],
+        "behaviouralTrends": ["Chat-based UX", "Gamification"],
+        "contentMediaTrends": ["Short-form video", "UGC", "Live audio"],
+        "relevantTimeframe": "Near-future",
+        "techCategories": ["Frontend", "Backend", "Analytics", "CRM"],
+        "specificTechnologies": ["React", "Node.js", "MongoDB", "Segment", "Salesforce"],
+        "adoptionStrategy": "First mover",
+        "techStackBias": ["Open-source", "Low-code/No-code"],
+        "internalStakeholders": ["Product", "Marketing", "Design", "Data"],
+        "strategicThemes": ["Innovation", "Speed to Market"],
+        "governancePriority": "Medium",
+        "feedbackChannels": ["Surveys", "Social Listening", "App Store Reviews"],
+        "topUserFrictions": ["Mobile experience", "Checkout complexity", "Search functionality"],
+        "behaviourTriggers": ["Rage clicks", "Trial abandonment"],
+        "riskTypes": ["Financial", "Operational", "Technical Debt"],
+        "complianceFrameworks": ["GDPR", "CCPA", "PCI-DSS"],
+        "jurisdictionalFocus": ["US", "UK", "EU"],
+        "riskAppetite": "Moderate",
+        "opportunityCategories": ["New segments", "New geographies", "Product extensions"],
+        "innovationAppetite": "Measured bets"
+      }
+    },
+    "edgeCase1_EmptyArrays": {
+      "description": "Profile with empty arrays (valid but minimal)",
+      "data": {
+        "businessModel": [],
+        "industrySector": [],
+        "stageOfGrowth": "",
+        "strategicHorizon": "",
+        "primaryStrategicGoals": [],
+        "targetGeographies": [],
+        "marketType": "",
+        "marketInsightsPriority": [],
+        "preferredSources": [],
+        "directCompetitors": [],
+        "watchCategories": [],
+        "businessModelMatch": "",
+        "competitiveIntensity": ""
+      }
+    },
+    "edgeCase2_SingleSelections": {
+      "description": "Profile with only single selections in each multi-select",
+      "data": {
+        "businessModel": ["B2B"],
+        "industrySector": ["SaaS"],
+        "stageOfGrowth": "Mature (7+ yrs)",
+        "strategicHorizon": "6–12 months",
+        "primaryStrategicGoals": ["Achieve compliance"],
+        "targetGeographies": ["UK"],
+        "marketType": "Established",
+        "marketInsightsPriority": ["Regulatory shifts"],
+        "preferredSources": ["Government data"],
+        "directCompetitors": ["Main Competitor"],
+        "watchCategories": ["Funding"],
+        "businessModelMatch": "Sales-led",
+        "competitiveIntensity": "Low"
+      }
+    },
+    "edgeCase3_MaxSelections": {
+      "description": "Profile with maximum selections in all fields",
+      "data": {
+        "businessModel": ["B2B", "B2C", "B2B2C", "SaaS", "Marketplace", "Platform", "Agency", "Subscription", "Freemium"],
+        "industrySector": ["Retail", "Ecommerce", "Fintech", "Healthtech", "Edtech", "Consumer Tech", "SaaS", "AI/ML", "Web3"],
+        "stageOfGrowth": "Growth (1–3 yrs)",
+        "strategicHorizon": "1–3 years",
+        "primaryStrategicGoals": ["Launch new product", "Expand to new market", "Increase retention", "Reduce cost base", "Raise funding", "Improve differentiation", "Achieve compliance"],
+        "targetGeographies": ["North America", "UK", "EU", "MENA", "APAC", "LATAM", "Africa"],
+        "marketType": "Emerging",
+        "marketInsightsPriority": ["Growth projections", "M&A activity", "Venture funding", "Consumer demand shifts", "Regulatory shifts"],
+        "preferredSources": ["McKinsey", "BCG", "CB Insights", "Statista", "Government data", "News APIs", "LinkedIn Pulse"],
+        "directCompetitors": ["Comp1", "Comp2", "Comp3", "Comp4", "Comp5", "Comp6", "Comp7", "Comp8", "Comp9", "Comp10"],
+        "watchCategories": ["Product Launches", "Pricing Changes", "Messaging & Positioning", "Partnerships", "Funding", "Executive Hiring"],
+        "businessModelMatch": "PLG",
+        "competitiveIntensity": "High",
+        "designTrends": ["Dark mode", "Minimalism", "3D/Neumorphism", "Glassmorphism", "Personalisation", "Adaptive Layouts"],
+        "behaviouralTrends": ["Voice input", "Chat-based UX", "Micro-interactions", "Gamification"],
+        "contentMediaTrends": ["Short-form video", "Live audio", "UGC", "Interactive learning"],
+        "relevantTimeframe": "Current",
+        "techCategories": ["Frontend", "Backend", "Database", "DevOps", "AI/ML", "Security", "Analytics", "CDP", "CMS", "CRM"],
+        "specificTechnologies": ["React", "Vue", "Angular", "Node.js", "Python", "Go", "PostgreSQL", "MongoDB", "Redis", "AWS", "GCP", "Azure"],
+        "adoptionStrategy": "First mover",
+        "techStackBias": ["Open-source", "Low-code/No-code", "Cloud-native", "Self-hosted"],
+        "internalStakeholders": ["Product", "Engineering", "Design", "Marketing", "Sales", "Finance", "Legal", "Data", "Executive"],
+        "strategicThemes": ["Innovation", "Efficiency", "Speed to Market", "Risk Mitigation", "Talent Retention"],
+        "governancePriority": "High (regulated)",
+        "feedbackChannels": ["Surveys", "Interviews", "Support Tickets", "App Store Reviews", "Social Listening", "NPS"],
+        "topUserFrictions": ["F1", "F2", "F3", "F4", "F5"],
+        "behaviourTriggers": ["Drop-off points", "Rage clicks", "Trial abandonment", "Time-on-task issues"],
+        "riskTypes": ["Legal", "Financial", "Technical Debt", "Security", "Regulatory", "Reputational", "Operational"],
+        "complianceFrameworks": ["GDPR", "HIPAA", "SOC2", "ISO27001", "PCI-DSS", "CCPA"],
+        "jurisdictionalFocus": ["UK", "US", "EU", "Global"],
+        "riskAppetite": "High",
+        "opportunityCategories": ["New segments", "New geographies", "Product extensions", "Workflow integration", "Monetisation"],
+        "innovationAppetite": "Blue-sky"
+      }
+    },
+    "validationTest_InvalidValues": {
+      "description": "Test data with invalid values (should be rejected)",
+      "data": {
+        "businessModel": ["Invalid Business Model"],
+        "industrySector": ["Not a valid sector"],
+        "stageOfGrowth": "Invalid Stage",
+        "strategicHorizon": "10 years",
+        "primaryStrategicGoals": ["Invalid goal"],
+        "marketType": "Unknown"
+      },
+      "expectedResult": "Should fail validation"
+    }
+  },
+  "testWorkflows": [
+    {
+      "name": "New User First Save",
+      "steps": [
+        "Open Intelligence Bank without strategy ID",
+        "See 'No strategy selected' warning",
+        "Close and reopen with valid strategy ID",
+        "See 'No profile yet' status",
+        "Fill in minimal profile data",
+        "See 'Unsaved changes' status",
+        "Click Save Profile",
+        "See 'Saving...' status",
+        "See 'Profile saved' success message",
+        "See timestamp in status"
+      ]
+    },
+    {
+      "name": "Edit Existing Profile",
+      "steps": [
+        "Open Intelligence Bank with strategy that has saved profile",
+        "See loading spinner",
+        "See profile data loaded in all fields",
+        "See 'Saved [timestamp]' status",
+        "Modify any field",
+        "See 'Unsaved changes' status",
+        "Click Save Profile",
+        "See updated timestamp"
+      ]
+    },
+    {
+      "name": "Profile Persistence",
+      "steps": [
+        "Save a complete profile",
+        "Close Intelligence Bank",
+        "Reopen Intelligence Bank",
+        "Verify all data is preserved",
+        "Check array fields maintained order",
+        "Check single selections preserved",
+        "Check free text fields preserved"
+      ]
+    },
+    {
+      "name": "Multiple Strategy Profiles",
+      "steps": [
+        "Save profile for Strategy A",
+        "Switch to Strategy B",
+        "See empty profile form",
+        "Save different profile for Strategy B",
+        "Switch back to Strategy A",
+        "Verify Strategy A profile loads correctly",
+        "Switch to Strategy B",
+        "Verify Strategy B profile loads correctly"
+      ]
+    },
+    {
+      "name": "Error Handling",
+      "steps": [
+        "Disconnect internet",
+        "Try to save profile",
+        "See error alert",
+        "Reconnect internet",
+        "Successfully save profile",
+        "Simulate server error",
+        "See appropriate error message"
+      ]
+    }
+  ]
+}

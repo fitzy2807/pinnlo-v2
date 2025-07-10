@@ -1,24 +1,52 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ArrowLeft, Share2, MoreHorizontal, Settings, Plus, Check, Search, Filter, X } from 'lucide-react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 import { getAllBlueprints, BLUEPRINT_CATEGORIES, MANDATORY_BLUEPRINTS, validateBlueprintDependencies, getSuggestedBlueprints } from '../blueprints/registry'
 
 interface BlueprintManagerProps {
   strategyId: string
+  onBlueprintsChange?: (blueprints: string[]) => void
 }
 
 const CATEGORIES = ['All', ...Object.keys(BLUEPRINT_CATEGORIES)]
 
-export default function BlueprintManager({ strategyId }: BlueprintManagerProps) {
+export default function BlueprintManager({ strategyId, onBlueprintsChange }: BlueprintManagerProps) {
   const [modalOpen, setModalOpen] = useState(false)
-  const [selectedBlueprints, setSelectedBlueprints] = useState<string[]>([
-    'strategic-context', 'vision', 'value-proposition', 'personas', 'okrs'
-  ])
+  const [selectedBlueprints, setSelectedBlueprints] = useState<string[]>(MANDATORY_BLUEPRINTS)
   const [isLoading, setIsLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
+
+  // Load saved blueprints on mount
+  useEffect(() => {
+    loadBlueprintsFromDatabase()
+  }, [strategyId])
+
+  const loadBlueprintsFromDatabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('strategies')
+        .select('blueprint_config')
+        .eq('id', strategyId)
+        .single()
+
+      if (error) {
+        console.error('Error loading blueprint config:', error)
+        return
+      }
+
+      if (data?.blueprint_config?.enabledBlueprints) {
+        const enabledBlueprints = data.blueprint_config.enabledBlueprints
+        setSelectedBlueprints(enabledBlueprints)
+        onBlueprintsChange?.(enabledBlueprints)
+      }
+    } catch (error) {
+      console.error('Error loading blueprints:', error)
+    }
+  }
 
   const allBlueprints = getAllBlueprints()
 
@@ -42,11 +70,11 @@ export default function BlueprintManager({ strategyId }: BlueprintManagerProps) 
       return
     }
 
-    setSelectedBlueprints(prev => 
-      prev.includes(blueprintId)
-        ? prev.filter(id => id !== blueprintId)
-        : [...prev, blueprintId]
-    )
+    const newBlueprints = selectedBlueprints.includes(blueprintId)
+      ? selectedBlueprints.filter(id => id !== blueprintId)
+      : [...selectedBlueprints, blueprintId]
+    
+    setSelectedBlueprints(newBlueprints)
   }
 
   const handleSave = async () => {
@@ -58,11 +86,30 @@ export default function BlueprintManager({ strategyId }: BlueprintManagerProps) 
     setIsLoading(true)
     try {
       console.log('Saving blueprints for strategy:', strategyId, selectedBlueprints)
-      // TODO: Save to Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      const { error } = await supabase
+        .from('strategies')
+        .update({
+          blueprint_config: {
+            enabledBlueprints: selectedBlueprints,
+            mandatoryBlueprints: MANDATORY_BLUEPRINTS,
+            lastUpdated: new Date().toISOString()
+          }
+        })
+        .eq('id', strategyId)
+
+      if (error) {
+        throw error
+      }
+
+      // Notify parent component of the change
+      onBlueprintsChange?.(selectedBlueprints)
+      
       setModalOpen(false)
+      console.log('✅ Blueprints saved successfully')
     } catch (error) {
       console.error('Failed to save blueprints:', error)
+      alert('Failed to save blueprint configuration. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -70,7 +117,8 @@ export default function BlueprintManager({ strategyId }: BlueprintManagerProps) 
 
   const addSuggestedBlueprint = (blueprintId: string) => {
     if (!selectedBlueprints.includes(blueprintId)) {
-      setSelectedBlueprints(prev => [...prev, blueprintId])
+      const newBlueprints = [...selectedBlueprints, blueprintId]
+      setSelectedBlueprints(newBlueprints)
     }
   }
 
@@ -258,8 +306,8 @@ export default function BlueprintManager({ strategyId }: BlueprintManagerProps) 
             </div>
           </div>
 
-          {/* Compact Blueprint Grid - 4 columns for scalability */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-4 max-h-80 overflow-y-auto">
+          {/* Compact Blueprint Grid - 7 columns for scalability */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 gap-2 mb-4 max-h-80 overflow-y-auto">
             {filteredBlueprints.map((blueprint) => {
               const isSelected = selectedBlueprints.includes(blueprint.id)
               const isMandatory = isBlueprintMandatory(blueprint.id)
@@ -270,7 +318,7 @@ export default function BlueprintManager({ strategyId }: BlueprintManagerProps) 
                   key={blueprint.id}
                   onClick={() => handleBlueprintToggle(blueprint.id)}
                   disabled={isMandatory && isSelected}
-                  className={`p-2.5 rounded-md border transition-all duration-200 text-left group relative ${
+                  className={`p-2 rounded-md border transition-all duration-200 text-left group relative ${
                     isSelected
                       ? 'border-gray-900 bg-gray-900 text-white'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
@@ -290,16 +338,16 @@ export default function BlueprintManager({ strategyId }: BlueprintManagerProps) 
                     )}
                   </div>
 
-                  <div className="flex items-start justify-between mb-1.5 pr-16">
-                    <span className="text-base">{blueprint.icon}</span>
+                  <div className="flex items-start justify-between mb-1 pr-12">
+                    <span className="text-sm">{blueprint.icon}</span>
                     {isSelected && (
-                      <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                        <Check size={10} className="text-gray-900" />
+                      <div className="w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                      <Check size={8} className="text-gray-900" />
                       </div>
                     )}
                   </div>
                   
-                  <h4 className={`text-xs font-medium mb-1 leading-tight ${
+                  <h4 className={`text-xs font-medium mb-0.5 leading-tight ${
                     isSelected ? 'text-white' : 'text-gray-900'
                   }`}>
                     {blueprint.name}

@@ -5,7 +5,7 @@ export const kpiConfig: BlueprintConfig = {
   name: 'KPIs & Metrics',
   description: 'Define key performance indicators and success metrics',
   category: 'Measurement',
-  icon: 'BarChart3',
+  icon: '📈',
   fields: [
     {
       id: 'metricCategory',

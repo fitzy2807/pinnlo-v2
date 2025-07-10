@@ -5,7 +5,7 @@ export const businessModelConfig: BlueprintConfig = {
   name: 'Business Model',
   description: 'Define how your business creates, delivers, and captures value',
   category: 'Planning & Execution',
-  icon: 'Building2',
+  icon: '🏗️',
   fields: [
     {
       id: 'modelType',

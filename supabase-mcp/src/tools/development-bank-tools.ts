@@ -1,4 +1,4 @@
-import { Tool } from '@modelcontextprotocol/sdk/types.js';
+// Tool type will be inferred from the object structure
 
 export const developmentBankTools = [
   {

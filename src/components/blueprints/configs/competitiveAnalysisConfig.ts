@@ -5,7 +5,7 @@ export const competitiveAnalysisConfig: BlueprintConfig = {
   name: 'Competitive Analysis',
   description: 'Analyze competitors and competitive landscape',
   category: 'Research & Analysis',
-  icon: 'Swords',
+  icon: '⚔️',
   fields: [
     {
       id: 'analysisType',

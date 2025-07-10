@@ -15,7 +15,7 @@ import {
   Users,
   Clock
 } from 'lucide-react'
-import { useSession } from '@supabase/auth-helpers-react'
+import { useAuth } from '@/providers/AuthProvider'
 import { DevelopmentBankService, type TechStackSelection } from '@/services/developmentBankService'
 
 interface TechStackSelectorProps {
@@ -59,7 +59,7 @@ export default function TechStackSelector({
   selectedTechStack, 
   onTechStackGenerated 
 }: TechStackSelectorProps) {
-  const session = useSession()
+  const { user } = useAuth()
   const [step, setStep] = useState(1)
   const [answers, setAnswers] = useState<DiagnosticAnswers>(initialAnswers)
   const [loading, setLoading] = useState(false)

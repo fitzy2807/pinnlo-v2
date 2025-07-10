@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Filter, SortAsc, Settings, Plus } from 'lucide-react'
+import { Search, Filter, SortAsc, Settings, Plus, Zap } from 'lucide-react'
 
 interface Blueprint {
   id: string
@@ -11,9 +11,11 @@ interface Blueprint {
 
 interface PageControllerProps {
   blueprint?: Blueprint
+  onAddCard?: () => void
+  onQuickAdd?: () => void
 }
 
-export default function PageController({ blueprint }: PageControllerProps) {
+export default function PageController({ blueprint, onAddCard, onQuickAdd }: PageControllerProps) {
   if (!blueprint) return null
 
   return (
@@ -66,7 +68,23 @@ export default function PageController({ blueprint }: PageControllerProps) {
             <span>Generate Card</span>
           </button>
 
-          <button className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors">
+          {onQuickAdd && (
+            <button 
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+              onClick={onQuickAdd}
+            >
+              <Zap size={14} />
+              <span>Quick Add</span>
+            </button>
+          )}
+
+          <button 
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
+            onClick={() => {
+              console.log('📝 PageController: Add Card clicked');
+              onAddCard && onAddCard();
+            }}
+          >
             <Plus size={14} />
             <span>Add Card</span>
           </button>

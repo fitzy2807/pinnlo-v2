@@ -1,0 +1,135 @@
+/**
+ * Intelligence Bank Component
+ * 
+ * Main interface for viewing and managing intelligence cards.
+ * Uses the current PINNLO design system for consistency.
+ */
+
+'use client'
+
+import { useState } from 'react'
+import { 
+  Search, 
+  Filter, 
+  Settings, 
+  TrendingUp, 
+  Eye, 
+  Users, 
+  Cpu, 
+  Crown, 
+  Target, 
+  AlertTriangle, 
+  Lightbulb,
+  Bookmark,
+  Archive,
+  X,
+  TestTube
+} from 'lucide-react'
+
+interface IntelligenceBankProps {
+  isOpen: boolean
+  onClose: () => void
+  strategyId?: string
+}
+
+interface IntelligenceCategory {
+  id: string
+  name: string
+  icon: React.ComponentType<{ className?: string }>
+  description: string
+  count: number
+}
+
+const intelligenceCategories: IntelligenceCategory[] = [
+  {
+    id: 'profile',
+    name: 'Intelligence Profile',
+    icon: Settings,
+    description: 'Configure your strategic context for relevant intelligence',
+    count: 1
+  },
+  {
+    id: 'market',
+    name: 'Market',
+    icon: TrendingUp,
+    description: 'Growth projections',
+    count: 0
+  },
+  {
+    id: 'competitor',
+    name: 'Competitor',
+    icon: Eye,
+    description: 'New product launches',
+    count: 0
+  },
+  {
+    id: 'trends',
+    name: 'Trends',
+    icon: TrendingUp,
+    description: 'UX/UI shifts',
+    count: 0
+  },
+  {
+    id: 'technology',
+    name: 'Technology',
+    icon: Cpu,
+    description: 'Tech stack evolution',
+    count: 0
+  },
+  {
+    id: 'stakeholder',
+    name: 'Stakeholder',
+    icon: Crown,
+    description: 'Internal goals',
+    count: 0
+  },
+  {
+    id: 'consumer',
+    name: 'Consumer',
+    icon: Target,
+    description: 'Feedback',
+    count: 0
+  },
+  {
+    id: 'risk',
+    name: 'Risk',
+    icon: AlertTriangle,
+    description: 'Legal',
+    count: 0
+  },
+  {
+    id: 'opportunities',
+    name: 'Opportunities',
+    icon: Lightbulb,
+    description: 'White space',
+    count: 0
+  },
+  {
+    id: 'saved',
+    name: 'Saved Cards',
+    icon: Bookmark,
+    description: 'Your saved intelligence cards',
+    count: 0
+  },
+  {
+    id: 'archive',
+    name: 'Archive',
+    icon: Archive,
+    description: 'Archived intelligence cards',
+    count: 0
+  }
+]
+
+export default function IntelligenceBank({ isOpen, onClose, strategyId }: IntelligenceBankProps) {
+  const [selectedCategory, setSelectedCategory] = useState('profile')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
+
+  const selectedCategoryData = intelligenceCategories.find(cat => cat.id === selectedCategory)
+  const totalCards = intelligenceCategories.reduce((sum, cat) => sum + cat.count, 0)
+
+  if (!isOpen) return null
+
+  return (
+    <div className=\"fixed inset-0 z-50 flex\">
+      {/* Backdrop */}\n      <div \n        className=\"absolute inset-0 bg-black bg-opacity-50\"\n        onClick={onClose}\n      />\n      \n      {/* Intelligence Bank Modal */}\n      <div className=\"relative w-full max-w-7xl mx-auto my-8 bg-white rounded-lg shadow-xl overflow-hidden flex\">\n        {/* Left Sidebar - Intelligence Categories */}\n        <div className=\"w-80 bg-gray-50 border-r border-gray-200 flex flex-col\">\n          {/* Sidebar Header */}\n          <div className=\"p-4 border-b border-gray-200\">\n            <div className=\"flex items-center justify-between mb-2\">\n              <h2 className=\"text-h3\">Intelligence Bank</h2>\n              <button\n                onClick={onClose}\n                className=\"p-1 hover:bg-gray-200 rounded transition-colors\"\n              >\n                <X className=\"w-4 h-4 text-gray-500\" />\n              </button>\n            </div>\n            <p className=\"text-caption\">Strategic intelligence for informed decisions</p>\n          </div>\n\n          {/* Intelligence Categories */}\n          <div className=\"flex-1 overflow-y-auto\">\n            <div className=\"p-3\">\n              <h3 className=\"text-xs font-medium text-gray-500 uppercase tracking-wide mb-3\">\n                Intelligence Categories\n              </h3>\n              \n              <div className=\"space-y-1\">\n                {intelligenceCategories.map((category) => {\n                  const Icon = category.icon\n                  const isSelected = selectedCategory === category.id\n                  \n                  return (\n                    <button\n                      key={category.id}\n                      onClick={() => setSelectedCategory(category.id)}\n                      className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-md text-left transition-colors ${\n                        isSelected \n                          ? 'bg-gray-900 text-white' \n                          : 'text-gray-700 hover:bg-gray-200'\n                      }`}\n                    >\n                      <Icon className={`w-4 h-4 flex-shrink-0 ${\n                        isSelected ? 'text-white' : 'text-gray-500'\n                      }`} />\n                      \n                      <div className=\"flex-1 min-w-0\">\n                        <div className=\"flex items-center justify-between\">\n                          <span className=\"text-sm font-medium truncate\">\n                            {category.name}\n                          </span>\n                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${\n                            isSelected \n                              ? 'bg-white bg-opacity-20 text-white' \n                              : 'bg-gray-200 text-gray-600'\n                          }`}>\n                            {category.count}\n                          </span>\n                        </div>\n                        <p className={`text-xs truncate ${\n                          isSelected ? 'text-gray-200' : 'text-gray-500'\n                        }`}>\n                          {category.description}\n                        </p>\n                      </div>\n                    </button>\n                  )\n                })}\n              </div>\n            </div>\n          </div>\n        </div>\n\n        {/* Main Content Area */}\n        <div className=\"flex-1 flex flex-col\">\n          {/* Main Header */}\n          <div className=\"p-6 border-b border-gray-200\">\n            <div className=\"flex items-center justify-between mb-4\">\n              <div className=\"flex items-center space-x-3\">\n                {selectedCategoryData && (\n                  <>\n                    <selectedCategoryData.icon className=\"w-6 h-6 text-gray-600\" />\n                    <div>\n                      <h1 className=\"text-h2\">{selectedCategoryData.name} Intelligence</h1>\n                      <p className=\"text-body\">{selectedCategoryData.description}</p>\n                    </div>\n                  </>\n                )}\n              </div>\n              \n              <div className=\"flex items-center space-x-3\">\n                <button className=\"flex items-center space-x-2 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors\">\n                  <TestTube className=\"w-4 h-4\" />\n                  <span>Test MCP System</span>\n                </button>\n                \n                <div className=\"text-sm text-gray-600\">\n                  <span className=\"font-medium\">{totalCards}</span> cards\n                </div>\n              </div>\n            </div>\n\n            {/* Search and Filters */}\n            <div className=\"flex items-center space-x-3\">\n              <div className=\"flex-1 relative\">\n                <Search className=\"absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400\" />\n                <input\n                  type=\"text\"\n                  placeholder=\"Search intelligence cards...\"\n                  value={searchQuery}\n                  onChange={(e) => setSearchQuery(e.target.value)}\n                  className=\"input pl-10\"\n                />\n              </div>\n              \n              <button\n                onClick={() => setShowFilters(!showFilters)}\n                className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-md border transition-colors ${\n                  showFilters \n                    ? 'bg-gray-900 text-white border-gray-900' \n                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'\n                }`}\n              >\n                <Filter className=\"w-4 h-4\" />\n                <span>Filter</span>\n              </button>\n            </div>\n          </div>\n\n          {/* Content Area */}\n          <div className=\"flex-1 overflow-y-auto\">\n            {selectedCategory === 'profile' ? (\n              <IntelligenceProfileContent />\n            ) : (\n              <IntelligenceCardsContent \n                category={selectedCategory}\n                searchQuery={searchQuery}\n                categoryData={selectedCategoryData}\n              />\n            )}\n          </div>\n        </div>\n      </div>\n    </div>\n  )\n}\n\n/**\n * Intelligence Profile Configuration Content\n */\nfunction IntelligenceProfileContent() {\n  return (\n    <div className=\"flex items-center justify-center h-full\">\n      <div className=\"text-center max-w-md\">\n        <div className=\"w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4\">\n          <Settings className=\"w-8 h-8 text-gray-400\" />\n        </div>\n        \n        <h3 className=\"text-h3 mb-2\">Intelligence Profile</h3>\n        <p className=\"text-body text-gray-600 mb-6\">\n          Configure your strategic context for relevant intelligence gathering.\n        </p>\n        \n        <button className=\"btn btn-primary\">\n          Configure Profile\n        </button>\n      </div>\n    </div>\n  )\n}\n\n/**\n * Intelligence Cards Content (for non-profile categories)\n */\ninterface IntelligenceCardsContentProps {\n  category: string\n  searchQuery: string\n  categoryData?: IntelligenceCategory\n}\n\nfunction IntelligenceCardsContent({ category, searchQuery, categoryData }: IntelligenceCardsContentProps) {\n  // For now, show empty state since we haven't implemented card generation yet\n  return (\n    <div className=\"flex items-center justify-center h-full\">\n      <div className=\"text-center max-w-md\">\n        <div className=\"w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4\">\n          {categoryData?.icon && (\n            <categoryData.icon className=\"w-8 h-8 text-gray-400\" />\n          )}\n        </div>\n        \n        <h3 className=\"text-h3 mb-2\">No {categoryData?.name} Intelligence Yet</h3>\n        <p className=\"text-body text-gray-600 mb-6\">\n          Intelligence cards will appear here once you configure your Intelligence Profile and the system begins gathering insights.\n        </p>\n        \n        <div className=\"space-y-3\">\n          <button className=\"btn btn-primary\">\n            Configure Intelligence Profile\n          </button>\n          \n          <div className=\"text-xs text-gray-500\">\n            or\n          </div>\n          \n          <button className=\"btn btn-secondary\">\n            Generate Test Intelligence\n          </button>\n        </div>\n      </div>\n    </div>\n  )\n}

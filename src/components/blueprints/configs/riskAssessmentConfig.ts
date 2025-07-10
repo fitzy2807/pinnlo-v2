@@ -5,7 +5,7 @@ export const riskAssessmentConfig: BlueprintConfig = {
   name: 'Risk Assessment',
   description: 'Identify and analyze potential risks and mitigation strategies',
   category: 'Planning & Execution',
-  icon: 'AlertTriangle',
+  icon: '⚠️',
   fields: [
     {
       id: 'riskCategory',

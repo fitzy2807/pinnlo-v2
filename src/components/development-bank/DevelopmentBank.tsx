@@ -12,7 +12,7 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react'
-import { useSession } from '@supabase/auth-helpers-react'
+import { useAuth } from '@/providers/AuthProvider'
 import { DevelopmentBankService, type TechStackSelection, type DevBankAsset } from '@/services/developmentBankService'
 import TechStackSelector from './TechStackSelector'
 import SpecificationDisplay from './SpecificationDisplay'
@@ -25,7 +25,7 @@ interface DevelopmentBankProps {
 type ActiveTab = 'tech-stack' | 'specifications' | 'assets'
 
 export default function DevelopmentBank({ strategyId, onClose }: DevelopmentBankProps) {
-  const session = useSession()
+  const { user, loading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState<ActiveTab>('tech-stack')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,13 +40,13 @@ export default function DevelopmentBank({ strategyId, onClose }: DevelopmentBank
   const [selectedSpecification, setSelectedSpecification] = useState<DevBankAsset | null>(null)
   const [generatingSpec, setGeneratingSpec] = useState(false)
 
-  // Load existing data
+  // Load existing data when user is available
   useEffect(() => {
-    if (strategyId && session) {
+    if (strategyId && user && !authLoading) {
       loadTechStacks()
       loadSpecifications()
     }
-  }, [strategyId, session])
+  }, [strategyId, user, authLoading])
 
   const loadTechStacks = useCallback(async () => {
     try {
@@ -101,7 +101,20 @@ export default function DevelopmentBank({ strategyId, onClose }: DevelopmentBank
     { id: 'assets', label: 'Assets', icon: Package, count: 0 }
   ]
 
-  if (!session) {
+  // Show loading while authenticating
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 text-blue-500 mx-auto mb-4 animate-spin" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading...</h3>
+          <p className="text-gray-600">Initializing Development Bank...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
