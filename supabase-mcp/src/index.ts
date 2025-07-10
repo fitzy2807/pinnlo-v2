@@ -13,6 +13,9 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { createClient } from '@supabase/supabase-js';
+import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards } from './tools/strategy-creator-tools.js';
+import { intelligenceTools, handleAnalyzeUrl, handleProcessIntelligenceText } from './tools/ai-generation.js';
+import { developmentBankTools, handleGenerateTechStackRecommendations, handleGenerateTechnicalSpecification } from './tools/development-bank-tools.js';
 
 interface SupabaseConfig {
   url: string;
@@ -81,6 +84,24 @@ class SupabaseMCPServer {
           
           case 'supabase_query_data':
             return await this.queryData(args as any);
+          
+          case 'generate_context_summary':
+            return await handleGenerateContextSummary(args);
+          
+          case 'generate_strategy_cards':
+            return await handleGenerateStrategyCards(args);
+
+          case 'generate_tech_stack_recommendations':
+            return await handleGenerateTechStackRecommendations(args);
+
+          case 'generate_technical_specification':
+            return await handleGenerateTechnicalSpecification(args);
+
+          case 'analyze_url':
+            return await handleAnalyzeUrl(args, this.supabase);
+          
+          case 'process_intelligence_text':
+            return await handleProcessIntelligenceText(args, this.supabase);
 
           default:
             throw new Error(`Unknown tool: ${name}`);
@@ -102,6 +123,9 @@ class SupabaseMCPServer {
 
   private getAvailableTools(): Tool[] {
     return [
+      ...strategyCreatorTools,
+      ...intelligenceTools,
+      ...developmentBankTools,
       {
         name: 'supabase_connect',
         description: 'Connect to a Supabase project',

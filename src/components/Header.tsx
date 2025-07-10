@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/providers/AuthProvider'
-import { ChevronDown, Home, BarChart3 } from 'lucide-react'
+import { ChevronDown, Home, BarChart3, Building2, Database, Settings } from 'lucide-react'
+import DevelopmentBankModal from '@/components/development-bank/DevelopmentBankModal'
 
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [developmentBankOpen, setDevelopmentBankOpen] = useState(false)
   const { user, signOut } = useAuth()
 
   const getInitials = (email: string) => {
@@ -41,6 +43,13 @@ export default function Header() {
               <BarChart3 size={14} />
               <span className="text-xs font-medium">Strategies</span>
             </a>
+            <button
+              onClick={() => setDevelopmentBankOpen(true)}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
+            >
+              <Building2 size={14} />
+              <span className="text-xs font-medium">Development Bank</span>
+            </button>
           </nav>
         </div>
 
@@ -101,6 +110,12 @@ export default function Header() {
           )}
         </div>
       </div>
+      
+      {/* Development Bank Modal */}
+      <DevelopmentBankModal
+        isOpen={developmentBankOpen}
+        onClose={() => setDevelopmentBankOpen(false)}
+      />
     </header>
   )
 }
