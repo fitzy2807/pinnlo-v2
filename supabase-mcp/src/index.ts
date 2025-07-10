@@ -15,7 +15,7 @@ import {
 import { createClient } from '@supabase/supabase-js';
 import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards } from './tools/strategy-creator-tools.js';
 import { intelligenceTools, handleAnalyzeUrl, handleProcessIntelligenceText } from './tools/ai-generation.js';
-import { developmentBankTools, handleGenerateTechStackRecommendations, handleGenerateTechnicalSpecification } from './tools/development-bank-tools.js';
+import { developmentBankTools, handleGenerateTechStackRecommendations, handleGenerateTechnicalSpecification, handleGenerateTestScenarios, handleGenerateTaskList } from './tools/development-bank-tools.js';
 
 interface SupabaseConfig {
   url: string;
@@ -96,6 +96,12 @@ class SupabaseMCPServer {
 
           case 'generate_technical_specification':
             return await handleGenerateTechnicalSpecification(args);
+
+          case 'generate_test_scenarios':
+            return await handleGenerateTestScenarios(args);
+
+          case 'generate_task_list':
+            return await handleGenerateTaskList(args);
 
           case 'analyze_url':
             return await handleAnalyzeUrl(args, this.supabase);
