@@ -34,7 +34,7 @@ export interface TechStackSelection {
 export interface DevBankAsset {
   id: string
   strategy_id: number
-  asset_type: 'tech-spec' | 'api-spec' | 'database-schema' | 'deployment-guide'
+  asset_type: 'tech-spec' | 'api-spec' | 'database-schema' | 'deployment-guide' | 'test-scenario' | 'task-list'
   source_card_ids?: string[]
   tech_stack_id?: string
   content: {
