@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS tech_stacks (
 CREATE TABLE IF NOT EXISTS dev_bank_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     strategy_id INTEGER REFERENCES strategies(id) ON DELETE CASCADE,
-    asset_type VARCHAR(100) NOT NULL CHECK (asset_type IN ('tech-spec', 'api-spec', 'database-schema', 'deployment-guide')),
+    asset_type VARCHAR(100) NOT NULL CHECK (asset_type IN ('tech-spec', 'api-spec', 'database-schema', 'deployment-guide', 'test-scenario', 'task-list')),
     source_card_ids TEXT[], -- Array of card IDs that generated this asset
     tech_stack_id UUID REFERENCES tech_stacks(id) ON DELETE SET NULL,
     content JSONB NOT NULL DEFAULT '{}',
