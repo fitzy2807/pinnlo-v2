@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Building2, ArrowRight, Check, FileCode, Sparkles } from 'lucide-react'
+import { X, Building2, ArrowRight, Check, FileCode, Sparkles, TestTube, ListTodo } from 'lucide-react'
 import { useSession } from '@supabase/auth-helpers-react'
 import { useStrategies } from '@/hooks/useStrategies'
 import DevelopmentBank from './DevelopmentBank'
@@ -25,6 +25,10 @@ export default function DevelopmentBankModal({
   const [selectedStrategyId, setSelectedStrategyId] = useState<string>(strategyId || '')
   const [generatingSpec, setGeneratingSpec] = useState(false)
   const [currentSpecAsset, setCurrentSpecAsset] = useState<DevBankAsset | null>(null)
+  const [generatingTests, setGeneratingTests] = useState(false)
+  const [currentTestAsset, setCurrentTestAsset] = useState<DevBankAsset | null>(null)
+  const [generatingTasks, setGeneratingTasks] = useState(false)
+  const [currentTaskAsset, setCurrentTaskAsset] = useState<DevBankAsset | null>(null)
   const [selectedStack, setSelectedStack] = useState<any>(null)
   const [cards, setCards] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<string>('tech-stack')
@@ -78,6 +82,93 @@ export default function DevelopmentBankModal({
       console.error('Error generating specification:', error)
     } finally {
       setGeneratingSpec(false)
+    }
+  }
+
+  const generateTestScenarios = async () => {
+    if (!selectedStack || cards.length === 0) return
+    
+    setGeneratingTests(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('No session')
+      
+      const featureCards = cards.filter(c => c.card_type === 'feature')
+      if (featureCards.length === 0) {
+        throw new Error('No feature cards found')
+      }
+      
+      const response = await fetch('/api/development-bank/generate-tests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          strategyId: selectedStrategyId,
+          featureIds: featureCards.map(c => c.id),
+          techStackId: selectedStack.id,
+          options: {
+            format: 'ai-ready',
+            includeEdgeCases: true,
+            includeTestData: true
+          }
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate test scenarios')
+      }
+      
+      const result = await response.json()
+      if (result.success && result.asset) {
+        setCurrentTestAsset(result.asset)
+      }
+    } catch (error) {
+      console.error('Error generating test scenarios:', error)
+    } finally {
+      setGeneratingTests(false)
+    }
+  }
+
+  const generateTaskList = async () => {
+    if (!selectedStack || cards.length === 0) return
+    
+    setGeneratingTasks(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('No session')
+      
+      const featureCards = cards.filter(c => c.card_type === 'feature')
+      if (featureCards.length === 0) {
+        throw new Error('No feature cards found')
+      }
+      
+      const response = await fetch('/api/development-bank/generate-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          strategyId: selectedStrategyId,
+          featureIds: featureCards.map(c => c.id),
+          techStackId: selectedStack.id
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate task list')
+      }
+      
+      const result = await response.json()
+      if (result.success && result.asset) {
+        setCurrentTaskAsset(result.asset)
+      }
+    } catch (error) {
+      console.error('Error generating task list:', error)
+    } finally {
+      setGeneratingTasks(false)
     }
   }
 
@@ -245,6 +336,26 @@ export default function DevelopmentBankModal({
               >
                 Specifications
               </button>
+              <button
+                onClick={() => setActiveTab('test')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'test'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Test Scenarios
+              </button>
+              <button
+                onClick={() => setActiveTab('task')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'task'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Task Lists
+              </button>
             </nav>
           </div>
 
@@ -288,6 +399,76 @@ export default function DevelopmentBankModal({
                 <FileCode className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-600 mb-4">
                   Select a tech stack first to generate specifications
+                </p>
+              </div>
+            )}
+
+            {activeTab === 'test' && selectedStack && (
+              <div>
+                {!currentTestAsset && !generatingTests && (
+                  <div className="text-center py-12">
+                    <TestTube className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-600 mb-4">
+                      Create comprehensive test scenarios from acceptance criteria
+                    </p>
+                    <button 
+                      onClick={generateTestScenarios}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Generate Test Scenarios</span>
+                    </button>
+                  </div>
+                )}
+                
+                <SpecificationDisplay
+                  asset={currentTestAsset}
+                  loading={generatingTests}
+                  onRegenerate={generateTestScenarios}
+                />
+              </div>
+            )}
+
+            {activeTab === 'test' && !selectedStack && (
+              <div className="text-center py-12">
+                <TestTube className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-4">
+                  Select a tech stack first to generate test scenarios
+                </p>
+              </div>
+            )}
+
+            {activeTab === 'task' && selectedStack && (
+              <div>
+                {!currentTaskAsset && !generatingTasks && (
+                  <div className="text-center py-12">
+                    <ListTodo className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-600 mb-4">
+                      Break down features into actionable development tasks
+                    </p>
+                    <button 
+                      onClick={generateTaskList}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Generate Task List</span>
+                    </button>
+                  </div>
+                )}
+                
+                <SpecificationDisplay
+                  asset={currentTaskAsset}
+                  loading={generatingTasks}
+                  onRegenerate={generateTaskList}
+                />
+              </div>
+            )}
+
+            {activeTab === 'task' && !selectedStack && (
+              <div className="text-center py-12">
+                <ListTodo className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-4">
+                  Select a tech stack first to generate task lists
                 </p>
               </div>
             )}
