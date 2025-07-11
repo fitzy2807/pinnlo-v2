@@ -33,15 +33,23 @@ interface GroupCardProps {
   onEdit: () => void
   onDelete: () => void
   expandable?: boolean
+  // Selection props for cards within the group
+  selectedCardIds?: Set<string>
+  setSelectedCardIds?: (ids: Set<string>) => void
+  isSelectionMode?: boolean
+  setIsSelectionMode?: (mode: boolean) => void
 }
 
 // Individual card component within group
 interface GroupCardItemProps {
   card: IntelligenceCard
   onRemove: (cardId: string, e: React.MouseEvent) => void
+  isSelected?: boolean
+  onToggleSelect?: (cardId: string) => void
+  isSelectionMode?: boolean
 }
 
-function GroupCardItem({ card, onRemove }: GroupCardItemProps) {
+function GroupCardItem({ card, onRemove, isSelected = false, onToggleSelect, isSelectionMode = false }: GroupCardItemProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const { save: saveCard, archive: archiveCard, delete: deleteCard } = useIntelligenceCardActions()
 
@@ -77,9 +85,30 @@ function GroupCardItem({ card, onRemove }: GroupCardItemProps) {
   }
 
   return (
-    <div className="relative bg-white rounded border border-gray-200 overflow-hidden">
+    <div className={`relative bg-white rounded border overflow-hidden ${
+      isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+    }`}>
+      
+      {/* Selection Checkbox */}
+      {onToggleSelect && (isSelectionMode || isSelected) && (
+        <div className="absolute top-3 left-3 z-10">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => {
+              e.stopPropagation()
+              onToggleSelect(card.id)
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          />
+        </div>
+      )}
+      
       {/* Card header */}
-      <div className="p-3">
+      <div className={`p-3 ${
+        onToggleSelect && (isSelectionMode || isSelected) ? 'pl-10' : ''
+      }`}>
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
             {/* Expand/collapse button */}
@@ -237,7 +266,11 @@ export default function GroupCard({
   onSelect,
   onEdit,
   onDelete,
-  expandable = false
+  expandable = false,
+  selectedCardIds = new Set<string>(),
+  setSelectedCardIds,
+  isSelectionMode = false,
+  setIsSelectionMode
 }: GroupCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [groupCards, setGroupCards] = useState<IntelligenceCard[]>([])
@@ -284,6 +317,22 @@ export default function GroupCard({
       console.error('Error removing card from group:', error)
       alert('Failed to remove card from group')
     }
+  }
+
+  const handleToggleCardSelect = (cardId: string) => {
+    if (!setSelectedCardIds) return
+    
+    const newSelection = new Set(selectedCardIds)
+    if (newSelection.has(cardId)) {
+      newSelection.delete(cardId)
+      if (newSelection.size === 0) {
+        setIsSelectionMode?.(false)
+      }
+    } else {
+      newSelection.add(cardId)
+      setIsSelectionMode?.(true)
+    }
+    setSelectedCardIds(newSelection)
   }
 
   const ExpandIcon = isExpanded ? ChevronDown : ChevronRight
@@ -383,6 +432,37 @@ export default function GroupCard({
                   <h5 className="text-sm font-medium text-gray-700">
                     Cards in {group.name} ({groupCards.length})
                   </h5>
+                  
+                  {/* Select all cards in group */}
+                  {setSelectedCardIds && groupCards.length > 0 && (
+                    <label className="flex items-center space-x-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={groupCards.every(card => selectedCardIds.has(card.id))}
+                        ref={(el) => {
+                          if (el) {
+                            const selectedInGroup = groupCards.filter(card => selectedCardIds.has(card.id)).length
+                            el.indeterminate = selectedInGroup > 0 && selectedInGroup < groupCards.length
+                          }
+                        }}
+                        onChange={(e) => {
+                          const newSelection = new Set(selectedCardIds)
+                          if (e.target.checked) {
+                            groupCards.forEach(card => newSelection.add(card.id))
+                            setIsSelectionMode?.(true)
+                          } else {
+                            groupCards.forEach(card => newSelection.delete(card.id))
+                            if (newSelection.size === 0) {
+                              setIsSelectionMode?.(false)
+                            }
+                          }
+                          setSelectedCardIds(newSelection)
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-gray-600">Select all in group</span>
+                    </label>
+                  )}
                 </div>
                 
                 {groupCards.map(card => (
@@ -390,6 +470,9 @@ export default function GroupCard({
                     key={card.id}
                     card={card}
                     onRemove={handleRemoveCard}
+                    isSelected={selectedCardIds.has(card.id)}
+                    onToggleSelect={handleToggleCardSelect}
+                    isSelectionMode={isSelectionMode}
                   />
                 ))}
               </div>
@@ -492,6 +575,37 @@ export default function GroupCard({
                 <h5 className="text-sm font-medium text-gray-700">
                   Cards in {group.name} ({groupCards.length})
                 </h5>
+                
+                {/* Select all cards in group */}
+                {setSelectedCardIds && groupCards.length > 0 && (
+                  <label className="flex items-center space-x-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={groupCards.every(card => selectedCardIds.has(card.id))}
+                      ref={(el) => {
+                        if (el) {
+                          const selectedInGroup = groupCards.filter(card => selectedCardIds.has(card.id)).length
+                          el.indeterminate = selectedInGroup > 0 && selectedInGroup < groupCards.length
+                        }
+                      }}
+                      onChange={(e) => {
+                        const newSelection = new Set(selectedCardIds)
+                        if (e.target.checked) {
+                          groupCards.forEach(card => newSelection.add(card.id))
+                          setIsSelectionMode?.(true)
+                        } else {
+                          groupCards.forEach(card => newSelection.delete(card.id))
+                          if (newSelection.size === 0) {
+                            setIsSelectionMode?.(false)
+                          }
+                        }
+                        setSelectedCardIds(newSelection)
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-gray-600">Select all in group</span>
+                  </label>
+                )}
               </div>
               
               <div className="space-y-3">
@@ -500,6 +614,9 @@ export default function GroupCard({
                     key={card.id}
                     card={card}
                     onRemove={handleRemoveCard}
+                    isSelected={selectedCardIds.has(card.id)}
+                    onToggleSelect={handleToggleCardSelect}
+                    isSelectionMode={isSelectionMode}
                   />
                 ))}
               </div>

@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 /**
  * Supabase MCP Server
- * Provides direct Supabase database management capabilities via MCP
+ * Provides comprehensive AI generation capabilities via MCP
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextprotocol/sdk/types.js';
 import { createClient } from '@supabase/supabase-js';
+import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards } from './tools/strategy-creator-tools.js';
+import { intelligenceTools, handleAnalyzeUrl, handleProcessIntelligenceText, handleGenerateAutomationIntelligence } from './tools/ai-generation.js';
+import { terminalTools, handleExecuteCommand, handleReadFileContent, handleListDirectoryContents, handleGetProjectStatus, handleGetSystemInfo, handleMonitorFileChanges } from './tools/terminal-tools.js';
 class SupabaseMCPServer {
     server;
     supabase;
@@ -14,427 +17,233 @@ class SupabaseMCPServer {
     constructor() {
         this.server = new Server({
             name: 'supabase-mcp',
-            version: '1.0.0',
+            version: '2.0.0',
         }, {
             capabilities: {
                 tools: {},
             },
         });
-        this.setupToolHandlers();
+        this.setupHandlers();
+        this.initializeSupabase();
     }
-    setupToolHandlers() {
-        // List available tools
+    initializeSupabase() {
+        // Initialize with environment variables if available
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (supabaseUrl && supabaseServiceKey) {
+            this.config = { url: supabaseUrl, serviceKey: supabaseServiceKey };
+            this.supabase = createClient(supabaseUrl, supabaseServiceKey);
+            // Debug: Supabase initialized with environment variables
+        }
+    }
+    setupHandlers() {
         this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-            return {
-                tools: this.getAvailableTools(),
-            };
+            const allTools = [
+                {
+                    name: 'supabase_connect',
+                    description: 'Connect to a Supabase project',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            url: {
+                                type: 'string',
+                                description: 'Supabase project URL',
+                            },
+                            serviceKey: {
+                                type: 'string',
+                                description: 'Supabase service role key (for admin operations)',
+                            },
+                            anonKey: {
+                                type: 'string',
+                                description: 'Supabase anon key (optional)',
+                            },
+                        },
+                        required: ['url', 'serviceKey'],
+                    },
+                },
+                {
+                    name: 'generate_executive_summary',
+                    description: 'Generate executive summary from cards',
+                    inputSchema: {
+                        type: 'object',
+                        properties: {
+                            cards: {
+                                type: 'array',
+                                description: 'Array of cards to summarize',
+                            },
+                            blueprint_type: {
+                                type: 'string',
+                                description: 'Type of blueprint',
+                            },
+                        },
+                        required: ['cards', 'blueprint_type'],
+                    },
+                },
+                // Add all strategy creator tools
+                ...strategyCreatorTools,
+                // Add all intelligence tools
+                ...intelligenceTools,
+                // Add all terminal tools
+                ...terminalTools
+            ];
+            return { tools: allTools };
         });
-        // Handle tool calls
         this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
             const { name, arguments: args } = request.params;
             try {
                 switch (name) {
                     case 'supabase_connect':
-                        return await this.connect(args);
-                    case 'supabase_execute_sql':
-                        return await this.executeSql(args);
-                    case 'supabase_get_tables':
-                        return await this.getTables();
-                    case 'supabase_get_table_schema':
-                        return await this.getTableSchema(args);
-                    case 'supabase_enable_rls':
-                        return await this.enableRLS(args);
-                    case 'supabase_create_policy':
-                        return await this.createPolicy(args);
-                    case 'supabase_insert_data':
-                        return await this.insertData(args);
-                    case 'supabase_update_data':
-                        return await this.updateData(args);
-                    case 'supabase_query_data':
-                        return await this.queryData(args);
+                        return this.handleConnect(args);
+                    case 'generate_executive_summary':
+                        return this.handleGenerateExecutiveSummary(args);
+                    // Strategy Creator Tools
+                    case 'generate_context_summary':
+                        return await handleGenerateContextSummary(args);
+                    case 'generate_strategy_cards':
+                        return await handleGenerateStrategyCards(args);
+                    // Intelligence Tools
+                    case 'analyze_url':
+                        return await handleAnalyzeUrl(args, this.supabase);
+                    case 'process_intelligence_text':
+                        return await handleProcessIntelligenceText(args, this.supabase);
+                    case 'generate_automation_intelligence':
+                        return await handleGenerateAutomationIntelligence(args, this.supabase);
+                    // Terminal Tools
+                    case 'execute_command':
+                        return await handleExecuteCommand(args);
+                    case 'read_file_content':
+                        return await handleReadFileContent(args);
+                    case 'list_directory_contents':
+                        return await handleListDirectoryContents(args);
+                    case 'get_project_status':
+                        return await handleGetProjectStatus(args);
+                    case 'get_system_info':
+                        return await handleGetSystemInfo(args);
+                    case 'monitor_file_changes':
+                        return await handleMonitorFileChanges(args);
                     default:
                         throw new Error(`Unknown tool: ${name}`);
                 }
             }
             catch (error) {
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error(`Error executing tool ${name}:`, error);
                 return {
                     content: [
                         {
                             type: 'text',
-                            text: `Error executing ${name}: ${errorMessage}`,
-                        },
+                            text: JSON.stringify({
+                                success: false,
+                                error: error instanceof Error ? error.message : 'Unknown error'
+                            })
+                        }
                     ],
-                    isError: true,
+                    isError: true
                 };
             }
         });
     }
-    getAvailableTools() {
-        return [
-            {
-                name: 'supabase_connect',
-                description: 'Connect to a Supabase project',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        url: {
-                            type: 'string',
-                            description: 'Supabase project URL',
-                        },
-                        serviceKey: {
-                            type: 'string',
-                            description: 'Supabase service role key (for admin operations)',
-                        },
-                        anonKey: {
-                            type: 'string',
-                            description: 'Supabase anon key (optional)',
-                        },
-                    },
-                    required: ['url', 'serviceKey'],
-                },
-            },
-            {
-                name: 'supabase_execute_sql',
-                description: 'Execute raw SQL against the Supabase database',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        sql: {
-                            type: 'string',
-                            description: 'SQL query to execute',
-                        },
-                    },
-                    required: ['sql'],
-                },
-            },
-            {
-                name: 'supabase_get_tables',
-                description: 'List all tables in the database',
-                inputSchema: {
-                    type: 'object',
-                    properties: {},
-                },
-            },
-            {
-                name: 'supabase_get_table_schema',
-                description: 'Get schema information for a specific table',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        tableName: {
-                            type: 'string',
-                            description: 'Name of the table',
-                        },
-                    },
-                    required: ['tableName'],
-                },
-            },
-            {
-                name: 'supabase_enable_rls',
-                description: 'Enable Row Level Security on a table',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        tableName: {
-                            type: 'string',
-                            description: 'Name of the table',
-                        },
-                    },
-                    required: ['tableName'],
-                },
-            },
-            {
-                name: 'supabase_create_policy',
-                description: 'Create an RLS policy on a table',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        tableName: {
-                            type: 'string',
-                            description: 'Name of the table',
-                        },
-                        policyName: {
-                            type: 'string',
-                            description: 'Name of the policy',
-                        },
-                        operation: {
-                            type: 'string',
-                            enum: ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'ALL'],
-                            description: 'SQL operation to apply policy to',
-                        },
-                        expression: {
-                            type: 'string',
-                            description: 'Policy expression (e.g., "auth.uid() = user_id")',
-                        },
-                    },
-                    required: ['tableName', 'policyName', 'operation', 'expression'],
-                },
-            },
-            {
-                name: 'supabase_insert_data',
-                description: 'Insert data into a table',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        tableName: {
-                            type: 'string',
-                            description: 'Name of the table',
-                        },
-                        data: {
-                            type: 'object',
-                            description: 'Data to insert',
-                        },
-                    },
-                    required: ['tableName', 'data'],
-                },
-            },
-            {
-                name: 'supabase_update_data',
-                description: 'Update data in a table',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        tableName: {
-                            type: 'string',
-                            description: 'Name of the table',
-                        },
-                        data: {
-                            type: 'object',
-                            description: 'Data to update',
-                        },
-                        where: {
-                            type: 'object',
-                            description: 'Where conditions',
-                        },
-                    },
-                    required: ['tableName', 'data', 'where'],
-                },
-            },
-            {
-                name: 'supabase_query_data',
-                description: 'Query data from a table',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        tableName: {
-                            type: 'string',
-                            description: 'Name of the table',
-                        },
-                        select: {
-                            type: 'string',
-                            description: 'Columns to select (default: *)',
-                        },
-                        where: {
-                            type: 'object',
-                            description: 'Where conditions (optional)',
-                        },
-                        limit: {
-                            type: 'number',
-                            description: 'Limit number of results (optional)',
-                        },
-                    },
-                    required: ['tableName'],
-                },
-            },
-        ];
-    }
-    async connect(args) {
+    async handleConnect(config) {
         try {
-            this.config = args;
-            this.supabase = createClient(args.url, args.serviceKey);
-            // Test connection
-            const { data, error } = await this.supabase.from('_test_connection').select('*').limit(1);
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `✅ Successfully connected to Supabase project: ${args.url}`,
-                    },
-                ],
-            };
-        }
-        catch (error) {
-            throw new Error(`Failed to connect to Supabase: ${error}`);
-        }
-    }
-    async executeSql(args) {
-        if (!this.supabase) {
-            throw new Error('Not connected to Supabase. Use supabase_connect first.');
-        }
-        try {
-            const { data, error } = await this.supabase.rpc('execute_sql', { sql_query: args.sql });
-            if (error) {
-                throw new Error(error.message);
-            }
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `✅ SQL executed successfully:\n\n${JSON.stringify(data, null, 2)}`,
-                    },
-                ],
-            };
-        }
-        catch (error) {
-            throw new Error(`SQL execution failed: ${error}`);
-        }
-    }
-    async getTables() {
-        if (!this.supabase) {
-            throw new Error('Not connected to Supabase. Use supabase_connect first.');
-        }
-        try {
+            this.config = config;
+            this.supabase = createClient(config.url, config.serviceKey);
+            // Test connection with a simple query
             const { data, error } = await this.supabase
-                .from('information_schema.tables')
-                .select('table_name')
-                .eq('table_schema', 'public');
-            if (error) {
+                .from('strategies')
+                .select('count')
+                .limit(1);
+            if (error && error.code !== 'PGRST116') { // PGRST116 is "relation does not exist" which is fine
                 throw new Error(error.message);
             }
-            const tableNames = data.map((row) => row.table_name);
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `📋 Tables in database:\n${tableNames.join('\n')}`,
+                        text: JSON.stringify({
+                            success: true,
+                            message: 'Connected to Supabase successfully!',
+                            url: config.url
+                        })
                     },
                 ],
             };
         }
         catch (error) {
-            throw new Error(`Failed to get tables: ${error}`);
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify({
+                            success: false,
+                            error: `Failed to connect to Supabase: ${error}`
+                        })
+                    }
+                ],
+                isError: true
+            };
         }
     }
-    async getTableSchema(args) {
-        if (!this.supabase) {
-            throw new Error('Not connected to Supabase. Use supabase_connect first.');
-        }
+    async handleGenerateExecutiveSummary(args) {
         try {
-            const { data, error } = await this.supabase
-                .from('information_schema.columns')
-                .select('column_name, data_type, is_nullable, column_default')
-                .eq('table_name', args.tableName)
-                .eq('table_schema', 'public');
-            if (error) {
-                throw new Error(error.message);
-            }
+            const { cards, blueprint_type } = args;
+            // Enhanced executive summary generation
+            const systemPrompt = `You are a strategic analyst. Generate a comprehensive executive summary from the provided cards for ${blueprint_type} blueprint.`;
+            const cardSummaries = cards.map((card, index) => `${index + 1}. **${card.title}**: ${card.description || 'No description'}`).join('\n');
+            const userPrompt = `Generate an executive summary for ${blueprint_type} based on these ${cards.length} cards:
+
+${cardSummaries}
+
+Create a summary with:
+1. 3-5 key strategic themes
+2. Critical implications for decision-making
+3. Recommended next steps
+4. Overall strategic narrative
+
+Format as structured JSON with themes, implications, nextSteps, and summary fields.`;
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `📊 Schema for table "${args.tableName}":\n\n${JSON.stringify(data, null, 2)}`,
+                        text: JSON.stringify({
+                            success: true,
+                            prompts: {
+                                system: systemPrompt,
+                                user: userPrompt
+                            },
+                            metadata: {
+                                blueprint_type,
+                                card_count: cards.length
+                            }
+                        })
                     },
                 ],
             };
         }
         catch (error) {
-            throw new Error(`Failed to get table schema: ${error}`);
-        }
-    }
-    async enableRLS(args) {
-        return await this.executeSql({
-            sql: `ALTER TABLE ${args.tableName} ENABLE ROW LEVEL SECURITY;`
-        });
-    }
-    async createPolicy(args) {
-        const sql = `
-      CREATE POLICY "${args.policyName}" ON ${args.tableName}
-      FOR ${args.operation} USING (${args.expression});
-    `;
-        return await this.executeSql({ sql });
-    }
-    async insertData(args) {
-        if (!this.supabase) {
-            throw new Error('Not connected to Supabase. Use supabase_connect first.');
-        }
-        try {
-            const { data, error } = await this.supabase
-                .from(args.tableName)
-                .insert(args.data)
-                .select();
-            if (error) {
-                throw new Error(error.message);
-            }
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `✅ Data inserted successfully:\n\n${JSON.stringify(data, null, 2)}`,
-                    },
+                        text: JSON.stringify({
+                            success: false,
+                            error: error instanceof Error ? error.message : 'Unknown error'
+                        })
+                    }
                 ],
+                isError: true
             };
-        }
-        catch (error) {
-            throw new Error(`Failed to insert data: ${error}`);
-        }
-    }
-    async updateData(args) {
-        if (!this.supabase) {
-            throw new Error('Not connected to Supabase. Use supabase_connect first.');
-        }
-        try {
-            let query = this.supabase.from(args.tableName).update(args.data);
-            // Apply where conditions
-            Object.entries(args.where).forEach(([key, value]) => {
-                query = query.eq(key, value);
-            });
-            const { data, error } = await query.select();
-            if (error) {
-                throw new Error(error.message);
-            }
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `✅ Data updated successfully:\n\n${JSON.stringify(data, null, 2)}`,
-                    },
-                ],
-            };
-        }
-        catch (error) {
-            throw new Error(`Failed to update data: ${error}`);
-        }
-    }
-    async queryData(args) {
-        if (!this.supabase) {
-            throw new Error('Not connected to Supabase. Use supabase_connect first.');
-        }
-        try {
-            let query = this.supabase.from(args.tableName).select(args.select || '*');
-            // Apply where conditions
-            if (args.where) {
-                Object.entries(args.where).forEach(([key, value]) => {
-                    query = query.eq(key, value);
-                });
-            }
-            // Apply limit
-            if (args.limit) {
-                query = query.limit(args.limit);
-            }
-            const { data, error } = await query;
-            if (error) {
-                throw new Error(error.message);
-            }
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `📊 Query results:\n\n${JSON.stringify(data, null, 2)}`,
-                    },
-                ],
-            };
-        }
-        catch (error) {
-            throw new Error(`Failed to query data: ${error}`);
         }
     }
     async run() {
+        // MCP Server starting - logging removed to prevent JSON parsing issues
         const transport = new StdioServerTransport();
         await this.server.connect(transport);
+        // MCP Server ready - logging removed to prevent JSON parsing issues
     }
 }
 // Run the server
 const server = new SupabaseMCPServer();
-server.run().catch(console.error);
+server.run().catch((error) => {
+    console.error('❌ Failed to start MCP Server:', error);
+    process.exit(1);
+});
 //# sourceMappingURL=index.js.map

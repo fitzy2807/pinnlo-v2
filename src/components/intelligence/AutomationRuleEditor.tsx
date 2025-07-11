@@ -56,6 +56,7 @@ export default function AutomationRuleEditor({ rule, onSave, onCancel }: Automat
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    system_prompt: '',
     enabled: true,
     automation_enabled: true,
     schedule_frequency: 'daily',
@@ -70,6 +71,7 @@ export default function AutomationRuleEditor({ rule, onSave, onCancel }: Automat
       setFormData({
         name: rule.name || '',
         description: rule.description || '',
+        system_prompt: rule.system_prompt || '',
         enabled: rule.enabled ?? true,
         automation_enabled: rule.automation_enabled ?? true,
         schedule_frequency: rule.schedule_frequency || 'daily',
@@ -167,6 +169,29 @@ export default function AutomationRuleEditor({ rule, onSave, onCancel }: Automat
                     rows={2}
                     placeholder="Describe what this rule does..."
                   />
+                </div>
+
+                {/* System Prompt */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    System Prompt
+                  </label>
+                  <div className="mb-2">
+                    <div className="flex items-center space-x-1 text-xs text-gray-600">
+                      <Info className="w-3 h-3" />
+                      <span>This prompt will guide the AI when generating intelligence cards</span>
+                    </div>
+                  </div>
+                  <textarea
+                    value={formData.system_prompt}
+                    onChange={(e) => setFormData(prev => ({ ...prev, system_prompt: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-mono text-sm"
+                    rows={4}
+                    placeholder="You are a strategic intelligence analyst. Focus on extracting actionable insights about market trends, competitive positioning, and emerging opportunities. Analyze content with a focus on strategic implications for business decision-making..."
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    This system prompt will be used by the AI to understand the context and focus for intelligence generation. Be specific about what kind of insights you want.
+                  </p>
                 </div>
 
                 {/* Schedule Frequency */}

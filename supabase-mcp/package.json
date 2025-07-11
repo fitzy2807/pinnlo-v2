@@ -8,11 +8,17 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "dev:http": "tsx src/index.ts"
+    "dev:http": "tsx src/http-server.ts",
+    "http": "node dist/http-server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
-    "@supabase/supabase-js": "^2.39.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

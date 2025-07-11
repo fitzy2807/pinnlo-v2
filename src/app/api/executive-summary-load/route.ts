@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const supabase = createClient(cookies())
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    if (sessionError || !session) {
+    if (authError || !user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('strategy_id', strategyId)
       .eq('blueprint_id', blueprintId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single()
 
     if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"

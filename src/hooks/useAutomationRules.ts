@@ -9,6 +9,7 @@ interface AutomationRule {
   user_id: string
   name: string
   description?: string
+  system_prompt?: string
   enabled: boolean
   automation_enabled: boolean
   schedule_frequency: 'hourly' | 'daily' | 'weekly'
@@ -140,6 +141,18 @@ export function useAutomationRules() {
     }
 
     try {
+      // Get the rule details first
+      const { data: rule, error: ruleError } = await supabase
+        .from('ai_generation_rules')
+        .select('*')
+        .eq('id', ruleId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (ruleError || !rule) {
+        return { success: false, error: 'Rule not found' }
+      }
+
       // Create execution record
       const { data: execution, error: execError } = await supabase
         .from('ai_automation_executions')
@@ -156,7 +169,7 @@ export function useAutomationRules() {
         return { success: false, error: execError.message }
       }
 
-      // Call MCP server to generate intelligence
+      // Call MCP server to generate intelligence with rule parameters
       const response = await fetch('/api/mcp/invoke', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -165,7 +178,12 @@ export function useAutomationRules() {
           arguments: { 
             userId: user.id,
             ruleId, 
-            triggerType: 'manual' 
+            triggerType: 'manual',
+            categories: rule.intelligence_categories || [],
+            maxCards: rule.max_cards_per_run || 5,
+            targetGroups: rule.target_groups || [],
+            optimizationLevel: rule.optimization_level || 'balanced',
+            systemPrompt: rule.system_prompt || ''
           }
         })
       })

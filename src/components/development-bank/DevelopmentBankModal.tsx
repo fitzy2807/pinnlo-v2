@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { X, Building2, ArrowRight, Check, FileCode, Sparkles, TestTube, ListTodo } from 'lucide-react'
 import { useAuth } from '@/providers/AuthProvider'
 import { useStrategies } from '@/hooks/useStrategies'
+import { supabase } from '@/lib/supabase'
 import DevelopmentBank from './DevelopmentBank'
 import SpecificationDisplay from './SpecificationDisplay'
 import type { DevBankAsset } from '@/services/developmentBankService'
@@ -31,7 +32,8 @@ export default function DevelopmentBankModal({
   const [selectedStack, setSelectedStack] = useState<any>(null)
   const [cards, setCards] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<string>('tech-stack')
-
+  
+  // Supabase client is imported above
 
 
   const generateSpecification = async () => {
@@ -170,7 +172,7 @@ export default function DevelopmentBankModal({
 
   if (!isOpen) return null
 
-  if (!session) {
+  if (!user) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">

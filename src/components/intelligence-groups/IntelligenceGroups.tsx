@@ -22,6 +22,10 @@ export default function IntelligenceGroups({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [showCreator, setShowCreator] = useState(false)
   const [editingGroup, setEditingGroup] = useState<IntelligenceGroup | null>(null)
+  
+  // Selection state for cards within groups
+  const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set())
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
 
   const filteredGroups = groups.filter(group =>
     group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,8 +147,12 @@ export default function IntelligenceGroups({
                   deleteGroup(group.id)
                 }
               }}
+              selectedCardIds={selectedCardIds}
+              setSelectedCardIds={setSelectedCardIds}
+              isSelectionMode={isSelectionMode}
+              setIsSelectionMode={setIsSelectionMode}
             />
-          ))}
+          ))}}
         </div>
       )}
 

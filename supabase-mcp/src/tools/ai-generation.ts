@@ -50,6 +50,10 @@ export const intelligenceTools = [
         triggerType: {
           type: 'string',
           enum: ['scheduled', 'manual']
+        },
+        systemPrompt: {
+          type: 'string',
+          description: 'Custom system prompt to guide AI generation'
         }
       },
       required: ['userId', 'ruleId']
@@ -57,7 +61,7 @@ export const intelligenceTools = [
   }
 ];
 
-export async function handleAnalyzeUrl(args, supabase) {
+export async function handleAnalyzeUrl(args: any, supabase: any) {
   try {
     const { url, context } = args;
     
@@ -84,7 +88,7 @@ Extract key insights, trends, and actionable intelligence.`;
         }
       ]
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       content: [
         {
@@ -100,7 +104,7 @@ Extract key insights, trends, and actionable intelligence.`;
   }
 }
 
-export async function handleProcessIntelligenceText(args, supabase) {
+export async function handleProcessIntelligenceText(args: any, supabase: any) {
   try {
     const { text, context, type } = args;
     
@@ -128,7 +132,7 @@ Extract structured insights, key points, and actionable intelligence.`;
         }
       ]
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       content: [
         {
@@ -144,7 +148,7 @@ Extract structured insights, key points, and actionable intelligence.`;
   }
 }
 
-export async function handleGenerateAutomationIntelligence(args, supabase) {
+export async function handleGenerateAutomationIntelligence(args: any, supabase: any) {
   try {
     const { 
       userId, 
@@ -153,54 +157,114 @@ export async function handleGenerateAutomationIntelligence(args, supabase) {
       maxCards = 5, 
       targetGroups = [],
       optimizationLevel = 'balanced',
-      triggerType = 'scheduled'
+      triggerType = 'scheduled',
+      systemPrompt = ''
     } = args;
     
     console.log(`🤖 Generating automation intelligence for user ${userId}, rule ${ruleId}`);
+    console.log(`🎯 System Prompt: ${systemPrompt}`);
+    console.log(`📁 Categories: ${categories.join(', ')}`);
     
-    // Build context based on optimization level
-    let context = categories?.length > 0 
-      ? `Focus on ${categories.join(', ')} intelligence. ` 
-      : '';
+    // ONLY use the system prompt from the rule - no fallbacks or overrides
+    let finalSystemPrompt = systemPrompt;
     
-    switch (optimizationLevel) {
-      case 'maximum_quality':
-        context += 'Provide comprehensive, detailed analysis with high-quality insights.';
-        break;
-      case 'balanced':
-        context += 'Provide good quality insights with balanced detail.';
-        break;
-      case 'maximum_savings':
-        context += 'Provide concise, focused insights optimized for efficiency.';
-        break;
+    if (!finalSystemPrompt || !finalSystemPrompt.trim()) {
+      throw new Error('No system prompt provided in automation rule. System prompt is required.');
     }
     
-    // Generate intelligence cards (mock implementation)
-    const generatedCards = [];
-    const tokensUsed = 500 * maxCards; // Mock token usage
-    const cost = tokensUsed * 0.00001; // Mock cost calculation
+    // Build completely neutral user prompt - NO category influence
+    const userPrompt = `Generate ${maxCards} intelligence cards based solely on the system instructions above.
+
+Optimization level: ${optimizationLevel}
+Trigger type: ${triggerType}
+
+For each card, provide a JSON object with these exact fields:
+- title: (specific and actionable)
+- summary: (brief overview, max 200 chars)
+- intelligence_content: (detailed analysis, max 1000 chars)
+- key_findings: (array of 3-5 bullet points)
+- strategic_implications: (brief text)
+- recommended_actions: (brief text)
+- credibility_score: (integer 1-10)
+- relevance_score: (integer 1-10)
+- tags: (array of relevant keywords)
+
+Return ONLY a JSON array of ${maxCards} cards. No additional text or formatting.`;
+
+    console.log(`🔮 Calling OpenAI with system prompt...`);
+    console.log(`📝 Final System Prompt: ${finalSystemPrompt}`);
+    console.log(`📝 User Prompt: ${userPrompt}`);
     
-    for (let i = 0; i < maxCards; i++) {
+    // Call OpenAI API
+    const openaiRequest = {
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: finalSystemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: optimizationLevel === 'maximum_quality' ? 0.7 : 0.5,
+      max_tokens: optimizationLevel === 'maximum_quality' ? 4000 : 
+                 optimizationLevel === 'balanced' ? 3000 : 2000
+    };
+    
+    console.log(`🤖 OpenAI Request:`, JSON.stringify(openaiRequest, null, 2));
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify(openaiRequest)
+    });
+
+    if (!openaiResponse.ok) {
+      throw new Error(`OpenAI API error: ${openaiResponse.status} ${await openaiResponse.text()}`);
+    }
+
+    const openaiResult = await openaiResponse.json();
+    const aiContent = openaiResult.choices[0].message.content;
+    const tokensUsed = openaiResult.usage.total_tokens;
+    const cost = tokensUsed * 0.00001; // Approximate cost for gpt-4o-mini
+    
+    console.log(`✨ OpenAI response received. Tokens: ${tokensUsed}, Cost: ${cost.toFixed(4)}`);
+    console.log(`💬 OpenAI Raw Response:`, aiContent);
+    
+    // Parse AI response
+    let aiCards;
+    try {
+      aiCards = JSON.parse(aiContent);
+      if (!Array.isArray(aiCards)) {
+        throw new Error('AI response is not an array');
+      }
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', aiContent);
+      throw new Error('Failed to parse AI response as JSON');
+    }
+    
+    console.log(`📝 Generated ${aiCards.length} cards from AI`);
+    console.log(`🐶 First card title check:`, aiCards[0]?.title);
+    
+    // Save cards to database
+    const generatedCards = [];
+    
+    for (let i = 0; i < aiCards.length && i < maxCards; i++) {
+      const aiCard = aiCards[i];
       const category = categories[i % categories.length] || 'market';
+      
       const card = {
-        id: `auto-${Date.now()}-${i}`,
         user_id: userId,
-        title: `Automated ${category} Intelligence - ${new Date().toLocaleDateString()}`,
-        description: `Generated insight for ${category} category`,
         category: category,
-        source_type: 'automation',
-        source_name: `Automation Rule ${ruleId}`,
-        source_reference: `Rule: ${ruleId}`,
-        credibility_score: optimizationLevel === 'maximum_quality' ? 9 : 7,
-        relevance_score: 8,
-        key_insights: [
-          `Key insight 1 for ${category}`,
-          `Key insight 2 based on ${optimizationLevel} optimization`,
-          `Key insight 3 from automated analysis`
-        ],
-        tags: ['automation', triggerType, category],
-        status: 'active',
-        created_at: new Date().toISOString()
+        title: aiCard.title || `AI Generated ${category} Intelligence`,
+        summary: aiCard.summary || aiCard.intelligence_content?.substring(0, 200) || 'AI generated insight',
+        intelligence_content: aiCard.intelligence_content || aiCard.summary || 'AI generated content',
+        key_findings: aiCard.key_findings || ['AI generated finding'],
+        strategic_implications: aiCard.strategic_implications || 'Strategic implications from AI analysis',
+        recommended_actions: aiCard.recommended_actions || 'Recommended actions from AI analysis',
+        source_reference: `Automation Rule: ${ruleId}`,
+        credibility_score: aiCard.credibility_score || (optimizationLevel === 'maximum_quality' ? 9 : 7),
+        relevance_score: aiCard.relevance_score || 8,
+        tags: aiCard.tags || ['automation', triggerType, category],
+        status: 'active'
       };
       
       // Save to database
@@ -224,7 +288,7 @@ export async function handleGenerateAutomationIntelligence(args, supabase) {
             .from('intelligence_group_cards')
             .insert({
               group_id: groupId,
-              card_id: data.id,
+              intelligence_card_id: data.id,
               added_by: userId
             });
         }
@@ -242,12 +306,12 @@ export async function handleGenerateAutomationIntelligence(args, supabase) {
         tokens_used: tokensUsed,
         cost_incurred: cost,
         success: true,
-        metadata: {
-          rule_id: ruleId,
-          trigger_type: triggerType,
-          cards_created: generatedCards.length
-        }
+        blueprint_id: null,
+        strategy_id: null,
+        generation_type: 'intelligence_automation'
       });
+    
+    console.log(`✅ Successfully created ${generatedCards.length} intelligence cards`);
     
     return {
       content: [
@@ -258,13 +322,14 @@ export async function handleGenerateAutomationIntelligence(args, supabase) {
             cardsCreated: generatedCards.length,
             cards: generatedCards,
             tokensUsed: tokensUsed,
-            cost: cost
+            cost: cost,
+            systemPromptUsed: finalSystemPrompt
           })
         }
       ]
     };
-  } catch (error) {
-    console.error('Automation intelligence generation error:', error);
+  } catch (error: any) {
+    console.error('🚨 Automation intelligence generation error:', error);
     return {
       content: [
         {

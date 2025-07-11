@@ -2,23 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { context } = await request.json()
+    const { blueprintCards, intelligenceCards, intelligenceGroups, strategyName } = await request.json()
 
-    // Call MCP tool to generate summary
-    const response = await fetch('http://localhost:3001/api/tools/generate_context_summary', {
+    // Call MCP tool to generate context summary prompts
+    const mcpResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3001'}/api/mcp/invoke`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ context })
+      body: JSON.stringify({
+        tool: 'generate_context_summary',
+        arguments: {
+          blueprintCards,
+          intelligenceCards,
+          intelligenceGroups,
+          strategyName
+        }
+      })
     })
 
-    if (!response.ok) {
-      throw new Error('Failed to generate summary')
+    if (!mcpResponse.ok) {
+      throw new Error('Failed to get MCP prompts')
     }
 
-    const result = await response.json()
+    const mcpResult = await mcpResponse.json()
     
-    // Extract prompts from MCP response
-    const { prompts } = JSON.parse(result.content)
+    if (!mcpResult.success || !mcpResult.prompts) {
+      throw new Error('Invalid MCP response format')
+    }
 
     // Call OpenAI to generate the actual summary
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -28,28 +37,41 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: prompts.system },
-          { role: 'user', content: prompts.user }
+          { role: 'system', content: mcpResult.prompts.system },
+          { role: 'user', content: mcpResult.prompts.user }
         ],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 1500
       })
     })
 
     if (!openaiResponse.ok) {
-      throw new Error('Failed to call OpenAI')
+      const errorText = await openaiResponse.text()
+      throw new Error(`OpenAI API error: ${errorText}`)
     }
 
     const openaiResult = await openaiResponse.json()
     const summary = openaiResult.choices[0].message.content
 
-    return NextResponse.json({ summary })
+    return NextResponse.json({ 
+      success: true,
+      summary,
+      metadata: {
+        blueprintCardCount: blueprintCards.length,
+        intelligenceCardCount: intelligenceCards.length,
+        intelligenceGroupCount: intelligenceGroups.length,
+        strategyName
+      }
+    })
   } catch (error: any) {
-    console.error('Error generating summary:', error)
+    console.error('Error generating context summary:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to generate summary' },
+      { 
+        success: false,
+        error: error.message || 'Failed to generate context summary' 
+      },
       { status: 500 }
     )
   }

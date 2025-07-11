@@ -171,3 +171,6 @@ export function getSuggestedBlueprints(selectedBlueprints: string[]): string[] {
 
   return Array.from(suggestions)
 }
+
+// Export the registry for use in other components
+export const blueprintRegistry = BLUEPRINT_REGISTRY

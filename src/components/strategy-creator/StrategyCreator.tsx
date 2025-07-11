@@ -53,26 +53,57 @@ export default function StrategyCreator({ isOpen, onClose }: StrategyCreatorProp
 
   // Load or create session when modal opens
   useEffect(() => {
-    if (isOpen && session.strategyId && !session.id) {
-      loadOrCreateSession()
+    if (isOpen) {
+      // Always start fresh when opening the modal
+      // The first step will handle strategy selection
     }
-  }, [isOpen, session.strategyId])
+  }, [isOpen])
 
-  const loadOrCreateSession = async () => {
-    if (!session.strategyId) return
+  const loadOrCreateSession = async (strategyId: string) => {
+    if (!strategyId) return
     
     setLoading(true)
     setError(null)
     
     try {
-      const response = await fetch(`/api/strategy-creator/session?strategyId=${session.strategyId}`)
-      if (!response.ok) throw new Error('Failed to load session')
+      const response = await fetch(`/api/strategy-creator/session?strategyId=${strategyId}`)
+      if (!response.ok) {
+        // If no session exists, create a new one
+        const createResponse = await fetch('/api/strategy-creator/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ strategyId })
+        })
+        
+        if (!createResponse.ok) throw new Error('Failed to create session')
+        
+        const { session: newSession } = await createResponse.json()
+        
+        setSession(prev => ({
+          ...prev,
+          id: newSession.id,
+          strategyId: strategyId,
+          currentStep: 1,
+          completedSteps: [],
+          selectedBlueprintCards: [],
+          selectedIntelligenceCards: [],
+          selectedIntelligenceGroups: [],
+          intelligenceGroupCards: [],
+          contextSummary: null,
+          targetBlueprint: null,
+          generationOptions: { count: 3, style: 'comprehensive' },
+          generatedCards: []
+        }))
+        
+        return
+      }
       
       const { session: savedSession } = await response.json()
       
       setSession(prev => ({
         ...prev,
         id: savedSession.id,
+        strategyId: strategyId,
         currentStep: savedSession.current_step || 1,
         completedSteps: savedSession.completed_steps || [],
         selectedBlueprintCards: savedSession.selected_blueprint_cards || [],
@@ -169,6 +200,11 @@ export default function StrategyCreator({ isOpen, onClose }: StrategyCreatorProp
             onUpdateSession={(updates) => {
               setSession(prev => ({ ...prev, ...updates }))
               updateSession(updates)
+              
+              // If a strategy was selected and we don't have a session yet, load/create one
+              if (updates.strategyId && !session.id) {
+                loadOrCreateSession(updates.strategyId)
+              }
             }}
             onNext={() => handleStepComplete(1)}
             onPrevious={() => {}}

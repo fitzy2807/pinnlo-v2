@@ -81,7 +81,7 @@ export const strategyCreatorTools = [
   }
 ];
 
-export async function handleGenerateContextSummary(args) {
+export async function handleGenerateContextSummary(args: any) {
   try {
     const { blueprintCards, intelligenceCards, strategyName } = args;
     
@@ -96,14 +96,14 @@ Your summary should:
 Format the summary with clear sections and bullet points for readability.`;
     
     // Group blueprint cards by type
-    const blueprintsByType = blueprintCards.reduce((acc, card) => {
+    const blueprintsByType = blueprintCards.reduce((acc: any, card: any) => {
       if (!acc[card.cardType]) acc[card.cardType] = [];
       acc[card.cardType].push(card);
       return acc;
     }, {});
     
     // Group intelligence cards by category
-    const intelligenceByCategory = intelligenceCards.reduce((acc, card) => {
+    const intelligenceByCategory = intelligenceCards.reduce((acc: any, card: any) => {
       if (!acc[card.category]) acc[card.category] = [];
       acc[card.category].push(card);
       return acc;
@@ -112,15 +112,15 @@ Format the summary with clear sections and bullet points for readability.`;
     const userPrompt = `Generate a comprehensive context summary for the strategy: "${strategyName || 'Unnamed Strategy'}"
 
 ## Blueprint Cards Analysis (${blueprintCards.length} cards)
-${Object.entries(blueprintsByType).map(([type, cards]) => `
-### ${type} (${cards.length} cards)
-${cards.map(card => `- **${card.title}**: ${card.description}`).join('\n')}
+${Object.entries(blueprintsByType).map(([type, cards]: [string, any]) => `
+### ${type} (${(cards as any[]).length} cards)
+${(cards as any[]).map((card: any) => `- **${card.title}**: ${card.description}`).join('\n')}
 `).join('\n')}
 
 ## Intelligence Cards Analysis (${intelligenceCards.length} cards)
-${Object.entries(intelligenceByCategory).map(([category, cards]) => `
-### ${category} (${cards.length} cards)
-${cards.map(card => `- **${card.title}** (Relevance: ${card.relevanceScore}/10)
+${Object.entries(intelligenceByCategory).map(([category, cards]: [string, any]) => `
+### ${category} (${(cards as any[]).length} cards)
+${(cards as any[]).map((card: any) => `- **${card.title}** (Relevance: ${card.relevanceScore}/10)
   Key Findings: ${card.keyFindings?.slice(0, 3).join('; ')}`).join('\n')}
 `).join('\n')}
 
@@ -145,7 +145,7 @@ Create a strategic context summary that:
         }
       ]
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       content: [
         {
@@ -161,7 +161,7 @@ Create a strategic context summary that:
   }
 }
 
-export async function handleGenerateStrategyCards(args) {
+export async function handleGenerateStrategyCards(args: any) {
   try {
     const { contextSummary, targetBlueprint, generationOptions = {}, existingCards = [] } = args;
     const { count = 3, style = 'comprehensive' } = generationOptions;
@@ -198,7 +198,7 @@ export async function handleGenerateStrategyCards(args) {
       }
     };
     
-    const blueprintConfig = blueprintConfigs[targetBlueprint] || {
+    const blueprintConfig = (blueprintConfigs as any)[targetBlueprint] || {
       fields: [],
       focus: 'strategic planning and execution'
     };
@@ -213,7 +213,7 @@ export async function handleGenerateStrategyCards(args) {
 Generate high-quality strategy cards that are:
 1. Directly relevant to the context summary
 2. Actionable and specific
-3. Aligned with the ${style} generation style: ${styleGuides[style]}
+3. Aligned with the ${style} generation style: ${(styleGuides as any)[style]}
 4. Complementary to existing cards without duplication
 
 Each card should have comprehensive blueprint-specific fields that provide real value.`;
@@ -224,7 +224,7 @@ Each card should have comprehensive blueprint-specific fields that provide real 
 ${contextSummary}
 
 ## Existing ${targetBlueprint} Cards (avoid duplication):
-${existingCards.filter(c => c.cardType === targetBlueprint).map(c => `- ${c.title}`).join('\n') || 'None'}
+${existingCards.filter((c: any) => c.cardType === targetBlueprint).map((c: any) => `- ${c.title}`).join('\n') || 'None'}
 
 ## Blueprint Focus:
 Generate cards focusing on: ${blueprintConfig.focus}
@@ -241,7 +241,7 @@ Return a JSON array with ${count} card objects, each containing:
   },
   "keyPoints": ["3-5 key insights or action items"],
   "blueprintFields": {
-    ${blueprintConfig.fields.map(field => `"${field}": "Detailed content for this field"`).join(',\n    ')}
+    ${blueprintConfig.fields.map((field: any) => `"${field}": "Detailed content for this field"`).join(',\n    ')}
   },
   "tags": ["relevant", "tags"],
   "relationships": ["Related card titles or concepts"],
@@ -268,7 +268,7 @@ Ensure each card is unique, valuable, and actionable within the strategic contex
         }
       ]
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       content: [
         {

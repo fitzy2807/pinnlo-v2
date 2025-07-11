@@ -220,9 +220,9 @@ export const developmentBankTools = [
   }
 ];
 
-export async function handleGenerateTechStackRecommendations(args) {
+export async function handleGenerateTechStackRecommendations(args: any) {
   try {
-    console.log('🚀 Preparing tech stack recommendation request with args:', JSON.stringify(args, null, 2));
+    // Debug: Preparing tech stack recommendation request
     
     const { companyProfile, projectRequirements, strategyContext } = args;
     
@@ -301,7 +301,7 @@ Return a JSON array with 2-3 recommendations. Each should have:
         }
       ]
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error preparing tech stack recommendation request:', error);
     return {
       content: [
@@ -318,15 +318,15 @@ Return a JSON array with 2-3 recommendations. Each should have:
   }
 }
 
-export async function handleGenerateTechnicalSpecification(args) {
+export async function handleGenerateTechnicalSpecification(args: any) {
   try {
-    console.log('📋 Generating technical specification with args:', JSON.stringify(args, null, 2));
+    // Debug: Generating technical specification
     
     const { features, epics, techStack, options = {} } = args;
     const format = options.format || 'ai-ready';
     
     // Extract key information from features
-    const featureRequirements = features.map(f => ({
+    const featureRequirements = features.map((f: any) => ({
       title: f.title,
       stories: f.userStories,
       acceptance: f.acceptanceCriteria,
@@ -337,7 +337,7 @@ export async function handleGenerateTechnicalSpecification(args) {
     // Build tech context
     const techContext = Object.entries(techStack.layers)
       .map(([layer, choices]) => 
-        `${layer}: ${choices.map(c => c.product).join(', ')}`
+        `${layer}: ${(choices as any[]).map((c: any) => c.product).join(', ')}`
       ).join('\n');
     
     // Create the specification prompt
@@ -358,7 +358,7 @@ Format: ${format === 'ai-ready' ? 'Optimized for AI coding assistants' :
 Features:
 ${JSON.stringify(featureRequirements, null, 2)}
 
-${epics ? `Epics Context:\n${JSON.stringify(epics.map(e => ({ title: e.title, outcomes: e.outcomes })), null, 2)}\n` : ''}
+${epics ? `Epics Context:\n${JSON.stringify(epics.map((e: any) => ({ title: e.title, outcomes: e.outcomes })), null, 2)}\n` : ''}
 
 Tech Stack:
 ${techContext}
@@ -400,7 +400,7 @@ ${options.includeDiagrams ? 'Include mermaid diagrams for architecture and data 
         }
       ]
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error preparing technical specification:', error);
     return {
       content: [
@@ -417,9 +417,9 @@ ${options.includeDiagrams ? 'Include mermaid diagrams for architecture and data 
   }
 }
 
-export async function handleGenerateTestScenarios(args) {
+export async function handleGenerateTestScenarios(args: any) {
   try {
-    console.log('🧪 Generating test scenarios with args:', JSON.stringify(args, null, 2));
+    // Debug: Generating test scenarios
     
     const { features, techStack, options = {} } = args;
     const format = options.format || 'ai-ready';
@@ -457,15 +457,15 @@ ${options.includeTestData ? 'Include sample test data' : ''}`;
         temperature: 0.7
       }
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error preparing test scenarios:', error);
     return { success: false, error: error.message };
   }
 }
 
-export async function handleGenerateTaskList(args) {
+export async function handleGenerateTaskList(args: any) {
   try {
-    console.log('📋 Generating task list with args:', JSON.stringify(args, null, 2));
+    // Debug: Generating task list
     
     const { features, epics, techStack } = args;
     
@@ -504,7 +504,7 @@ For each task provide:
         temperature: 0.7
       }
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error preparing task list:', error);
     return { success: false, error: error.message };
   }

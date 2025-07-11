@@ -186,6 +186,10 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set())
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [showGroupSelector, setShowGroupSelector] = useState(false)
+  
+  // Editor states
+  const [showEditor, setShowEditor] = useState(false)
+  const [editingCard, setEditingCard] = useState<IntelligenceCardType | null>(null)
 
   // Hooks
   const { categoryCounts, statusCounts, refresh: refreshCounts } = useIntelligenceCardCounts()
@@ -876,7 +880,12 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
               ) : selectedCategory === 'automation' ? (
                 <AutomationContent />
               ) : selectedCategory === 'groups' ? (
-                <IntelligenceGroups />
+                <IntelligenceGroups
+                  selectedCardIds={selectedCardIds}
+                  setSelectedCardIds={setSelectedCardIds}
+                  isSelectionMode={isSelectionMode}
+                  setIsSelectionMode={setIsSelectionMode}
+                />
               ) : (
                 <IntelligenceCardsContent 
                   category={selectedCategory}
@@ -926,10 +935,10 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
   )
 }
 
-// Dashboard Component
+// Dashboard Content Component
 interface DashboardContentProps {
   categoryCounts: Record<string, number>
-  statusCounts: { saved: number; archived: number }
+  statusCounts: { saved: number, archived: number }
   totalCards: number
 }
 
@@ -1408,6 +1417,8 @@ function TextPasteContent() {
     </div>
   )
 }
+
+
 
 // Automation Content Component
 function AutomationContent() {

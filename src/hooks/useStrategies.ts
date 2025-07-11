@@ -82,19 +82,19 @@ export function useStrategies() {
       fetchAttempts.current++
       lastFetchTime.current = now
 
-      console.log(`Fetch attempt ${fetchAttempts.current} for user:`, user.id)
+      // console.log(`Fetch attempt ${fetchAttempts.current} for user:`, user.id)
 
       const { data, error: fetchError } = await supabase
         .from('strategies')
         .select('*')
-        .eq('userId', user.id)
+        .eq('created_by', user.id)
         .order('updatedAt', { ascending: false })
 
       if (fetchError) {
         throw fetchError
       }
 
-      console.log('Successfully fetched strategies:', data?.length || 0)
+      // console.log('Successfully fetched strategies:', data?.length || 0)
       setStrategies(data || [])
       
       // Reset attempts on success
@@ -133,6 +133,7 @@ export function useStrategies() {
         .from('strategies')
         .insert({
           userId: user.id,
+          created_by: user.id,
           title: strategyData.title || 'Untitled Strategy',
           client: strategyData.client || '',
           description: strategyData.description || '',
@@ -197,7 +198,7 @@ export function useStrategies() {
         .from('strategies')
         .delete()
         .eq('id', strategyId)
-        .eq('userId', user.id) // Ensure user can only delete their own strategies
+        .eq('created_by', user.id) // Ensure user can only delete their own strategies
 
       if (deleteError) {
         throw deleteError

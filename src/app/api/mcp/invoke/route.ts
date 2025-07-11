@@ -21,50 +21,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Call MCP server
-    const mcpResponse = await fetch(`${process.env.MCP_SERVER_URL}/invoke`, {
+    const mcpResponse = await fetch(`${process.env.MCP_SERVER_URL}/api/mcp/invoke`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.MCP_SERVER_TOKEN}`
       },
       body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'tools/call',
-        params: {
-          name: tool,
-          arguments: args
-        },
-        id: Date.now()
+        tool,
+        arguments: args
       })
     })
 
     const mcpResult = await mcpResponse.json()
 
-    if (mcpResult.error) {
+    if (!mcpResponse.ok) {
       return NextResponse.json(
-        { success: false, error: mcpResult.error.message || 'MCP error' },
+        { success: false, error: mcpResult.error || 'MCP server error' },
         { status: 500 }
       )
     }
 
-    // Parse the result
-    if (mcpResult.result?.content?.[0]?.text) {
-      try {
-        const resultData = JSON.parse(mcpResult.result.content[0].text)
-        return NextResponse.json({ success: true, ...resultData })
-      } catch (e) {
-        // If not JSON, return as is
-        return NextResponse.json({ 
-          success: true, 
-          result: mcpResult.result.content[0].text 
-        })
-      }
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      result: mcpResult.result 
-    })
+    // The HTTP MCP server returns results directly
+    return NextResponse.json({ success: true, ...mcpResult })
   } catch (error) {
     console.error('MCP invoke error:', error)
     return NextResponse.json(
