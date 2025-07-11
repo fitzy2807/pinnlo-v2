@@ -3,6 +3,10 @@
  * HTTP-based MCP Server for PINNLO V2
  * Provides REST API endpoints for AI generation capabilities
  */
+// Load environment variables first
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+config({ path: '.env' });
 import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
@@ -29,10 +33,16 @@ class HttpMcpServer {
     initializeSupabase() {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+        console.log('🔧 Initializing Supabase...');
+        console.log('📍 URL:', supabaseUrl ? 'Found' : 'Missing');
+        console.log('🔑 Service Key:', supabaseServiceKey ? 'Found' : 'Missing');
         if (supabaseUrl && supabaseServiceKey) {
             this.config = { url: supabaseUrl, serviceKey: supabaseServiceKey };
             this.supabase = createClient(supabaseUrl, supabaseServiceKey);
-            // Debug: Supabase initialized with environment variables
+            console.log('✅ Supabase client created successfully');
+        }
+        else {
+            console.error('❌ Missing Supabase environment variables');
         }
     }
     setupRoutes() {
@@ -96,7 +106,7 @@ class HttpMcpServer {
         });
         this.app.post('/api/tools/generate_automation_intelligence', async (req, res) => {
             try {
-                const result = await handleGenerateAutomationIntelligence(req.body);
+                const result = await handleGenerateAutomationIntelligence(req.body, this.supabase);
                 res.json(result);
             }
             catch (error) {
@@ -177,7 +187,7 @@ class HttpMcpServer {
             case 'process_intelligence_text':
                 return await handleProcessIntelligenceText(args);
             case 'generate_automation_intelligence':
-                return await handleGenerateAutomationIntelligence(args);
+                return await handleGenerateAutomationIntelligence(args, this.supabase);
             case 'execute_command':
                 return await handleExecuteCommand(args);
             case 'read_file_content':
@@ -189,11 +199,23 @@ class HttpMcpServer {
         }
     }
     start() {
-        this.app.listen(this.port, () => {
-            console.log(`🚀 HTTP MCP Server running on port ${this.port}`);
-            console.log(`📋 Available at: http://localhost:${this.port}`);
-            console.log(`🏥 Health check: http://localhost:${this.port}/health`);
-        });
+        try {
+            const server = this.app.listen(this.port, '127.0.0.1', () => {
+                console.log(`🚀 HTTP MCP Server running on port ${this.port}`);
+                console.log(`📋 Available at: http://localhost:${this.port}`);
+                console.log(`🏥 Health check: http://localhost:${this.port}/health`);
+            });
+            server.on('error', (error) => {
+                console.error('❌ Server error:', error);
+            });
+            // Test that the server is actually listening
+            server.on('listening', () => {
+                console.log('✅ Server is actually listening!');
+            });
+        }
+        catch (error) {
+            console.error('❌ Failed to start server:', error);
+        }
     }
 }
 // Start the HTTP MCP server

@@ -15,16 +15,16 @@ export async function createIntelligenceCard(
   cardData: CreateIntelligenceCardData
 ): Promise<{ success: boolean; data?: IntelligenceCard; error?: string }> {
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const { data: { user }, error: sessionError } = await supabase.auth.getUser()
     
-    if (sessionError || !session) {
+    if (sessionError || !user) {
       throw new Error('Not authenticated')
     }
 
     // Prepare data with defaults and handle empty fields
     const insertData = {
       ...cardData,
-      user_id: session.user.id,
+      user_id: user.id,
       status: cardData.status || IntelligenceCardStatus.ACTIVE,
       key_findings: cardData.key_findings || [],
       relevant_blueprint_pages: cardData.relevant_blueprint_pages || [],

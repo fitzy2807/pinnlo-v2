@@ -20,9 +20,10 @@ export const intelligenceTools = [
             properties: {
                 text: { type: 'string' },
                 context: { type: 'string' },
-                type: { type: 'string' }
+                type: { type: 'string' },
+                userId: { type: 'string' }
             },
-            required: ['text']
+            required: ['text', 'userId']
         }
     },
     {
@@ -101,38 +102,294 @@ Extract key insights, trends, and actionable intelligence.`;
 }
 export async function handleProcessIntelligenceText(args, supabase) {
     try {
-        const { text, context, type } = args;
-        const systemPrompt = `You are an intelligence analyst. Process the provided text and extract structured insights.`;
-        const userPrompt = `Process this ${type || 'text'} content:
+        const { text, context, type, userId } = args;
+        if (!text || !text.trim()) {
+            throw new Error('Text content is required for processing');
+        }
+        if (!userId) {
+            throw new Error('User ID is required');
+        }
+        console.log(`🔍 Processing intelligence text for user ${userId}`);
+        console.log(`📝 Text length: ${text.length} characters`);
+        console.log(`🎯 Context: ${context || 'None provided'}`);
+        console.log(`📋 Type: ${type || 'General text'}`);
+        // Check if this is likely an interview transcript
+        const isInterview = type === 'interview' ||
+            text.toLowerCase().includes('interviewer') ||
+            text.toLowerCase().includes('interviewee') ||
+            /\b(q:|a:|question:|answer:)/i.test(text) ||
+            text.length > 2000; // Long content likely to be transcript
+        const minimumCards = isInterview ? 10 : 3; // Minimum 10 for interviews, 3 for other content
+        console.log(`🎬 Content identified as ${isInterview ? 'interview transcript' : 'general text'}, targeting ${minimumCards} minimum cards`);
+        let systemPrompt, userPrompt;
+        if (isInterview) {
+            // Enhanced system prompt for interview transcripts
+            systemPrompt = `You are a strategic analyst AI working inside a business planning platform. Your role is to extract valuable, context-rich insights from interview transcript chunks.
 
+Your objective is to extract **at least 10 distinct, high-quality insights** from the interview transcript. These insights will be used to create Intelligence Cards in a product strategy platform.
+
+For each insight, include:
+- Clear, actionable summary (1–2 sentences)
+- Strategic theme or category (e.g. Safety, Workforce, Automation, Tech Integration, Operations, Customer Experience)
+- Supporting quote or paraphrase from the stakeholder
+- Opportunity for what could be explored or solved
+- Stakeholder motivation (why this matters to them - explicit or inferred)
+
+Rules:
+- Do NOT return fewer than 10 insights
+- Do NOT repeat the same insight with different wording  
+- Focus on real-world operational, safety, integration, and workforce challenges
+- Use the stakeholder's own words when possible for evidence
+- If you find fewer obvious insights, include extrapolated or adjacent insights that are implied but not stated directly
+- Combine weaker signals into synthesized, useful insights if needed`;
+            userPrompt = `Analyze this interview transcript and extract **at least 10 distinct strategic insights**:
+
+--- INTERVIEW TRANSCRIPT ---
 ${text}
+--- END TRANSCRIPT ---
 
-Context: ${context || 'General processing'}
+${context ? `\nAdditional Context: ${context}` : ''}
 
-Extract structured insights, key points, and actionable intelligence.`;
+For each insight, create a JSON object with these exact fields:
+- insight: (clear, actionable summary - 1-2 sentences)
+- theme: (strategic category like Safety, Workforce, Automation, Operations, etc.)
+- quoted_evidence: (actual quote or paraphrase from stakeholder)
+- opportunity: (what could be explored, automated, or solved)
+- stakeholder_motivation: (why this matters to them - explicit or inferred)
+- title: (specific, actionable title for the intelligence card)
+- summary: (concise overview - max 200 chars)
+- intelligence_content: (detailed analysis incorporating the insight - max 1000 chars)
+- key_findings: (array of 3-5 specific bullet points)
+- strategic_implications: (brief strategic impact description)
+- recommended_actions: (specific actionable recommendations)
+- credibility_score: (integer 1-10 based on source quality)
+- relevance_score: (integer 1-10 based on strategic importance)
+- tags: (array of relevant keywords for categorization)
+- category: (one of: market, competitor, trends, technology, customer, regulatory, opportunities, risks)
+
+Return ONLY a JSON array of at least 10 intelligence cards. No additional text or formatting.`;
+        }
+        else {
+            // Standard system prompt for general text
+            systemPrompt = `You are an expert intelligence analyst. Your task is to process raw text content and extract structured, actionable intelligence insights.
+
+Analyze the provided text and create intelligence cards that capture:
+- Key strategic insights and implications
+- Market trends and opportunities
+- Competitive intelligence
+- Technological developments
+- Risk factors and mitigation strategies
+- Actionable recommendations
+
+Focus on quality over quantity. Extract only the most valuable and actionable intelligence.`;
+            userPrompt = `Process the following ${type || 'text'} content and extract 3-5 high-quality intelligence cards:
+
+--- TEXT CONTENT ---
+${text}
+--- END CONTENT ---
+
+${context ? `\nAdditional Context: ${context}` : ''}
+
+For each intelligence insight you identify, create a JSON object with these exact fields:
+- title: (specific, actionable title - max 100 chars)
+- summary: (concise overview - max 200 chars)
+- intelligence_content: (detailed analysis - max 1000 chars)
+- key_findings: (array of 3-5 specific bullet points)
+- strategic_implications: (brief strategic impact description)
+- recommended_actions: (specific actionable recommendations)
+- credibility_score: (integer 1-10 based on source quality)
+- relevance_score: (integer 1-10 based on strategic importance)
+- tags: (array of relevant keywords for categorization)
+- category: (one of: market, competitor, trends, technology, customer, regulatory, opportunities, risks)
+
+Return ONLY a JSON array of intelligence cards. No additional text or formatting.`;
+        }
+        console.log(`🤖 Calling OpenAI for text processing...`);
+        // Call OpenAI API
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.6,
+                max_tokens: 3000
+            })
+        });
+        if (!openaiResponse.ok) {
+            throw new Error(`OpenAI API error: ${openaiResponse.status} ${await openaiResponse.text()}`);
+        }
+        const openaiResult = await openaiResponse.json();
+        const aiContent = openaiResult.choices[0].message.content;
+        const tokensUsed = openaiResult.usage.total_tokens;
+        const cost = tokensUsed * 0.00001; // Approximate cost for gpt-4o-mini
+        console.log(`✨ OpenAI response received. Tokens: ${tokensUsed}, Cost: ${cost.toFixed(4)}`);
+        // Parse AI response
+        let aiCards;
+        try {
+            aiCards = JSON.parse(aiContent);
+            if (!Array.isArray(aiCards)) {
+                throw new Error('AI response is not an array');
+            }
+        }
+        catch (parseError) {
+            console.error('Failed to parse AI response:', aiContent);
+            throw new Error('Failed to parse AI response as JSON');
+        }
+        console.log(`📝 Generated ${aiCards.length} intelligence cards from text`);
+        // Check if we meet minimum card requirements
+        if (aiCards.length < minimumCards) {
+            console.log(`⚠️ Only ${aiCards.length} cards generated, minimum required: ${minimumCards}`);
+            if (isInterview) {
+                // For interviews, try again with more aggressive extraction
+                console.log(`🔄 Retrying with enhanced extraction for interview transcript...`);
+                const enhancedPrompt = `The previous analysis only generated ${aiCards.length} insights, but this interview transcript should yield at least 10 insights. Please re-analyze more thoroughly:
+
+--- INTERVIEW TRANSCRIPT ---
+${text}
+--- END TRANSCRIPT ---
+
+Extract insights from:
+- Direct statements and opinions
+- Implied concerns or motivations
+- Process inefficiencies mentioned
+- Technology gaps or opportunities
+- Workflow challenges
+- Resource constraints
+- Quality or safety concerns
+- Future needs or aspirations
+- Competitive pressures
+- Regulatory or compliance issues
+
+Even seemingly minor comments can reveal strategic insights. For each insight, create a complete JSON object as specified above.
+
+Return EXACTLY 10 or more intelligence cards as a JSON array.`;
+                const retryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o-mini',
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: enhancedPrompt }
+                        ],
+                        temperature: 0.8, // Higher creativity for more insights
+                        max_tokens: 4000
+                    })
+                });
+                if (retryResponse.ok) {
+                    const retryResult = await retryResponse.json();
+                    const retryContent = retryResult.choices[0].message.content;
+                    const additionalTokens = retryResult.usage.total_tokens;
+                    try {
+                        const retryCards = JSON.parse(retryContent);
+                        if (Array.isArray(retryCards) && retryCards.length >= minimumCards) {
+                            console.log(`✅ Retry successful: ${retryCards.length} cards generated`);
+                            aiCards = retryCards;
+                            tokensUsed += additionalTokens;
+                            cost = tokensUsed * 0.00001;
+                        }
+                    }
+                    catch (retryParseError) {
+                        console.log(`⚠️ Retry parse failed, continuing with original ${aiCards.length} cards`);
+                    }
+                }
+            }
+        }
+        // Save cards to database
+        const generatedCards = [];
+        for (const aiCard of aiCards) {
+            const card = {
+                user_id: userId,
+                category: aiCard.category || 'market',
+                title: aiCard.title || aiCard.insight || 'Processed Intelligence',
+                summary: aiCard.summary || aiCard.intelligence_content?.substring(0, 200) || 'Intelligence extracted from text',
+                intelligence_content: aiCard.intelligence_content || aiCard.insight || 'Intelligence content from processed text',
+                key_findings: aiCard.key_findings || [aiCard.quoted_evidence || 'Key finding from processed text'],
+                strategic_implications: aiCard.strategic_implications || 'Strategic implications from text analysis',
+                recommended_actions: aiCard.recommended_actions || aiCard.opportunity || 'Recommended actions from text analysis',
+                source_reference: `${isInterview ? 'Interview Transcript' : 'Text Processing'} - ${type || 'General'}${context ? ` (${context})` : ''}`,
+                credibility_score: aiCard.credibility_score || (isInterview ? 8 : 7),
+                relevance_score: aiCard.relevance_score || 8,
+                tags: aiCard.tags || (isInterview ?
+                    ['interview', 'transcript', aiCard.theme?.toLowerCase() || 'strategic', type || 'general'] :
+                    ['text-processing', type || 'general']),
+                status: 'active'
+            };
+            // Save to database
+            const { data, error } = await supabase
+                .from('intelligence_cards')
+                .insert(card)
+                .select()
+                .single();
+            if (error) {
+                console.error('Error creating intelligence card:', error);
+                continue;
+            }
+            generatedCards.push(data);
+        }
+        // Log usage
+        await supabase
+            .from('ai_usage')
+            .insert({
+            user_id: userId,
+            feature_used: 'intelligence_text_processing',
+            request_type: 'text_processing',
+            model_used: 'gpt-4o-mini',
+            tokens_used: tokensUsed,
+            cost_incurred: cost,
+            success: true,
+            blueprint_id: null,
+            strategy_id: null,
+            generation_type: 'intelligence_text_processing'
+        });
+        console.log(`✅ Successfully created ${generatedCards.length} intelligence cards from text`);
+        // Log specific metrics for interviews
+        if (isInterview) {
+            console.log(`🎬 Interview processing complete:`);
+            console.log(`📊 Target: ${minimumCards} cards, Generated: ${generatedCards.length}`);
+            console.log(`💰 Cost: ${cost.toFixed(4)} (${tokensUsed} tokens)`);
+            console.log(`📏 Transcript length: ${text.length} characters`);
+        }
         return {
             content: [
                 {
                     type: 'text',
                     text: JSON.stringify({
                         success: true,
-                        prompts: {
-                            system: systemPrompt,
-                            user: userPrompt
-                        }
+                        cardsCreated: generatedCards.length,
+                        cards: generatedCards,
+                        tokensUsed: tokensUsed,
+                        cost: cost,
+                        textLength: text.length,
+                        processingType: type || 'general',
+                        isInterview: isInterview,
+                        minimumCardsMet: generatedCards.length >= minimumCards,
+                        targetCards: minimumCards
                     })
                 }
             ]
         };
     }
     catch (error) {
+        console.error('🚨 Text processing error:', error);
         return {
             content: [
                 {
                     type: 'text',
                     text: JSON.stringify({
                         success: false,
-                        error: error.message
+                        error: error.message,
+                        cardsCreated: 0
                     })
                 }
             ],
@@ -143,73 +400,97 @@ Extract structured insights, key points, and actionable intelligence.`;
 export async function handleGenerateAutomationIntelligence(args, supabase) {
     try {
         const { userId, ruleId, categories = [], maxCards = 5, targetGroups = [], optimizationLevel = 'balanced', triggerType = 'scheduled', systemPrompt = '' } = args;
-        // Debug: Generating automation intelligence (logging removed)
-        // Use custom system prompt if provided, otherwise build context based on optimization level
-        let systemPromptToUse = systemPrompt;
-        if (!systemPromptToUse) {
-            // Fallback to default prompt generation
-            let context = categories?.length > 0
-                ? `Focus on ${categories.join(', ')} intelligence. `
-                : '';
-            switch (optimizationLevel) {
-                case 'maximum_quality':
-                    context += 'Provide comprehensive, detailed analysis with high-quality insights.';
-                    break;
-                case 'balanced':
-                    context += 'Provide good quality insights with balanced detail.';
-                    break;
-                case 'maximum_savings':
-                    context += 'Provide concise, focused insights optimized for efficiency.';
-                    break;
-            }
-            systemPromptToUse = `You are a strategic intelligence analyst. ${context} Extract actionable insights and strategic implications from available data.`;
+        console.log(`🤖 Generating automation intelligence for user ${userId}, rule ${ruleId}`);
+        console.log(`🎯 System Prompt: ${systemPrompt}`);
+        console.log(`📁 Categories: ${categories.join(', ')}`);
+        // ONLY use the system prompt from the rule - no fallbacks or overrides
+        let finalSystemPrompt = systemPrompt;
+        if (!finalSystemPrompt || !finalSystemPrompt.trim()) {
+            throw new Error('No system prompt provided in automation rule. System prompt is required.');
         }
-        // Return prompts for OpenAI integration
-        const prompts = {
-            system: systemPromptToUse,
-            user: `Generate ${maxCards} intelligence cards for the following categories: ${categories.join(', ')}.
-      
+        // Build completely neutral user prompt - NO category influence
+        const userPrompt = `Generate ${maxCards} intelligence cards based solely on the system instructions above.
+
 Optimization level: ${optimizationLevel}
 Trigger type: ${triggerType}
-      
-For each card, provide:
-      1. Title (specific and actionable)
-      2. Summary (brief overview)
-      3. Intelligence content (detailed analysis)
-      4. Key findings (3-5 bullet points)
-      5. Strategic implications
-      6. Recommended actions
-      7. Credibility score (1-10)
-      8. Relevance score (1-10)
-      9. Tags (relevant keywords)
-      
-Focus on current market conditions, trends, and actionable insights.`
+
+For each card, provide a JSON object with these exact fields:
+- title: (specific and actionable)
+- summary: (brief overview, max 200 chars)
+- intelligence_content: (detailed analysis, max 1000 chars)
+- key_findings: (array of 3-5 bullet points)
+- strategic_implications: (brief text)
+- recommended_actions: (brief text)
+- credibility_score: (integer 1-10)
+- relevance_score: (integer 1-10)
+- tags: (array of relevant keywords)
+
+Return ONLY a JSON array of ${maxCards} cards. No additional text or formatting.`;
+        console.log(`🔮 Calling OpenAI with system prompt...`);
+        console.log(`📝 Final System Prompt: ${finalSystemPrompt}`);
+        console.log(`📝 User Prompt: ${userPrompt}`);
+        // Call OpenAI API
+        const openaiRequest = {
+            model: 'gpt-4o-mini',
+            messages: [
+                { role: 'system', content: finalSystemPrompt },
+                { role: 'user', content: userPrompt }
+            ],
+            temperature: optimizationLevel === 'maximum_quality' ? 0.7 : 0.5,
+            max_tokens: optimizationLevel === 'maximum_quality' ? 4000 :
+                optimizationLevel === 'balanced' ? 3000 : 2000
         };
-        // For now, generate mock cards until full OpenAI integration
+        console.log(`🤖 OpenAI Request:`, JSON.stringify(openaiRequest, null, 2));
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify(openaiRequest)
+        });
+        if (!openaiResponse.ok) {
+            throw new Error(`OpenAI API error: ${openaiResponse.status} ${await openaiResponse.text()}`);
+        }
+        const openaiResult = await openaiResponse.json();
+        const aiContent = openaiResult.choices[0].message.content;
+        const tokensUsed = openaiResult.usage.total_tokens;
+        const cost = tokensUsed * 0.00001; // Approximate cost for gpt-4o-mini
+        console.log(`✨ OpenAI response received. Tokens: ${tokensUsed}, Cost: ${cost.toFixed(4)}`);
+        console.log(`💬 OpenAI Raw Response:`, aiContent);
+        // Parse AI response
+        let aiCards;
+        try {
+            aiCards = JSON.parse(aiContent);
+            if (!Array.isArray(aiCards)) {
+                throw new Error('AI response is not an array');
+            }
+        }
+        catch (parseError) {
+            console.error('Failed to parse AI response:', aiContent);
+            throw new Error('Failed to parse AI response as JSON');
+        }
+        console.log(`📝 Generated ${aiCards.length} cards from AI`);
+        console.log(`🐶 First card title check:`, aiCards[0]?.title);
+        // Save cards to database
         const generatedCards = [];
-        const tokensUsed = 500 * maxCards; // Mock token usage
-        const cost = tokensUsed * 0.00001; // Mock cost calculation
-        for (let i = 0; i < maxCards; i++) {
+        for (let i = 0; i < aiCards.length && i < maxCards; i++) {
+            const aiCard = aiCards[i];
             const category = categories[i % categories.length] || 'market';
             const card = {
-                id: `auto-${Date.now()}-${i}`,
                 user_id: userId,
-                title: `Automated ${category} Intelligence - ${new Date().toLocaleDateString()}`,
-                description: `Generated insight for ${category} category`,
                 category: category,
-                source_type: 'automation',
-                source_name: `Automation Rule ${ruleId}`,
-                source_reference: `Rule: ${ruleId}`,
-                credibility_score: optimizationLevel === 'maximum_quality' ? 9 : 7,
-                relevance_score: 8,
-                key_insights: [
-                    `Key insight 1 for ${category}`,
-                    `Key insight 2 based on ${optimizationLevel} optimization`,
-                    `Key insight 3 from automated analysis`
-                ],
-                tags: ['automation', triggerType, category],
-                status: 'active',
-                created_at: new Date().toISOString()
+                title: aiCard.title || `AI Generated ${category} Intelligence`,
+                summary: aiCard.summary || aiCard.intelligence_content?.substring(0, 200) || 'AI generated insight',
+                intelligence_content: aiCard.intelligence_content || aiCard.summary || 'AI generated content',
+                key_findings: aiCard.key_findings || ['AI generated finding'],
+                strategic_implications: aiCard.strategic_implications || 'Strategic implications from AI analysis',
+                recommended_actions: aiCard.recommended_actions || 'Recommended actions from AI analysis',
+                source_reference: `Automation Rule: ${ruleId}`,
+                credibility_score: aiCard.credibility_score || (optimizationLevel === 'maximum_quality' ? 9 : 7),
+                relevance_score: aiCard.relevance_score || 8,
+                tags: aiCard.tags || ['automation', triggerType, category],
+                status: 'active'
             };
             // Save to database
             const { data, error } = await supabase
@@ -229,7 +510,7 @@ Focus on current market conditions, trends, and actionable insights.`
                         .from('intelligence_group_cards')
                         .insert({
                         group_id: groupId,
-                        card_id: data.id,
+                        intelligence_card_id: data.id,
                         added_by: userId
                     });
                 }
@@ -246,37 +527,29 @@ Focus on current market conditions, trends, and actionable insights.`
             tokens_used: tokensUsed,
             cost_incurred: cost,
             success: true,
-            metadata: {
-                rule_id: ruleId,
-                trigger_type: triggerType,
-                cards_created: generatedCards.length
-            }
+            blueprint_id: null,
+            strategy_id: null,
+            generation_type: 'intelligence_automation'
         });
+        console.log(`✅ Successfully created ${generatedCards.length} intelligence cards`);
         return {
             content: [
                 {
                     type: 'text',
                     text: JSON.stringify({
                         success: true,
-                        prompts: prompts,
                         cardsCreated: generatedCards.length,
                         cards: generatedCards,
                         tokensUsed: tokensUsed,
                         cost: cost,
-                        metadata: {
-                            rule_id: ruleId,
-                            user_id: userId,
-                            categories: categories,
-                            optimization_level: optimizationLevel,
-                            system_prompt_used: systemPromptToUse
-                        }
+                        systemPromptUsed: finalSystemPrompt
                     })
                 }
             ]
         };
     }
     catch (error) {
-        console.error('Automation intelligence generation error:', error);
+        console.error('🚨 Automation intelligence generation error:', error);
         return {
             content: [
                 {

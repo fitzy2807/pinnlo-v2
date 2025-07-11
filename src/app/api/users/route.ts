@@ -1,27 +1,28 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createClient } from '@/lib/supabase-server'
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
     const { userData } = await request.json()
     
     // Create a Supabase client with the request cookies
-    const supabase = createClient()
+    const supabase = createClient(cookies())
     
-    // Get the session from the Supabase auth helpers
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    if (sessionError || !session) {
-      console.error('Session error:', sessionError)
+    if (userError || !user) {
+      console.error('User error:', userError)
       return NextResponse.json(
-        { error: 'Unauthorized - No valid session' },
+        { error: 'Unauthorized - No valid user' },
         { status: 401 }
       )
     }
     
     // Verify the user ID matches
-    if (userData.id !== session.user.id) {
+    if (userData.id !== user.id) {
       return NextResponse.json(
         { error: 'Forbidden - Can only update own record' },
         { status: 403 }
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .upsert({
         id: userData.id,
-        email: userData.email || session.user.email || '',
+        email: userData.email || user.email || '',
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
         profileImageUrl: userData.profileImageUrl || '',
@@ -66,11 +67,11 @@ export async function POST(request: NextRequest) {
 // Add GET endpoint to fetch current user
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = createClient(cookies())
     
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -78,10 +79,10 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch user record from database
-    const { data: user, error } = await supabaseAdmin
+    const { data: userRecord, error } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
     
     if (error) {
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    return NextResponse.json({ user })
+    return NextResponse.json({ user: userRecord })
     
   } catch (error) {
     console.error('Exception in user GET:', error)

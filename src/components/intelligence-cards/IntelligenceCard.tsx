@@ -92,7 +92,7 @@ export default function IntelligenceCard({ card, onEdit, onRefresh, isSelected =
   return (
     <div className={`bg-white rounded-lg border ${isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'} shadow-sm hover:shadow-md transition-all relative`}>
       {/* Selection Checkbox */}
-      {onToggleSelect && (isSelectionMode || isSelected) && (
+      {onToggleSelect && (
         <div className="absolute top-4 left-4 z-10">
           <input
             type="checkbox"
@@ -109,7 +109,7 @@ export default function IntelligenceCard({ card, onEdit, onRefresh, isSelected =
       
       {/* Card Header */}
       <div
-        className={`p-4 cursor-pointer ${onToggleSelect && (isSelectionMode || isSelected) ? 'pl-12' : ''}`}
+        className={`p-4 cursor-pointer ${onToggleSelect ? 'pl-12' : ''}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-start justify-between">

@@ -1,251 +1,278 @@
-import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/providers/AuthProvider'
-import { 
-  IntelligenceGroup, 
-  CreateIntelligenceGroupData, 
-  UpdateIntelligenceGroupData,
-  IntelligenceGroupWithCards 
-} from '@/types/intelligence-groups'
+/**
+ * Hook for managing Intelligence Groups
+ */
 
-interface UseIntelligenceGroupsReturn {
-  groups: IntelligenceGroup[]
-  loading: boolean
-  error: Error | null
-  createGroup: (data: CreateIntelligenceGroupData) => Promise<IntelligenceGroup>
-  updateGroup: (id: string, data: UpdateIntelligenceGroupData) => Promise<void>
-  deleteGroup: (id: string) => Promise<void>
-  addCardsToGroup: (groupId: string, cardIds: string[]) => Promise<void>
-  removeCardFromGroup: (groupId: string, cardId: string) => Promise<void>
-  getGroup: (id: string) => Promise<IntelligenceGroupWithCards>
-  getGroupCards: (groupId: string) => Promise<any[]>
-  refreshGroups: () => Promise<void>
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+
+interface IntelligenceGroup {
+  id: string
+  user_id: string
+  name: string
+  description: string
+  color: string
+  created_at: string
+  updated_at: string
+  card_count: number
+  last_used_at: string
 }
 
-export function useIntelligenceGroups(): UseIntelligenceGroupsReturn {
+interface CreateGroupData {
+  name: string
+  description: string
+  color: string
+}
+
+export function useIntelligenceGroups() {
   const [groups, setGroups] = useState<IntelligenceGroup[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-  const { user } = useAuth()
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Fetch all groups
-  const fetchGroups = useCallback(async () => {
-    if (!user) {
-      setLoading(false)
-      return
-    }
+  useEffect(() => {
+    loadGroups()
+  }, [])
 
+  const loadGroups = async () => {
     try {
-      setLoading(true)
+      setIsLoading(true)
       setError(null)
 
-      const { data, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from('intelligence_groups')
         .select('*')
-        .eq('user_id', user.id)
         .order('last_used_at', { ascending: false })
 
-      if (fetchError) throw fetchError
-
+      if (error) throw error
       setGroups(data || [])
-    } catch (err) {
-      console.error('Error fetching intelligence groups:', err)
-      setError(err as Error)
+    } catch (err: any) {
+      console.error('Error loading intelligence groups:', err)
+      setError(err.message)
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
-  }, [user])
+  }
 
-  // Create a new group
-  const createGroup = useCallback(async (data: CreateIntelligenceGroupData): Promise<IntelligenceGroup> => {
-    if (!user) throw new Error('User not authenticated')
+  const createGroup = async (groupData: CreateGroupData): Promise<IntelligenceGroup | null> => {
+    try {
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('User not authenticated')
+      }
 
-    const { data: group, error: createError } = await supabase
-      .from('intelligence_groups')
-      .insert({
-        user_id: user.id,
-        name: data.name.trim(),
-        description: data.description?.trim() || null,
-        color: data.color || '#3B82F6'
-      })
-      .select()
-      .single()
+      const { data, error } = await supabase
+        .from('intelligence_groups')
+        .insert({
+          user_id: user.id,  // ✅ Critical: Include user_id for RLS
+          name: groupData.name,
+          description: groupData.description,
+          color: groupData.color,
+          card_count: 0,
+          last_used_at: new Date().toISOString()
+        })
+        .select()
+        .single()
 
-    if (createError) throw createError
-
-    // Update local state
-    setGroups(prev => [group, ...prev])
-    
-    return group
-  }, [user])
-
-  // Update a group
-  const updateGroup = useCallback(async (id: string, data: UpdateIntelligenceGroupData): Promise<void> => {
-    if (!user) throw new Error('User not authenticated')
-
-    const updateData: any = {}
-    if (data.name !== undefined) updateData.name = data.name.trim()
-    if (data.description !== undefined) updateData.description = data.description?.trim() || null
-    if (data.color !== undefined) updateData.color = data.color
-
-    const { error: updateError } = await supabase
-      .from('intelligence_groups')
-      .update(updateData)
-      .eq('id', id)
-      .eq('user_id', user.id)
-
-    if (updateError) throw updateError
-
-    // Update local state
-    setGroups(prev => prev.map(g => 
-      g.id === id ? { ...g, ...updateData } : g
-    ))
-  }, [user])
-
-  // Delete a group
-  const deleteGroup = useCallback(async (id: string): Promise<void> => {
-    if (!user) throw new Error('User not authenticated')
-
-    const { error: deleteError } = await supabase
-      .from('intelligence_groups')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id)
-
-    if (deleteError) throw deleteError
-
-    // Update local state
-    setGroups(prev => prev.filter(g => g.id !== id))
-  }, [user])
-
-  // Add cards to a group
-  const addCardsToGroup = useCallback(async (groupId: string, cardIds: string[]): Promise<void> => {
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`/api/intelligence-groups/${groupId}/cards`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cardIds })
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to add cards to group')
+      if (error) throw error
+      
+      // Add to local state
+      setGroups(prev => [data, ...prev])
+      return data
+    } catch (err: any) {
+      console.error('Error creating intelligence group:', err)
+      setError(err.message)
+      return null
     }
+  }
 
-    // Update local state to increment card count
-    setGroups(prev => prev.map(g => 
-      g.id === groupId 
-        ? { ...g, card_count: g.card_count + cardIds.length, last_used_at: new Date().toISOString() }
-        : g
-    ))
-  }, [user])
+  const updateGroup = async (id: string, updates: Partial<CreateGroupData>): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('intelligence_groups')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
 
-  // Remove card from group
-  const removeCardFromGroup = useCallback(async (groupId: string, cardId: string): Promise<void> => {
-    if (!user) throw new Error('User not authenticated')
+      if (error) throw error
 
-    const response = await fetch(`/api/intelligence-groups/${groupId}/cards/${cardId}`, {
-      method: 'DELETE'
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to remove card from group')
+      // Update local state
+      setGroups(prev => prev.map(group => 
+        group.id === id ? { ...group, ...updates } : group
+      ))
+      
+      return true
+    } catch (err: any) {
+      console.error('Error updating intelligence group:', err)
+      setError(err.message)
+      return false
     }
+  }
 
-    // Update local state to decrement card count
-    setGroups(prev => prev.map(g => 
-      g.id === groupId 
-        ? { ...g, card_count: Math.max(0, g.card_count - 1), last_used_at: new Date().toISOString() }
-        : g
-    ))
-  }, [user])
+  const deleteGroup = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('intelligence_groups')
+        .delete()
+        .eq('id', id)
 
-  // Get single group with cards
-  const getGroup = useCallback(async (id: string): Promise<IntelligenceGroupWithCards> => {
-    if (!user) throw new Error('User not authenticated')
+      if (error) throw error
 
-    const response = await fetch(`/api/intelligence-groups/${id}`)
-    
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to fetch group')
+      // Remove from local state
+      setGroups(prev => prev.filter(group => group.id !== id))
+      return true
+    } catch (err: any) {
+      console.error('Error deleting intelligence group:', err)
+      setError(err.message)
+      return false
     }
+  }
 
-    const { data } = await response.json()
-    return data
-  }, [user])
+  const getGroupCards = async (groupId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('intelligence_group_cards')
+        .select(`
+          id,
+          position,
+          intelligence_cards (
+            id,
+            category,
+            title,
+            summary,
+            intelligence_content,
+            key_findings,
+            source_reference,
+            date_accessed,
+            credibility_score,
+            relevance_score,
+            strategic_implications,
+            recommended_actions,
+            tags,
+            status,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('group_id', groupId)
+        .order('position', { ascending: true })
 
-  // Get cards in a group
-  const getGroupCards = useCallback(async (groupId: string): Promise<any[]> => {
-    if (!user) throw new Error('User not authenticated')
-
-    const response = await fetch(`/api/intelligence-groups/${groupId}/cards`)
-    
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to fetch group cards')
+      if (error) throw error
+      return data || []
+    } catch (err: any) {
+      console.error('Error loading group cards:', err)
+      throw err
     }
+  }
 
-    const { data } = await response.json()
-    return data
-  }, [user])
+  const removeCardFromGroup = async (groupId: string, cardId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('intelligence_group_cards')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('intelligence_card_id', cardId)
 
-  // Refresh groups
-  const refreshGroups = useCallback(async () => {
-    await fetchGroups()
-  }, [fetchGroups])
+      if (error) throw error
 
-  // Initial fetch
-  useEffect(() => {
-    fetchGroups()
-  }, [fetchGroups])
+      // Update the card count for the group
+      const { data: groupData, error: countError } = await supabase
+        .from('intelligence_groups')
+        .select('card_count')
+        .eq('id', groupId)
+        .single()
 
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!user) return
+      if (!countError && groupData) {
+        const { error: updateError } = await supabase
+          .from('intelligence_groups')
+          .update({ 
+            card_count: Math.max(0, groupData.card_count - 1),
+            last_used_at: new Date().toISOString()
+          })
+          .eq('id', groupId)
 
-    const channel = supabase
-      .channel('intelligence_groups_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'intelligence_groups',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setGroups(prev => [payload.new as IntelligenceGroup, ...prev])
-          } else if (payload.eventType === 'UPDATE') {
-            setGroups(prev => prev.map(g => 
-              g.id === payload.new.id ? payload.new as IntelligenceGroup : g
-            ))
-          } else if (payload.eventType === 'DELETE') {
-            setGroups(prev => prev.filter(g => g.id !== payload.old.id))
-          }
+        if (updateError) {
+          console.error('Error updating group card count:', updateError)
         }
-      )
-      .subscribe()
+      }
 
-    return () => {
-      supabase.removeChannel(channel)
+      // Update local state
+      setGroups(prev => prev.map(group => 
+        group.id === groupId 
+          ? { ...group, card_count: Math.max(0, group.card_count - 1), last_used_at: new Date().toISOString() }
+          : group
+      ))
+      
+      return true
+    } catch (err: any) {
+      console.error('Error removing card from group:', err)
+      return false
     }
-  }, [user])
+  }
+
+  const addCardsToGroup = async (groupId: string, cardIds: string[]): Promise<boolean> => {
+    try {
+      // Prepare the insert data
+      const insertData = cardIds.map((cardId, index) => ({
+        group_id: groupId,
+        intelligence_card_id: cardId,
+        position: index,
+        added_at: new Date().toISOString(),
+        added_by: null // We'll get the user ID if needed
+      }))
+
+      const { error } = await supabase
+        .from('intelligence_group_cards')
+        .insert(insertData)
+
+      if (error) throw error
+
+      // Update the card count for the group
+      const { data: groupData, error: countError } = await supabase
+        .from('intelligence_groups')
+        .select('card_count')
+        .eq('id', groupId)
+        .single()
+
+      if (!countError && groupData) {
+        const { error: updateError } = await supabase
+          .from('intelligence_groups')
+          .update({ 
+            card_count: groupData.card_count + cardIds.length,
+            last_used_at: new Date().toISOString()
+          })
+          .eq('id', groupId)
+
+        if (updateError) {
+          console.error('Error updating group card count:', updateError)
+        }
+      }
+
+      // Update local state
+      setGroups(prev => prev.map(group => 
+        group.id === groupId 
+          ? { ...group, card_count: group.card_count + cardIds.length, last_used_at: new Date().toISOString() }
+          : group
+      ))
+      
+      return true
+    } catch (err: any) {
+      console.error('Error adding cards to group:', err)
+      return false
+    }
+  }
 
   return {
     groups,
-    loading,
+    isLoading,
     error,
+    loadGroups,
     createGroup,
     updateGroup,
     deleteGroup,
-    addCardsToGroup,
-    removeCardFromGroup,
-    getGroup,
     getGroupCards,
-    refreshGroups
+    removeCardFromGroup,
+    addCardsToGroup
   }
 }

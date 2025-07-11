@@ -29,8 +29,7 @@ export async function GET(request: NextRequest) {
       .from('executive_summaries')
       .select('*')
       .eq('strategy_id', strategyId)
-      .eq('blueprint_id', blueprintId)
-      .eq('user_id', user.id)
+      .eq('blueprint_type', blueprintId)
       .single()
 
     if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
@@ -44,10 +43,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         summary: {
-          themes: data.summary_data?.themes || [],
-          implications: data.summary_data?.implications || [],
+          themes: data.metadata?.themes || [],
+          implications: data.metadata?.implications || [],
           lastUpdated: data.generated_at,
-          cardCount: data.cards_count || 0
+          cardCount: data.word_count || 0
         }
       })
     }

@@ -44,6 +44,7 @@ import IntelligenceGroups from '../intelligence-groups/IntelligenceGroups'
 import BulkActionsToolbar from '../intelligence-groups/BulkActionsToolbar'
 import CardGroupSelector from '../intelligence-groups/CardGroupSelector'
 import AutomationDashboard from '../intelligence/AutomationDashboard'
+import GroupsSelector from './GroupsSelector'
 import { 
   IntelligenceCard as IntelligenceCardType,
   IntelligenceCardCategory,
@@ -53,6 +54,7 @@ import {
 } from '@/types/intelligence-cards'
 import { useIntelligenceCardCounts, useCreateIntelligenceCard, useUpdateIntelligenceCard, useIntelligenceCardActions } from '@/hooks/useIntelligenceCards'
 import { useIntelligenceGroups } from '@/hooks/useIntelligenceGroups'
+import { useTextProcessing } from '@/hooks/useTextProcessing'
 
 interface IntelligenceBankProps {
   isOpen: boolean
@@ -187,6 +189,9 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [showGroupSelector, setShowGroupSelector] = useState(false)
   
+  // Refresh key for forcing component re-mount
+  const [refreshKey, setRefreshKey] = useState(0)
+  
   // Editor states
   const [showEditor, setShowEditor] = useState(false)
   const [editingCard, setEditingCard] = useState<IntelligenceCardType | null>(null)
@@ -196,6 +201,13 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
   const { create: createCard } = useCreateIntelligenceCard()
   const { groups } = useIntelligenceGroups()
   const { save: saveCard, archive: archiveCard, delete: deleteCard } = useIntelligenceCardActions()
+
+  // Global refresh function that updates everything
+  const globalRefresh = React.useCallback(() => {
+    refreshCounts()
+    setRefreshKey(prev => prev + 1) // Force component re-mount
+    setSelectedCardIds(new Set()) // Clear selections as well
+  }, [refreshCounts])
 
   // Update category counts
   const categoriesWithCounts = INTELLIGENCE_CATEGORIES.map(cat => {
@@ -232,7 +244,7 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
     const result = await createCard(data)
     if (result.success) {
       setShowCreateCard(false)
-      refreshCounts()
+      globalRefresh()
     } else {
       alert('Failed to create card: ' + result.error)
     }
@@ -439,7 +451,7 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
                             await Promise.all(cardIds.map(id => saveCard(id)))
                             setSelectedCardIds(new Set())
                             setIsSelectionMode(false)
-                            refreshCounts()
+                            globalRefresh()
                           } catch (error) {
                             alert('Failed to save cards. Please try again.')
                             console.error('Save cards error:', error)
@@ -458,7 +470,7 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
                             await Promise.all(cardIds.map(id => archiveCard(id)))
                             setSelectedCardIds(new Set())
                             setIsSelectionMode(false)
-                            refreshCounts()
+                            globalRefresh()
                           } catch (error) {
                             alert('Failed to archive cards. Please try again.')
                             console.error('Archive cards error:', error)
@@ -478,7 +490,7 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
                               await Promise.all(cardIds.map(id => deleteCard(id)))
                               setSelectedCardIds(new Set())
                               setIsSelectionMode(false)
-                              refreshCounts()
+                              globalRefresh()
                             } catch (error) {
                               alert('Failed to delete cards. Please try again.')
                               console.error('Delete cards error:', error)
@@ -888,6 +900,7 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
                 />
               ) : (
                 <IntelligenceCardsContent 
+                  key={`cards-${selectedCategory}-${refreshKey}`}
                   category={selectedCategory}
                   searchQuery={searchQuery}
                   sortBy={sortBy}
@@ -903,6 +916,7 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
                   setSelectedCardIds={setSelectedCardIds}
                   isSelectionMode={isSelectionMode}
                   setIsSelectionMode={setIsSelectionMode}
+                  onRefresh={globalRefresh}
                 />
               )}
             </div>
@@ -1093,6 +1107,7 @@ interface IntelligenceCardsContentProps {
   setSelectedCardIds: (ids: Set<string>) => void
   isSelectionMode: boolean
   setIsSelectionMode: (mode: boolean) => void
+  onRefresh?: () => void
 }
 
 function IntelligenceCardsContent({ 
@@ -1110,14 +1125,13 @@ function IntelligenceCardsContent({
   selectedCardIds,
   setSelectedCardIds,
   isSelectionMode,
-  setIsSelectionMode
+  setIsSelectionMode,
+  onRefresh
 }: IntelligenceCardsContentProps) {
   const [showEditor, setShowEditor] = useState(false)
   const [editingCard, setEditingCard] = useState<IntelligenceCardType | null>(null)
-  const [refreshKey, setRefreshKey] = useState(0)
   const { create: createCard } = useCreateIntelligenceCard()
   const { update: updateCard } = useUpdateIntelligenceCard()
-  const { refresh: refreshCounts } = useIntelligenceCardCounts()
 
   // Map category to proper type
   const getCategoryType = (categoryId: string): IntelligenceCardCategory | IntelligenceCardStatus | undefined => {
@@ -1148,8 +1162,7 @@ function IntelligenceCardsContent({
     if (result.success) {
       setShowEditor(false)
       setEditingCard(null)
-      refreshCounts()
-      setRefreshKey(prev => prev + 1)
+      onRefresh?.()
     } else {
       alert(`Failed to ${editingCard ? 'update' : 'create'} card: ` + result.error)
     }
@@ -1195,10 +1208,10 @@ function IntelligenceCardsContent({
     <div className="p-4">
       {/* Intelligence Card List */}
       <IntelligenceCardList
-        key={`${category}-${refreshKey}`}
         category={cardFilters.category}
         status={cardFilters.status}
         onEditCard={handleEditCard}
+        onRefresh={onRefresh}
         showFilters={false}
         showViewToggle={false}
         sortBy={sortBy}
@@ -1274,8 +1287,22 @@ function UploadLinkContent() {
 // Text/Paste Page Component
 function TextPasteContent() {
   const [textContent, setTextContent] = React.useState('')
-  const [isProcessing, setIsProcessing] = React.useState(false)
   const [category, setCategory] = React.useState<IntelligenceCardCategory>(IntelligenceCardCategory.MARKET)
+  const [contentType, setContentType] = React.useState('general')
+  const [context, setContext] = React.useState('')
+  const [targetGroups, setTargetGroups] = React.useState<string[]>([])
+  
+  // Use the text processing hook
+  const { processText, isProcessing, error, result, reset } = useTextProcessing()
+
+  // Detect if content looks like an interview
+  const isLikelyInterview = React.useMemo(() => {
+    return contentType === 'interview' || 
+           textContent.toLowerCase().includes('interviewer') ||
+           textContent.toLowerCase().includes('interviewee') ||
+           /\b(q:|a:|question:|answer:)/i.test(textContent) ||
+           textContent.length > 2000
+  }, [textContent, contentType])
 
   const handleProcess = async () => {
     if (!textContent.trim()) {
@@ -1283,24 +1310,41 @@ function TextPasteContent() {
       return
     }
 
-    setIsProcessing(true)
-    // Placeholder for MCP processing
-    console.log('Processing text content:', textContent)
-    console.log('Target category:', category)
-    
-    // Simulate processing time
-    setTimeout(() => {
-      setIsProcessing(false)
-      alert('Text processing functionality will be implemented with MCP integration')
-    }, 2000)
+    try {
+      const result = await processText(
+        textContent, 
+        context || `Processing ${contentType} content for ${category} intelligence`,
+        contentType,
+        category,  // targetCategory
+        targetGroups  // targetGroups
+      )
+      
+      if (result) {
+        // Success feedback with detailed information
+        const message = result.isInterview 
+          ? `Successfully extracted ${result.cardsCreated} insights from interview transcript! ${result.minimumCardsMet ? '✅' : '⚠️'} Target: ${result.targetCards} cards`
+          : `Successfully created ${result.cardsCreated} intelligence cards from text`
+        
+        alert(`${message}\n\nCost: ${result.cost.toFixed(4)}\nTokens used: ${result.tokensUsed}`)
+        
+        // Clear text after successful processing
+        setTextContent('')
+        setContext('')
+      }
+    } catch (err: any) {
+      alert(`Processing failed: ${err.message}`)
+    }
   }
 
   const handleClear = () => {
     setTextContent('')
+    setContext('')
+    reset()
   }
 
   const wordCount = textContent.trim().split(/\s+/).filter(word => word.length > 0).length
   const charCount = textContent.length
+  const estimatedCards = isLikelyInterview ? Math.max(10, Math.floor(wordCount / 200)) : Math.max(3, Math.floor(wordCount / 300))
 
   return (
     <div className="p-4">
@@ -1311,7 +1355,68 @@ function TextPasteContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Main Text Input Area */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 space-y-3">
+          {/* Content Type and Context */}
+          <div className="bg-white border border-gray-200 rounded">
+            <div className="p-3 border-b border-gray-200">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">Processing Options</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Content Type</label>
+                  <select
+                    value={contentType}
+                    onChange={(e) => setContentType(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-900 bg-white"
+                  >
+                    <option value="general">General Text</option>
+                    <option value="interview">Interview Transcript</option>
+                    <option value="meeting">Meeting Notes</option>
+                    <option value="research">Research Document</option>
+                    <option value="feedback">Customer Feedback</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Target Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as IntelligenceCardCategory)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-900 bg-white"
+                  >
+                    <option value={IntelligenceCardCategory.MARKET}>Market</option>
+                    <option value={IntelligenceCardCategory.COMPETITOR}>Competitor</option>
+                    <option value={IntelligenceCardCategory.CONSUMER}>Consumer</option>
+                    <option value={IntelligenceCardCategory.TECHNOLOGY}>Technology</option>
+                    <option value={IntelligenceCardCategory.TRENDS}>Trends</option>
+                    <option value={IntelligenceCardCategory.STAKEHOLDER}>Stakeholder</option>
+                    <option value={IntelligenceCardCategory.RISK}>Risk</option>
+                    <option value={IntelligenceCardCategory.OPPORTUNITIES}>Opportunities</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* Groups Selector */}
+              <div className="mt-3">
+                <GroupsSelector 
+                  selectedGroups={targetGroups}
+                  onGroupsChange={setTargetGroups}
+                  className=""
+                />
+              </div>
+              
+              <div className="mt-3">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Additional Context (Optional)</label>
+                <input
+                  type="text"
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  placeholder="e.g., Robotics for train maintenance, Customer feedback on mobile app..."
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-900 bg-white"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Text Input Area */}
           <div className="bg-white border border-gray-200 rounded">
             <div className="p-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -1319,6 +1424,9 @@ function TextPasteContent() {
                 <div className="flex items-center space-x-3 text-xs text-gray-500">
                   <span>{wordCount} words</span>
                   <span>{charCount} chars</span>
+                  {isLikelyInterview && (
+                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Interview Detected</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1335,48 +1443,41 @@ function TextPasteContent() {
             
             <div className="p-3 border-t border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">
-                <button
-                  onClick={handleClear}
-                  className="text-xs text-gray-600 hover:text-gray-800 transition-colors"
-                  disabled={!textContent.trim()}
-                >
-                  Clear
-                </button>
-                
-                <div className="flex items-center space-x-2">
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as IntelligenceCardCategory)}
-                    className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-900 bg-white"
-                  >
-                    <option value={IntelligenceCardCategory.MARKET}>Market</option>
-                    <option value={IntelligenceCardCategory.COMPETITOR}>Competitor</option>
-                    <option value={IntelligenceCardCategory.CONSUMER}>Consumer</option>
-                    <option value={IntelligenceCardCategory.TECHNOLOGY}>Technology</option>
-                    <option value={IntelligenceCardCategory.TRENDS}>Trends</option>
-                    <option value={IntelligenceCardCategory.STAKEHOLDER}>Stakeholder</option>
-                    <option value={IntelligenceCardCategory.RISK}>Risk</option>
-                    <option value={IntelligenceCardCategory.OPPORTUNITIES}>Opportunities</option>
-                  </select>
-                  
+                <div className="flex items-center space-x-3">
                   <button
-                    onClick={handleProcess}
-                    disabled={!textContent.trim() || isProcessing}
-                    className="px-3 py-1 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                    onClick={handleClear}
+                    className="text-xs text-gray-600 hover:text-gray-800 transition-colors"
+                    disabled={!textContent.trim()}
                   >
-                    {isProcessing ? (
-                      <>
-                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Processing</span>
-                      </>
-                    ) : (
-                      <>
-                        <TestTube className="w-3 h-3" />
-                        <span>Process</span>
-                      </>
-                    )}
+                    Clear
                   </button>
+                  {error && (
+                    <span className="text-xs text-red-600">Error: {error}</span>
+                  )}
+                  {estimatedCards > 0 && (
+                    <span className="text-xs text-green-600">
+                      Est. {estimatedCards} cards {isLikelyInterview ? '(Interview: 10+ target)' : ''}
+                    </span>
+                  )}
                 </div>
+                
+                <button
+                  onClick={handleProcess}
+                  disabled={!textContent.trim() || isProcessing}
+                  className="px-4 py-2 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Processing {isLikelyInterview ? 'Interview' : 'Text'}...</span>
+                    </>
+                  ) : (
+                    <>
+                      <TestTube className="w-3 h-3" />
+                      <span>Process {isLikelyInterview ? 'Interview' : 'Text'}</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -1390,9 +1491,21 @@ function TextPasteContent() {
               Instructions
             </h4>
             <div className="space-y-1 text-[10px] text-gray-600">
-              <p>• Select category</p>
+              <p>• Choose content type</p>
+              <p>• Set target category</p>
+              <p>• Add context (optional)</p>
               <p>• Paste content</p>
               <p>• Click Process</p>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded p-3">
+            <h4 className="text-xs font-medium text-gray-900 mb-2">Interview Processing</h4>
+            <div className="space-y-1 text-[10px] text-gray-600">
+              <p className="text-blue-600 font-medium">• Minimum 10 insights</p>
+              <p>• Stakeholder quotes</p>
+              <p>• Strategic themes</p>
+              <p>• Actionable opportunities</p>
             </div>
           </div>
 
@@ -1400,18 +1513,37 @@ function TextPasteContent() {
             <h4 className="text-xs font-medium text-gray-900 mb-2">Content Types</h4>
             <div className="space-y-1">
               {[
-                { type: 'Interviews', icon: '🎤' },
-                { type: 'Meetings', icon: '📝' },
-                { type: 'Research', icon: '📊' },
-                { type: 'Feedback', icon: '💬' }
+                { type: 'Interviews', icon: '🎤', desc: '10+ insights' },
+                { type: 'Meetings', icon: '📝', desc: '3-5 insights' },
+                { type: 'Research', icon: '📊', desc: '3-5 insights' },
+                { type: 'Feedback', icon: '💬', desc: '3-5 insights' }
               ].map((content, index) => (
-                <div key={index} className="flex items-center space-x-1 text-[10px] text-gray-600">
-                  <span className="text-xs">{content.icon}</span>
-                  <span>{content.type}</span>
+                <div key={index} className="flex items-center justify-between text-[10px] text-gray-600">
+                  <div className="flex items-center space-x-1">
+                    <span className="text-xs">{content.icon}</span>
+                    <span>{content.type}</span>
+                  </div>
+                  <span className="text-gray-500">{content.desc}</span>
                 </div>
               ))}
             </div>
           </div>
+
+          {result && (
+            <div className="bg-green-50 border border-green-200 rounded p-3">
+              <h4 className="text-xs font-medium text-green-900 mb-2">Last Processing Result</h4>
+              <div className="space-y-1 text-[10px] text-green-700">
+                <p>• {result.cardsCreated || 0} cards created</p>
+                <p>• Cost: ${(result.cost || 0).toFixed(4)}</p>
+                <p>• Type: {result.isInterview ? 'Interview' : 'Text'}</p>
+                {result.isInterview && (
+                  <p className={result.minimumCardsMet ? 'text-green-600' : 'text-yellow-600'}>
+                    • Target: {result.targetCards || 'N/A'} {result.minimumCardsMet ? '✅' : '⚠️'}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

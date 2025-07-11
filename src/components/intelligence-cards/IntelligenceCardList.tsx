@@ -26,6 +26,7 @@ interface IntelligenceCardListProps {
   category?: IntelligenceCardCategory
   status?: IntelligenceCardStatus
   onEditCard?: (card: IntelligenceCardType) => void
+  onRefresh?: () => void
   showFilters?: boolean
   showViewToggle?: boolean
   sortBy?: 'date' | 'relevance' | 'credibility' | 'title'
@@ -48,6 +49,7 @@ export default function IntelligenceCardList({
   category,
   status,
   onEditCard,
+  onRefresh,
   showFilters = true,
   showViewToggle = true,
   sortBy = 'date',
@@ -91,13 +93,23 @@ export default function IntelligenceCardList({
     }
     
     // Remove undefined values to ensure clean filtering
-    return Object.fromEntries(
+    const cleanFilters = Object.fromEntries(
       Object.entries(baseFilters).filter(([_, value]) => value !== undefined)
     ) as IntelligenceCardFilters
+    
+    console.log('Filters changed:', cleanFilters)
+    return cleanFilters
   }, [category, status, localSearchQuery, credibilityRange, relevanceRange, tagFilters, dateRange, localFilters])
 
   // Load cards with filters
   const { cards, loading, error, total, refresh } = useIntelligenceCards(filters)
+  
+  // Enhanced refresh that combines local and parent refresh
+  const enhancedRefresh = React.useCallback(() => {
+    console.log('Enhanced refresh triggered for category:', category, 'status:', status)
+    refresh() // Refresh local data
+    onRefresh?.() // Call parent refresh if provided
+  }, [refresh, onRefresh, category, status])
   
   // Handle search
   const handleSearch = (query: string) => {
@@ -150,7 +162,7 @@ export default function IntelligenceCardList({
         <div className="text-center">
           <p className="text-sm text-red-600 mb-2">Error loading cards</p>
           <button
-            onClick={refresh}
+            onClick={enhancedRefresh}
             className="text-sm text-blue-600 hover:text-blue-800"
           >
             Try again
@@ -360,7 +372,7 @@ export default function IntelligenceCardList({
               key={card.id}
               card={card}
               onEdit={onEditCard}
-              onRefresh={refresh}
+              onRefresh={enhancedRefresh}
               isSelected={selectedCardIds.has(card.id)}
               onToggleSelect={setSelectedCardIds ? () => {
                 const newSelection = new Set(selectedCardIds)

@@ -38,8 +38,10 @@ export declare const intelligenceTools: ({
             type: {
                 type: string;
             };
+            userId: {
+                type: string;
+            };
             url?: undefined;
-            userId?: undefined;
             ruleId?: undefined;
             categories?: undefined;
             maxCards?: undefined;
