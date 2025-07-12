@@ -87,8 +87,8 @@ export function useStrategies() {
       const { data, error: fetchError } = await supabase
         .from('strategies')
         .select('*')
-        .eq('created_by', user.id)
-        .order('updatedAt', { ascending: false })
+        .eq('userId', user.id)
+        .order('createdAt', { ascending: false })
 
       if (fetchError) {
         throw fetchError
@@ -133,7 +133,6 @@ export function useStrategies() {
         .from('strategies')
         .insert({
           userId: user.id,
-          created_by: user.id,
           title: strategyData.title || 'Untitled Strategy',
           client: strategyData.client || '',
           description: strategyData.description || '',
@@ -198,7 +197,7 @@ export function useStrategies() {
         .from('strategies')
         .delete()
         .eq('id', strategyId)
-        .eq('created_by', user.id) // Ensure user can only delete their own strategies
+        .eq('userId', user.id) // Ensure user can only delete their own strategies
 
       if (deleteError) {
         throw deleteError

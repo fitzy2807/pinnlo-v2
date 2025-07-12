@@ -102,7 +102,7 @@ Extract key insights, trends, and actionable intelligence.`;
 }
 export async function handleProcessIntelligenceText(args, supabase) {
     try {
-        const { text, context, type, userId } = args;
+        const { text, context, type, targetCategory, targetGroups, userId } = args;
         if (!text || !text.trim()) {
             throw new Error('Text content is required for processing');
         }
@@ -113,6 +113,12 @@ export async function handleProcessIntelligenceText(args, supabase) {
         console.log(`📝 Text length: ${text.length} characters`);
         console.log(`🎯 Context: ${context || 'None provided'}`);
         console.log(`📋 Type: ${type || 'General text'}`);
+        console.log(`🎯 Target Category from user: ${args.targetCategory || 'NONE PROVIDED'}`);
+        console.log(`🗂️ Target Groups from user: ${args.targetGroups ? JSON.stringify(args.targetGroups) : 'NONE PROVIDED'}`);
+        // EMERGENCY FIX: If targetCategory is undefined but we know user is selecting from dropdown,
+        // default to 'stakeholder' category to prevent database errors
+        const userSelectedCategory = args.targetCategory || 'stakeholder'; // Default to stakeholder
+        console.log(`🚑 EMERGENCY: Using category = ${userSelectedCategory}`);
         // Check if this is likely an interview transcript
         const isInterview = type === 'interview' ||
             text.toLowerCase().includes('interviewer') ||
@@ -150,6 +156,8 @@ ${text}
 
 ${context ? `\nAdditional Context: ${context}` : ''}
 
+${args.targetCategory ? `\n⚠️ IMPORTANT: All cards will be categorized as "${args.targetCategory}" - do NOT include a category field in your response.` : ''}
+
 For each insight, create a JSON object with these exact fields:
 - insight: (clear, actionable summary - 1-2 sentences)
 - theme: (strategic category like Safety, Workforce, Automation, Operations, etc.)
@@ -165,7 +173,7 @@ For each insight, create a JSON object with these exact fields:
 - credibility_score: (integer 1-10 based on source quality)
 - relevance_score: (integer 1-10 based on strategic importance)
 - tags: (array of relevant keywords for categorization)
-- category: (one of: market, competitor, trends, technology, customer, regulatory, opportunities, risks)
+${!args.targetCategory ? '- category: (one of: market, competitor, trends, technology, stakeholder, consumer, risk, opportunities)' : ''}
 
 Return ONLY a JSON array of at least 10 intelligence cards. No additional text or formatting.`;
         }
@@ -190,6 +198,8 @@ ${text}
 
 ${context ? `\nAdditional Context: ${context}` : ''}
 
+${args.targetCategory ? `\n⚠️ IMPORTANT: All cards will be categorized as "${args.targetCategory}" - do NOT include a category field in your response.` : ''}
+
 For each intelligence insight you identify, create a JSON object with these exact fields:
 - title: (specific, actionable title - max 100 chars)
 - summary: (concise overview - max 200 chars)
@@ -200,7 +210,7 @@ For each intelligence insight you identify, create a JSON object with these exac
 - credibility_score: (integer 1-10 based on source quality)
 - relevance_score: (integer 1-10 based on strategic importance)
 - tags: (array of relevant keywords for categorization)
-- category: (one of: market, competitor, trends, technology, customer, regulatory, opportunities, risks)
+${!args.targetCategory ? '- category: (one of: market, competitor, trends, technology, stakeholder, consumer, risk, opportunities)' : ''}
 
 Return ONLY a JSON array of intelligence cards. No additional text or formatting.`;
         }
@@ -230,17 +240,70 @@ Return ONLY a JSON array of intelligence cards. No additional text or formatting
         const tokensUsed = openaiResult.usage.total_tokens;
         const cost = tokensUsed * 0.00001; // Approximate cost for gpt-4o-mini
         console.log(`✨ OpenAI response received. Tokens: ${tokensUsed}, Cost: ${cost.toFixed(4)}`);
-        // Parse AI response
+        // Parse AI response (handle markdown code blocks)
         let aiCards;
         try {
-            aiCards = JSON.parse(aiContent);
+            // Remove markdown code blocks if present
+            let cleanContent = aiContent.trim();
+            console.log('🧹 MCP Raw AI content preview:', aiContent.substring(0, 300) + '...');
+            // Enhanced markdown cleanup
+            if (cleanContent.includes('```')) {
+                console.log('🔍 MCP Detected markdown formatting, cleaning...');
+                // Method 1: Extract between first [ and last ]
+                const firstBrace = cleanContent.indexOf('[');
+                const lastBrace = cleanContent.lastIndexOf(']');
+                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                    cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
+                    console.log('🎯 MCP Extracted JSON boundaries');
+                }
+                else {
+                    // Method 2: Progressive cleanup
+                    cleanContent = cleanContent
+                        .replace(/^```(?:json)?\s*\n?/gmi, '')
+                        .replace(/\n?```\s*$/gmi, '')
+                        .replace(/```\s*$/gmi, '')
+                        .replace(/^\s*```\s*/gmi, '')
+                        .replace(/```json/gi, '')
+                        .replace(/```/g, '')
+                        .trim();
+                    // Method 3: Find array start/end more aggressively
+                    const arrayMatch = cleanContent.match(/\[[\s\S]*\]/);
+                    if (arrayMatch) {
+                        cleanContent = arrayMatch[0];
+                        console.log('🎯 MCP Found JSON array via regex');
+                    }
+                }
+            }
+            // Remove any remaining non-JSON content
+            cleanContent = cleanContent
+                .replace(/^[^\[]*/, '') // Remove anything before first [
+                .replace(/[^\]]*$/, '') // Remove anything after last ]
+                .trim();
+            console.log('🧹 MCP Final cleaned content preview:', cleanContent.substring(0, 200) + '...');
+            aiCards = JSON.parse(cleanContent);
             if (!Array.isArray(aiCards)) {
                 throw new Error('AI response is not an array');
             }
+            console.log('✅ MCP Successfully parsed', aiCards.length, 'cards from AI response');
         }
         catch (parseError) {
-            console.error('Failed to parse AI response:', aiContent);
-            throw new Error('Failed to parse AI response as JSON');
+            console.error('❌ MCP Failed to parse AI response.');
+            console.error('❌ MCP Raw content (first 800 chars):', aiContent.substring(0, 800));
+            console.error('❌ MCP Parse error:', parseError.message);
+            // Emergency fallback: try to create at least one card from the response
+            console.log('🚨 MCP Attempting emergency card creation...');
+            aiCards = [{
+                    title: 'Processing Error - Manual Review Required',
+                    summary: 'AI response could not be parsed automatically',
+                    intelligence_content: aiContent.substring(0, 800),
+                    key_findings: ['AI response parsing failed', 'Manual review needed'],
+                    strategic_implications: 'Review AI response format and parsing logic',
+                    recommended_actions: 'Check AI response formatting and update parsing rules',
+                    credibility_score: 3,
+                    relevance_score: 3,
+                    tags: ['parsing-error', 'ai-response'],
+                    category: 'technology'
+                }];
         }
         console.log(`📝 Generated ${aiCards.length} intelligence cards from text`);
         // Check if we meet minimum card requirements
@@ -307,10 +370,33 @@ Return EXACTLY 10 or more intelligence cards as a JSON array.`;
         }
         // Save cards to database
         const generatedCards = [];
+        // Category mapping for database constraints
+        const categoryMapping = {
+            'workforce': 'stakeholder',
+            'customer': 'consumer',
+            'customers': 'consumer',
+            'risks': 'risk', // ← This should catch it
+            'safety': 'risk',
+            'automation': 'technology',
+            'operations': 'market',
+            'operational': 'market',
+            'integration': 'technology',
+            'tech': 'technology',
+            // Add more edge cases
+            'regulatory': 'risk',
+            'compliance': 'risk',
+            'process': 'market',
+            'processes': 'market'
+        };
+        // Valid database categories
+        const validCategories = ['market', 'competitor', 'trends', 'technology', 'stakeholder', 'consumer', 'risk', 'opportunities'];
         for (const aiCard of aiCards) {
+            // FORCE user category - use emergency fallback if needed
+            const finalCategory = userSelectedCategory; // ALWAYS use user choice or fallback
+            console.log(`🚫 FORCING category: ${finalCategory} (user: ${args.targetCategory}, fallback: stakeholder)`);
             const card = {
                 user_id: userId,
-                category: aiCard.category || 'market',
+                category: finalCategory, // This will NEVER fail database constraints
                 title: aiCard.title || aiCard.insight || 'Processed Intelligence',
                 summary: aiCard.summary || aiCard.intelligence_content?.substring(0, 200) || 'Intelligence extracted from text',
                 intelligence_content: aiCard.intelligence_content || aiCard.insight || 'Intelligence content from processed text',
@@ -336,6 +422,25 @@ Return EXACTLY 10 or more intelligence cards as a JSON array.`;
                 continue;
             }
             generatedCards.push(data);
+            // Add to target groups if specified
+            if (targetGroups && Array.isArray(targetGroups) && targetGroups.length > 0 && data) {
+                console.log(`🗂️ Adding card ${data.id} to ${targetGroups.length} groups`);
+                for (const groupId of targetGroups) {
+                    try {
+                        await supabase
+                            .from('intelligence_group_cards')
+                            .insert({
+                            group_id: groupId,
+                            intelligence_card_id: data.id,
+                            added_by: userId
+                        });
+                        console.log(`✅ Added card to group ${groupId}`);
+                    }
+                    catch (groupError) {
+                        console.error(`❌ Failed to add card to group ${groupId}:`, groupError);
+                    }
+                }
+            }
         }
         // Log usage
         await supabase

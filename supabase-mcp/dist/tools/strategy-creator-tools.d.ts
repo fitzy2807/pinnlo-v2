@@ -4,6 +4,51 @@ export declare const strategyCreatorTools: ({
     inputSchema: {
         type: string;
         properties: {
+            cards: {
+                type: string;
+                description: string;
+                items: {
+                    type: string;
+                    properties: {
+                        id: {
+                            type: string;
+                        };
+                        title: {
+                            type: string;
+                        };
+                        description: {
+                            type: string;
+                        };
+                        card_type: {
+                            type: string;
+                        };
+                        card_data: {
+                            type: string;
+                        };
+                    };
+                };
+            };
+            blueprint_type: {
+                type: string;
+                description: string;
+            };
+            blueprintCards?: undefined;
+            intelligenceCards?: undefined;
+            intelligenceGroups?: undefined;
+            strategyName?: undefined;
+            contextSummary?: undefined;
+            targetBlueprint?: undefined;
+            generationOptions?: undefined;
+            existingCards?: undefined;
+        };
+        required: string[];
+    };
+} | {
+    name: string;
+    description: string;
+    inputSchema: {
+        type: string;
+        properties: {
             blueprintCards: {
                 type: string;
                 items: {
@@ -76,6 +121,8 @@ export declare const strategyCreatorTools: ({
             strategyName: {
                 type: string;
             };
+            cards?: undefined;
+            blueprint_type?: undefined;
             contextSummary?: undefined;
             targetBlueprint?: undefined;
             generationOptions?: undefined;
@@ -120,6 +167,8 @@ export declare const strategyCreatorTools: ({
                     };
                 };
             };
+            cards?: undefined;
+            blueprint_type?: undefined;
             blueprintCards?: undefined;
             intelligenceCards?: undefined;
             intelligenceGroups?: undefined;
@@ -128,6 +177,19 @@ export declare const strategyCreatorTools: ({
         required: string[];
     };
 })[];
+export declare function handleGenerateUniversalExecutiveSummary(args: any): Promise<{
+    content: {
+        type: string;
+        text: string;
+    }[];
+    isError?: undefined;
+} | {
+    content: {
+        type: string;
+        text: string;
+    }[];
+    isError: boolean;
+}>;
 export declare function handleGenerateContextSummary(args: any): Promise<{
     content: {
         type: string;

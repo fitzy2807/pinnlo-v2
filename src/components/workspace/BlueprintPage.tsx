@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import PageHeaderControls from './PageHeaderControls'
 import QuickAdd from './QuickAdd'
 import ExecutiveSummary from './ExecutiveSummary'
+import { useCards } from '@/hooks/useCards'
 
 interface BlueprintPageProps {
   blueprintType: string
@@ -17,8 +18,19 @@ export default function BlueprintPage({ blueprintType, strategyId }: BlueprintPa
   const [selectAllChecked, setSelectAllChecked] = useState(false)
   const [loading, setLoading] = useState(false)
   
-  // TODO: Replace with actual cards from your data source
-  const cards: any[] = []
+  // Load actual cards from database
+  const { cards: allCards, loading: cardsLoading, refreshCards } = useCards(parseInt(strategyId))
+  
+  // Filter cards by blueprint type
+  const cards = allCards.filter(card => card.cardType === blueprintType)
+  
+  // Debug logging
+  console.log('🔍 Debug Info:')
+  console.log('- Blueprint Type:', blueprintType)
+  console.log('- All Cards Count:', allCards.length)
+  console.log('- All Cards:', allCards.map(c => ({ id: c.id, title: c.title, cardType: c.cardType })))
+  console.log('- Filtered Cards Count:', cards.length)
+  console.log('- Filtered Cards:', cards.map(c => ({ id: c.id, title: c.title, cardType: c.cardType })))
 
   const handleQuickAddSubmit = async (title: string, description: string) => {
     try {
@@ -36,7 +48,8 @@ export default function BlueprintPage({ blueprintType, strategyId }: BlueprintPa
       
       if (response.ok) {
         console.log('Card created successfully')
-        // TODO: Refresh cards or emit event to parent
+        await refreshCards() // Refresh cards after creation
+        setShowQuickAdd(false) // Close quick add panel
       }
     } catch (error) {
       console.error('Failed to create card:', error)
@@ -115,7 +128,7 @@ export default function BlueprintPage({ blueprintType, strategyId }: BlueprintPa
       {/* Executive Summary */}
       <ExecutiveSummary
         strategyId={parseInt(strategyId)}
-        blueprintId={blueprintType}
+        blueprintType={blueprintType}
         cards={cards}
       />
 

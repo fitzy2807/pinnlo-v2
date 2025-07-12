@@ -2,104 +2,183 @@ import { BlueprintConfig } from '../types'
 
 export const techStackConfig: BlueprintConfig = {
   id: 'tech-stack',
-  name: 'Tech Stack',
-  description: 'Define technology choices and architecture decisions',
+  name: 'Tech Stack Component',
+  description: 'Document and manage technology architecture components',
   category: 'Planning & Execution',
   icon: '⚙️',
   fields: [
+    // === BASIC INFORMATION ===
     {
-      id: 'layer',
-      name: 'Technology Layer',
+      id: 'category',
+      name: 'Category',
       type: 'enum',
       required: true,
       options: ['Frontend', 'Backend', 'Database', 'Infrastructure', 'DevOps', 'Analytics', 'Security', 'Integration', 'Mobile'],
-      description: 'Which layer of the tech stack does this address?'
+      description: 'Primary technology category'
     },
     {
-      id: 'category',
-      name: 'Technology Category',
+      id: 'subcategory',
+      name: 'Subcategory',
       type: 'text',
-      required: true,
-      placeholder: 'e.g., Web Framework, Database, Monitoring',
-      description: 'Specific category within the layer'
+      placeholder: 'e.g., Framework, Library, Tool',
+      description: 'More specific classification'
     },
     {
-      id: 'toolsUsed',
-      name: 'Tools/Technologies Used',
+      id: 'version_current',
+      name: 'Current Version',
+      type: 'text',
+      placeholder: 'e.g., 18.2.0',
+      description: 'Latest stable version available'
+    },
+    {
+      id: 'vendor',
+      name: 'Vendor/Maintainer',
+      type: 'text',
+      placeholder: 'e.g., Meta, Google, Microsoft',
+      description: 'Company or organization maintaining this technology'
+    },
+    {
+      id: 'license_type',
+      name: 'License',
+      type: 'text',
+      placeholder: 'e.g., MIT, Apache 2.0, Proprietary',
+      description: 'Software license type'
+    },
+    {
+      id: 'language_ecosystem',
+      name: 'Language/Ecosystem',
+      type: 'text',
+      placeholder: 'e.g., JavaScript, Python, Java',
+      description: 'Primary programming language or ecosystem'
+    },
+    {
+      id: 'implementation_status',
+      name: 'Implementation Status',
+      type: 'enum',
+      options: ['planned', 'in-progress', 'active', 'deprecated'],
+      description: 'Current status in our tech stack'
+    },
+    
+    // === CAPABILITIES ===
+    {
+      id: 'primary_functions',
+      name: 'Primary Functions',
       type: 'array',
-      required: true,
-      description: 'Specific tools, frameworks, or technologies chosen'
+      placeholder: 'Add key capabilities...',
+      description: 'Main features and capabilities this technology provides'
+    },
+    
+    // === OUR IMPLEMENTATION ===
+    {
+      id: 'our_implementation.version_used',
+      name: 'Version We Use',
+      type: 'text',
+      placeholder: 'e.g., 18.1.0',
+      description: 'The specific version deployed in our environment'
     },
     {
-      id: 'justification',
-      name: 'Choice Justification',
+      id: 'our_implementation.key_features_enabled',
+      name: 'Features Enabled',
+      type: 'array',
+      placeholder: 'Add enabled features...',
+      description: 'Which features we actually use'
+    },
+    {
+      id: 'our_implementation.custom_configurations',
+      name: 'Custom Configurations',
       type: 'textarea',
-      required: true,
-      placeholder: 'Why did we choose these technologies?',
-      description: 'Reasoning behind the technology choices'
+      placeholder: 'Describe any custom configurations...',
+      description: 'Custom settings and configurations'
     },
+    
+    // === INTEGRATIONS ===
     {
-      id: 'alternatives',
-      name: 'Alternatives Considered',
+      id: 'our_integrations.connects_to',
+      name: 'Connected Systems',
       type: 'array',
-      required: false,
-      description: 'Other technologies that were considered but not chosen'
+      placeholder: 'Add connected technologies...',
+      description: 'Other technologies this integrates with'
     },
     {
-      id: 'pros',
-      name: 'Advantages',
+      id: 'our_integrations.authentication_implementation',
+      name: 'Authentication Method',
+      type: 'text',
+      placeholder: 'e.g., JWT, OAuth2, API Key',
+      description: 'How authentication is handled'
+    },
+    {
+      id: 'our_integrations.data_flow_patterns',
+      name: 'Data Flow Patterns',
       type: 'array',
-      required: false,
-      description: 'Benefits of this technology choice'
+      placeholder: 'e.g., REST API, GraphQL, WebSocket',
+      description: 'How data flows between systems'
+    },
+    
+    // === DEVELOPMENT ===
+    {
+      id: 'our_workflow.build_process',
+      name: 'Build Process',
+      type: 'text',
+      placeholder: 'e.g., Webpack, Vite, Rollup',
+      description: 'Build tools and processes'
     },
     {
-      id: 'cons',
-      name: 'Limitations',
+      id: 'our_workflow.testing_approach',
+      name: 'Testing Approach',
+      type: 'text',
+      placeholder: 'e.g., Jest, Cypress, Playwright',
+      description: 'Testing framework and approach'
+    },
+    
+    // === SUPPORT ===
+    {
+      id: 'our_support.documentation_location',
+      name: 'Documentation Location',
+      type: 'text',
+      placeholder: 'e.g., Confluence URL, GitHub Wiki',
+      description: 'Where to find our internal documentation'
+    },
+    {
+      id: 'our_support.internal_expertise',
+      name: 'Internal Experts',
       type: 'array',
-      required: false,
-      description: 'Limitations or drawbacks of this choice'
+      placeholder: 'Add team members...',
+      description: 'Team members with expertise in this technology'
     },
     {
-      id: 'skillRequirements',
-      name: 'Skill Requirements',
+      id: 'common_issues.typical_problems',
+      name: 'Common Issues',
       type: 'array',
-      required: false,
-      description: 'Skills needed to work with these technologies'
-    },
-    {
-      id: 'migrationPlan',
-      name: 'Migration Plan',
-      type: 'textarea',
-      required: false,
-      placeholder: 'How will we transition to this technology?',
-      description: 'Plan for implementing or migrating to this tech stack'
-    },
-    {
-      id: 'maintenanceConsiderations',
-      name: 'Maintenance Considerations',
-      type: 'textarea',
-      required: false,
-      placeholder: 'Long-term maintenance and support considerations',
-      description: 'Ongoing maintenance and support requirements'
+      placeholder: 'Add known issues...',
+      description: 'Typical problems encountered with this technology'
     }
   ],
   defaultValues: {
-    layer: 'Backend',
-    category: '',
-    toolsUsed: [],
-    justification: '',
-    alternatives: [],
-    pros: [],
-    cons: [],
-    skillRequirements: [],
-    migrationPlan: '',
-    maintenanceConsiderations: ''
+    category: 'Frontend',
+    subcategory: '',
+    version_current: '',
+    vendor: '',
+    license_type: '',
+    language_ecosystem: '',
+    implementation_status: 'planned',
+    primary_functions: [],
+    'our_implementation.version_used': '',
+    'our_implementation.key_features_enabled': [],
+    'our_implementation.custom_configurations': '',
+    'our_integrations.connects_to': [],
+    'our_integrations.authentication_implementation': '',
+    'our_integrations.data_flow_patterns': [],
+    'our_workflow.build_process': '',
+    'our_workflow.testing_approach': '',
+    'our_support.documentation_location': '',
+    'our_support.internal_expertise': [],
+    'common_issues.typical_problems': []
   },
   validation: {
-    required: ['layer', 'category', 'toolsUsed', 'justification']
+    required: ['category']
   },
   relationships: {
     linkedBlueprints: ['technical-requirement', 'feature', 'roadmap'],
-    requiredBlueprints: ['strategic-context']
+    requiredBlueprints: []
   }
 }

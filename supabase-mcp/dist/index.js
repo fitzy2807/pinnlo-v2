@@ -7,7 +7,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextprotocol/sdk/types.js';
 import { createClient } from '@supabase/supabase-js';
-import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards } from './tools/strategy-creator-tools.js';
+import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards, handleGenerateUniversalExecutiveSummary } from './tools/strategy-creator-tools.js';
 import { intelligenceTools, handleAnalyzeUrl, handleProcessIntelligenceText, handleGenerateAutomationIntelligence } from './tools/ai-generation.js';
 import { terminalTools, handleExecuteCommand, handleReadFileContent, handleListDirectoryContents, handleGetProjectStatus, handleGetSystemInfo, handleMonitorFileChanges } from './tools/terminal-tools.js';
 class SupabaseMCPServer {
@@ -101,6 +101,8 @@ class SupabaseMCPServer {
                         return await handleGenerateContextSummary(args);
                     case 'generate_strategy_cards':
                         return await handleGenerateStrategyCards(args);
+                    case 'generate_universal_executive_summary':
+                        return await handleGenerateUniversalExecutiveSummary(args);
                     // Intelligence Tools
                     case 'analyze_url':
                         return await handleAnalyzeUrl(args, this.supabase);

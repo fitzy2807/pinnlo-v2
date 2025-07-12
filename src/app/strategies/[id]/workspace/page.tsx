@@ -10,6 +10,7 @@ import BlueprintManager from '@/components/workspace/BlueprintManager'
 import ExecutiveSummary from '@/components/workspace/ExecutiveSummary'
 import QuickAdd from '@/components/workspace/QuickAdd'
 import { getAllBlueprints } from '@/components/blueprints/registry'
+import { useCards } from '@/hooks/useCards'
 
 export default function WorkspacePage() {
   const params = useParams()
@@ -20,6 +21,19 @@ export default function WorkspacePage() {
   const contentAreaRef = useRef<ContentAreaRef>(null)
   
   const allBlueprints = getAllBlueprints()
+  
+  // Load actual cards for this strategy
+  const { cards: allCards } = useCards(parseInt(params.id as string))
+  
+  // Filter cards by active blueprint type
+  const activeCards = allCards.filter(card => card.cardType === activeBlueprint)
+  
+  // Debug logging
+  console.log('🔍 WorkspacePage Debug:')
+  console.log('- Active Blueprint:', activeBlueprint)
+  console.log('- All Cards Count:', allCards.length)
+  console.log('- Active Cards Count:', activeCards.length)
+  console.log('- Active Cards:', activeCards.map(c => ({ title: c.title, cardType: c.cardType })))
   
   // Create blueprint list with card counts (TODO: get real counts from database)
   const blueprints = enabledBlueprints.map(blueprintId => {
@@ -118,8 +132,8 @@ export default function WorkspacePage() {
               {/* Executive Summary */}
               <ExecutiveSummary
                 strategyId={parseInt(params.id as string)}
-                blueprintId={activeBlueprint}
-                cards={[]} // TODO: Pass actual cards from ContentArea
+                blueprintType={activeBlueprint}
+                cards={activeCards}
               />
               
               {/* Original Content Area */}

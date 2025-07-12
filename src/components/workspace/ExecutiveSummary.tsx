@@ -5,20 +5,23 @@ import { ChevronDown, ChevronUp, RotateCcw, Copy } from 'lucide-react'
 
 interface ExecutiveSummaryProps {
   strategyId: number
-  blueprintId: string
+  blueprintType: string
   cards?: any[]
 }
 
 interface SummaryData {
   themes: string[]
   implications: string[]
+  nextSteps: string[]
+  summary: string
+  detected_blueprint?: string
   lastUpdated: string
   cardCount: number
 }
 
 export default function ExecutiveSummary({ 
   strategyId, 
-  blueprintId, 
+  blueprintType, 
   cards = [] 
 }: ExecutiveSummaryProps) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -28,12 +31,12 @@ export default function ExecutiveSummary({
   // Load existing summary on mount
   useEffect(() => {
     loadExistingSummary()
-  }, [strategyId, blueprintId])
+  }, [strategyId, blueprintType])
 
   const loadExistingSummary = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/executive-summary-load?strategyId=${strategyId}&blueprintId=${blueprintId}`)
+      const response = await fetch(`/api/executive-summary-load?strategyId=${strategyId}&blueprintType=${blueprintType}`)
       if (response.ok) {
         const data = await response.json()
         if (data.summary) {
@@ -48,6 +51,11 @@ export default function ExecutiveSummary({
   }
 
   const generateSummary = async () => {
+    if (cards.length === 0) {
+      console.warn('No cards available for summary generation')
+      return
+    }
+
     try {
       setLoading(true)
       const response = await fetch('/api/executive-summary', {
@@ -55,7 +63,7 @@ export default function ExecutiveSummary({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           strategyId,
-          blueprintId,
+          blueprintType,
           cards,
           regenerate: true
         })
@@ -63,12 +71,21 @@ export default function ExecutiveSummary({
       
       if (response.ok) {
         const data = await response.json()
-        setSummary({
-          themes: data.themes || [],
-          implications: data.implications || [],
-          lastUpdated: new Date().toISOString(),
-          cardCount: cards.length
-        })
+        if (data.success) {
+          setSummary({
+            themes: data.themes || [],
+            implications: data.implications || [],
+            nextSteps: data.nextSteps || [],
+            summary: data.summary || '',
+            detected_blueprint: data.detected_blueprint,
+            lastUpdated: new Date().toISOString(),
+            cardCount: cards.length
+          })
+        } else {
+          console.error('Failed to generate summary:', data.error)
+        }
+      } else {
+        console.error('API request failed:', response.status)
       }
     } catch (error) {
       console.error('Failed to generate summary:', error)
@@ -81,13 +98,15 @@ export default function ExecutiveSummary({
     if (!summary) return
     
     const text = `
-Executive Summary - ${blueprintId}
+Executive Summary - ${summary.detected_blueprint || blueprintType}
 
 Key Themes:
 ${summary.themes.map((theme, i) => `${i + 1}. ${theme}`).join('\n')}
 
 Strategic Implications:
 ${summary.implications.map((implication, i) => `${i + 1}. ${implication}`).join('\n')}
+
+${summary.nextSteps.length > 0 ? `Next Steps:\n${summary.nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n` : ''}${summary.summary ? `Overall Summary:\n${summary.summary}` : ''}
     `.trim()
     
     try {
@@ -162,40 +181,80 @@ ${summary.implications.map((implication, i) => `${i + 1}. ${implication}`).join(
       {/* Content */}
       {isExpanded && summary && (
         <div className="mt-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          {/* Key Themes */}
           <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Key Themes</h4>
-              <div className="space-y-3">
-                {summary.themes.map((theme, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
-                      {index + 1}
-                    </div>
-                    <div className="bg-white p-2 rounded border text-xs text-gray-700 flex-1">
-                      {theme}
-                    </div>
-                  </div>
-                ))}
+            {/* Detected Blueprint Info */}
+            {summary.detected_blueprint && summary.detected_blueprint !== blueprintType && (
+              <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded border">
+                AI detected blueprint type: {summary.detected_blueprint}
               </div>
-            </div>
+            )}
+
+            {/* Key Themes */}
+            {summary.themes.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-3">Key Themes</h4>
+                <div className="space-y-3">
+                  {summary.themes.map((theme, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                        {index + 1}
+                      </div>
+                      <div className="bg-white p-3 rounded border text-sm text-gray-700 flex-1">
+                        {theme}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Strategic Implications */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Strategic Implications</h4>
-              <div className="space-y-3">
-                {summary.implications.map((implication, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
-                      {index + 1}
+            {summary.implications.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-3">Strategic Implications</h4>
+                <div className="space-y-3">
+                  {summary.implications.map((implication, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                        {index + 1}
+                      </div>
+                      <div className="bg-white p-3 rounded border text-sm text-gray-700 flex-1">
+                        {implication}
+                      </div>
                     </div>
-                    <div className="bg-white p-2 rounded border text-xs text-gray-700 flex-1">
-                      {implication}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Next Steps */}
+            {summary.nextSteps.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-3">Recommended Next Steps</h4>
+                <div className="space-y-3">
+                  {summary.nextSteps.map((step, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                        {index + 1}
+                      </div>
+                      <div className="bg-white p-3 rounded border text-sm text-gray-700 flex-1">
+                        {step}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Overall Summary */}
+            {summary.summary && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-3">Strategic Narrative</h4>
+                <div className="bg-white p-3 rounded border text-sm text-gray-700">
+                  {summary.summary}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -203,13 +262,33 @@ ${summary.implications.map((implication, i) => `${i + 1}. ${implication}`).join(
       {/* Empty State */}
       {isExpanded && !summary && !loading && (
         <div className="mt-2 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-          <p className="text-sm text-gray-600">No executive summary available.</p>
-          <button
-            onClick={generateSummary}
-            className="mt-2 text-sm text-blue-600 hover:text-blue-700"
-          >
-            Generate Summary
-          </button>
+          {cards.length === 0 ? (
+            <div>
+              <p className="text-sm text-gray-600 mb-2">No cards available for summary generation.</p>
+              <p className="text-xs text-gray-500">Add some cards to this blueprint to generate an executive summary.</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-gray-600 mb-3">No executive summary available.</p>
+              <button
+                onClick={generateSummary}
+                disabled={loading}
+                className="px-4 py-2 bg-black text-white text-sm rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Generating...' : `Generate Summary (${cards.length} cards)`}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isExpanded && loading && (
+        <div className="mt-2 p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+          <div className="flex items-center justify-center space-x-2">
+            <RotateCcw className="w-4 h-4 animate-spin text-gray-600" />
+            <span className="text-sm text-gray-600">Generating executive summary...</span>
+          </div>
         </div>
       )}
     </div>

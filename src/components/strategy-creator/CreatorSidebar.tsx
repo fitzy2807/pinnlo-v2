@@ -18,12 +18,10 @@ interface CreatorSidebarProps {
 }
 
 const steps = [
-  { number: 1, label: 'Select Strategy', icon: Target },
-  { number: 2, label: 'Blueprint Context', icon: Layers },
-  { number: 3, label: 'Intelligence Context', icon: Brain },
-  { number: 4, label: 'Context Summary', icon: FileText },
-  { number: 5, label: 'Target Blueprint', icon: Sparkles },
-  { number: 6, label: 'Review & Create', icon: CheckCircle2 }
+  { number: 1, label: 'Context Selection', icon: Target },
+  { number: 2, label: 'Context Summary', icon: FileText },
+  { number: 3, label: 'Target Blueprint', icon: Sparkles },
+  { number: 4, label: 'Review & Create', icon: CheckCircle2 }
 ]
 
 export default function CreatorSidebar({ 
@@ -91,11 +89,11 @@ export default function CreatorSidebar({
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
             className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(completedSteps.length / 6) * 100}%` }}
+            style={{ width: `${(completedSteps.length / 4) * 100}%` }}
           />
         </div>
         <div className="text-xs text-gray-500 mt-1">
-          {completedSteps.length} of 6 steps completed
+          {completedSteps.length} of 4 steps completed
         </div>
       </div>
     </div>

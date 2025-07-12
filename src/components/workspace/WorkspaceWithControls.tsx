@@ -117,7 +117,7 @@ export default function WorkspaceWithControls({
       {/* Executive Summary */}
       <ExecutiveSummary
         strategyId={strategyId}
-        blueprintId={blueprintId}
+        blueprintType={blueprintId}
         cards={cards}
       />
 

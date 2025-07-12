@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
+import { ensureArrayField } from '@/utils/cardDataUtils'
 
 interface ArrayFieldProps {
   value: string[]
@@ -28,21 +29,24 @@ export default function ArrayField({
 }: ArrayFieldProps) {
   const [newItem, setNewItem] = useState('')
 
+  // Ensure value is always an array using the utility function
+  const arrayValue = ensureArrayField(value)
+
   const addItem = () => {
-    if (newItem.trim() && (!maxItems || value.length < maxItems)) {
-      onChange([...value, newItem.trim()])
+    if (newItem.trim() && (!maxItems || arrayValue.length < maxItems)) {
+      onChange([...arrayValue, newItem.trim()])
       setNewItem('')
     }
   }
 
   const removeItem = (index: number) => {
-    if (!required || value.length > minItems) {
-      onChange(value.filter((_, i) => i !== index))
+    if (!required || arrayValue.length > minItems) {
+      onChange(arrayValue.filter((_, i) => i !== index))
     }
   }
 
   const updateItem = (index: number, newValue: string) => {
-    const updated = [...value]
+    const updated = [...arrayValue]
     updated[index] = newValue
     onChange(updated)
   }
@@ -67,7 +71,7 @@ export default function ArrayField({
 
       {/* Existing Items */}
       <div className="space-y-2">
-        {value.map((item, index) => (
+        {arrayValue.map((item, index) => (
           <div key={index} className="flex items-start space-x-2">
             <div className="flex-1">
               {itemType === 'text' ? (
@@ -101,7 +105,7 @@ export default function ArrayField({
       </div>
 
       {/* Add New Item */}
-      {(!maxItems || value.length < maxItems) && (
+      {(!maxItems || arrayValue.length < maxItems) && (
         <div className="flex items-start space-x-2">
           <div className="flex-1">
             {itemType === 'text' ? (
@@ -140,7 +144,7 @@ export default function ArrayField({
           {itemType === 'text' ? 'Press Enter to add' : 'Click + to add'}
         </span>
         {maxItems && (
-          <span>{value.length}/{maxItems} items</span>
+          <span>{arrayValue.length}/{maxItems} items</span>
         )}
       </div>
     </div>

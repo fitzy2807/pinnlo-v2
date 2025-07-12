@@ -96,7 +96,7 @@ class HttpMcpServer {
         });
         this.app.post('/api/tools/process_intelligence_text', async (req, res) => {
             try {
-                const result = await handleProcessIntelligenceText(req.body);
+                const result = await handleProcessIntelligenceText(req.body, this.supabase);
                 res.json(result);
             }
             catch (error) {
@@ -185,7 +185,7 @@ class HttpMcpServer {
             case 'analyze_url':
                 return await handleAnalyzeUrl(args);
             case 'process_intelligence_text':
-                return await handleProcessIntelligenceText(args);
+                return await handleProcessIntelligenceText(args, this.supabase);
             case 'generate_automation_intelligence':
                 return await handleGenerateAutomationIntelligence(args, this.supabase);
             case 'execute_command':

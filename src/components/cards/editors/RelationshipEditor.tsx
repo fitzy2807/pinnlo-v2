@@ -127,7 +127,7 @@ export default function RelationshipEditor({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2">
                   <span className="text-xs font-medium uppercase tracking-wide">
-                    {relationship.type.replace('-', ' ')}
+                    {relationship.type?.replace('-', ' ') || 'relates to'}
                   </span>
                 </div>
                 <p className="text-sm font-medium truncate">

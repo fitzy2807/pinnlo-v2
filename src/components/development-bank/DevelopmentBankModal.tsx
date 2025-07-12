@@ -9,6 +9,7 @@ import DevelopmentBank from './DevelopmentBank'
 import TechnicalRequirements from './TechnicalRequirements'
 import SpecificationDisplay from './SpecificationDisplay'
 import TaskList from './TaskList'
+import TechStackSection from './tech-stack/TechStackSection'
 import type { DevBankAsset } from '@/services/developmentBankService'
 
 interface DevelopmentBankModalProps {
@@ -352,6 +353,16 @@ export default function DevelopmentBankModal({
               >
                 Task Lists
               </button>
+              <button
+                onClick={() => setActiveTab('tech-stack')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'tech-stack'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-600 hover:text-black hover:border-gray-300'
+                }`}
+              >
+                Tech Stack
+              </button>
             </nav>
           </div>
 
@@ -401,6 +412,10 @@ export default function DevelopmentBankModal({
 
             {activeTab === 'task' && (
               <TaskList strategyId={selectedStrategyId} />
+            )}
+
+            {activeTab === 'tech-stack' && (
+              <TechStackSection strategyId={parseInt(selectedStrategyId)} />
             )}
           </div>
         </div>

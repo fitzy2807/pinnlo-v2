@@ -20,6 +20,7 @@ import {
   handleCommitTrdToTaskList
 } from './tools/development-bank-tools.js';
 import { batchedDevelopmentBankTools, handleCommitTrdToTaskListBatched } from './tools/development-bank-tools-batched.js';
+import { techStackTools } from './tools/tech-stack-tools.js';
 import { 
   terminalTools, 
   handleExecuteCommand, 
@@ -121,6 +122,8 @@ class SupabaseMCPServer {
         ...developmentBankTools,
         // Add all batched development bank tools
         ...batchedDevelopmentBankTools,
+        // Add all tech stack tools
+        ...techStackTools,
         // Add all terminal tools
         ...terminalTools
       ];
@@ -149,14 +152,8 @@ class SupabaseMCPServer {
           // Development Bank Tools
           case 'generate_technical_requirement':
             return await handleGenerateTechnicalRequirement(args);
-          case 'generate_tech_stack_recommendations':
-            return await handleGenerateTechStackRecommendations(args);
-          case 'generate_technical_specification':
-            return await handleGenerateTechnicalSpecification(args);
-          case 'generate_test_scenarios':
-            return await handleGenerateTestScenarios(args);
-          case 'generate_task_list':
-            return await handleGenerateTaskList(args);
+          case 'commit_trd_to_task_list':
+            return await handleCommitTrdToTaskList(args);
           case 'commit_trd_to_task_list_batched':
             return await handleCommitTrdToTaskListBatched(args);
           
@@ -181,6 +178,12 @@ class SupabaseMCPServer {
             return await handleGetSystemInfo(args);
           case 'monitor_file_changes':
             return await handleMonitorFileChanges(args);
+          
+          // Tech Stack Tools
+          case 'generate_tech_stack_component':
+            return await techStackTools.generate_tech_stack_component.handler(args);
+          case 'analyze_tech_stack':
+            return await techStackTools.analyze_tech_stack.handler(args);
           
           default:
             throw new Error(`Unknown tool: ${name}`);
