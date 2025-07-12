@@ -15,6 +15,7 @@ import { financialProjectionsConfig } from './configs/financialProjectionsConfig
 import { riskAssessmentConfig } from './configs/riskAssessmentConfig'
 import { roadmapConfig } from './configs/roadmapConfig'
 import { kpiConfig } from './configs/kpiConfig'
+import { templateConfig } from './configs/templateConfig'
 
 // Import 20 new blueprint configurations
 import { problemStatementConfig } from './configs/problemStatementConfig'
@@ -76,6 +77,9 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
   'experiment': experimentConfig,
   'strategic-bet': strategicBetConfig,
   
+  // Template blueprint for testing
+  'template': templateConfig,
+  
   // TODO: Add remaining blueprint configs when needed
   // 'stakeholder-map': stakeholderMapConfig,
   // 'strategy-analytics': strategyAnalyticsConfig,
@@ -95,7 +99,8 @@ export const BLUEPRINT_CATEGORIES: Record<string, string[]> = {
   'Planning & Execution': ['okrs', 'problem-statement', 'workstream', 'epic', 'feature', 'business-model', 'go-to-market', 'gtm-play', 'risk-assessment', 'roadmap'],
   'User Experience': ['user-journey', 'experience-section', 'service-blueprint'],
   'Organizational & Technical': ['organisational-capability', 'tech-stack', 'technical-requirement'],
-  'Measurement': ['cost-driver', 'revenue-driver', 'kpis', 'financial-projections']
+  'Measurement': ['cost-driver', 'revenue-driver', 'kpis', 'financial-projections'],
+  'Template': ['template']
 }
 
 // Mandatory blueprints (always enabled)

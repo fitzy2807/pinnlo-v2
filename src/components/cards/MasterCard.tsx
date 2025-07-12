@@ -52,7 +52,8 @@ const getBlueprintPrefix = (cardType: string): string => {
     'kpis': 'KPI',
     'stakeholder-map': 'STK',
     'strategy-analytics': 'ANA',
-    'workspace-settings': 'SET'
+    'workspace-settings': 'SET',
+    'template': 'TPL'
   }
   
   return prefixMap[cardType] || 'GEN' // Default to 'GEN' for generic
@@ -344,7 +345,7 @@ export default function MasterCard({
       {!isExpanded && (
         <div className="space-y-3">
           {/* Tags Section - Only show in collapsed if tags exist */}
-          {cardData.tags.length > 0 && (
+          {cardData.tags && cardData.tags.length > 0 && (
             <div className="bg-blue-50 p-2 rounded-md border-l-2 border-blue-200">
               <div className="flex flex-wrap gap-1">
                 {cardData.tags.slice(0, 3).map((tag, index) => (
@@ -378,7 +379,7 @@ export default function MasterCard({
           )}
 
           {/* 2. Relationships Section */}
-          {cardData.relationships.length > 0 && (
+          {cardData.relationships && cardData.relationships.length > 0 && (
             <div className="bg-purple-50 p-3 rounded-md border-l-3 border-purple-300">
               <div className="flex items-center space-x-1 mb-2">
                 <Link2 size={12} className="text-purple-600" />
@@ -436,7 +437,7 @@ export default function MasterCard({
           </div>
 
           {/* 4. Tags Section */}
-          {cardData.tags.length > 0 && (
+          {cardData.tags && cardData.tags.length > 0 && (
             <div className="bg-blue-50 p-3 rounded-md border-l-3 border-blue-300">
               <div className="flex items-center space-x-1 mb-2">
                 <Tag size={12} className="text-blue-600" />
