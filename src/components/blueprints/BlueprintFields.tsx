@@ -21,11 +21,28 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
   }
 
   const getFieldValue = (field: BlueprintField) => {
-    const value = cardData[field.id]
+    // Safety check for field
+    if (!field || !field.id) {
+      return ''
+    }
     
-    // Return existing value if it exists
-    if (value !== undefined && value !== null) {
-      return value
+    // Handle dot notation fields (e.g., 'our_implementation.version_used')
+    if (field.id.includes('.')) {
+      const [parent, child] = field.id.split('.')
+      const parentValue = cardData[parent]
+      const value = parentValue?.[child]
+      
+      // Return existing value if it exists
+      if (value !== undefined && value !== null) {
+        return value
+      }
+    } else {
+      const value = cardData[field.id]
+      
+      // Return existing value if it exists
+      if (value !== undefined && value !== null) {
+        return value
+      }
     }
     
     // Return appropriate default based on field type
@@ -55,7 +72,7 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
             value={value}
             onChange={(e) => onChange(field.id, e.target.value)}
             placeholder={field.placeholder}
-            className="input"
+            className="input text-black"
             required={field.required}
           />
         )
@@ -66,7 +83,7 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
             value={value}
             onChange={(e) => onChange(field.id, e.target.value)}
             placeholder={field.placeholder}
-            className="input min-h-[80px]"
+            className="input min-h-[80px] text-black"
             required={field.required}
           />
         )
@@ -78,7 +95,7 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
             value={value}
             onChange={(e) => onChange(field.id, parseFloat(e.target.value) || 0)}
             placeholder={field.placeholder}
-            className="input"
+            className="input text-black"
             required={field.required}
             min={field.validation?.min}
             max={field.validation?.max}
@@ -145,7 +162,7 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
             value={value}
             onChange={(e) => onChange(field.id, e.target.value)}
             placeholder={field.placeholder}
-            className="input"
+            className="input text-black"
             required={field.required}
           />
         )
@@ -159,9 +176,10 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
 
     switch (field.type) {
       case 'array':
+        const arrayValue = Array.isArray(value) ? value : []
         return (
           <div className="flex flex-wrap gap-1">
-            {value.map((item: any, index: number) => (
+            {arrayValue.map((item: any, index: number) => (
               <span key={index} className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
                 {typeof item === 'string' ? item : JSON.stringify(item)}
               </span>

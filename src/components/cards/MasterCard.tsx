@@ -89,7 +89,25 @@ export default function MasterCard({
 
   const handleSave = async () => {
     console.log('🔄 Saving card:', editData)
-    await onUpdate(editData)
+    
+    // Transform CardData to TemplateCard format
+    const updateData = {
+      title: editData.title,
+      description: editData.description,
+      priority: editData.priority?.toLowerCase() as 'high' | 'medium' | 'low',
+      card_data: {
+        ...editData,
+        // Include all the CardData fields in card_data
+        confidenceLevel: editData.confidenceLevel,
+        priorityRationale: editData.priorityRationale,
+        confidenceRationale: editData.confidenceRationale,
+        tags: editData.tags,
+        relationships: editData.relationships,
+        strategicAlignment: editData.strategicAlignment
+      }
+    }
+    
+    await onUpdate(updateData)
     setIsEditing(false)
   }
 
@@ -238,17 +256,21 @@ export default function MasterCard({
       {/* Card Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
-          {/* Card ID with Blueprint Prefix */}
-          <div className="flex items-center space-x-1 mb-2">
-            <Hash size={10} className="text-gray-400" />
-            <span className="text-xs text-gray-500 font-mono font-semibold">{formattedId}</span>
-            {isPinned && <Pin size={12} className="text-yellow-500 flex-shrink-0 ml-2" />}
-          </div>
+          {/* Card ID with Blueprint Prefix - Only show when expanded */}
+          {isExpanded && (
+            <div className="flex items-center space-x-1 mb-2">
+              <Hash size={10} className="text-gray-400" />
+              <span className="text-xs text-gray-500 font-mono font-semibold">{formattedId}</span>
+              {isPinned && <Pin size={12} className="text-yellow-500 flex-shrink-0 ml-2" />}
+            </div>
+          )}
           
           <div className="flex items-center space-x-2 mb-2">
             <h3 className="font-semibold text-gray-900 text-sm leading-tight truncate">
               {cardData.title}
             </h3>
+            {/* Show pin indicator when collapsed */}
+            {isPinned && !isExpanded && <Pin size={12} className="text-yellow-500 flex-shrink-0" />}
           </div>
 
           {/* Description - Moved directly under title */}
@@ -504,7 +526,7 @@ export default function MasterCard({
                   type="text"
                   value={editData.title || ''}
                   onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
-                  className="input input-sm"
+                  className="input input-sm text-black"
                 />
               </div>
 
@@ -513,7 +535,7 @@ export default function MasterCard({
                 <textarea
                   value={editData.description || ''}
                   onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-                  className="input input-sm"
+                  className="input input-sm text-black"
                   rows={3}
                 />
               </div>
@@ -526,7 +548,7 @@ export default function MasterCard({
                 <textarea
                   value={editData.strategicAlignment || ''}
                   onChange={(e) => setEditData(prev => ({ ...prev, strategicAlignment: e.target.value }))}
-                  className="input input-sm"
+                  className="input input-sm text-black"
                   rows={2}
                   placeholder="How does this card align with your overall strategy?"
                 />
@@ -552,7 +574,7 @@ export default function MasterCard({
                     <select
                       value={editData.priority || 'Medium'}
                       onChange={(e) => setEditData(prev => ({ ...prev, priority: e.target.value as any }))}
-                      className="input input-sm"
+                      className="input input-sm text-black"
                     >
                       <option value="High">High</option>
                       <option value="Medium">Medium</option>
@@ -565,7 +587,7 @@ export default function MasterCard({
                     <select
                       value={editData.confidenceLevel || 'Medium'}
                       onChange={(e) => setEditData(prev => ({ ...prev, confidenceLevel: e.target.value as any }))}
-                      className="input input-sm"
+                      className="input input-sm text-black"
                     >
                       <option value="High">High</option>
                       <option value="Medium">Medium</option>
@@ -580,7 +602,7 @@ export default function MasterCard({
                     <textarea
                       value={editData.priorityRationale || ''}
                       onChange={(e) => setEditData(prev => ({ ...prev, priorityRationale: e.target.value }))}
-                      className="input input-sm"
+                      className="input input-sm text-black"
                       rows={2}
                       placeholder="Why is this priority level appropriate?"
                     />
@@ -591,7 +613,7 @@ export default function MasterCard({
                     <textarea
                       value={editData.confidenceRationale || ''}
                       onChange={(e) => setEditData(prev => ({ ...prev, confidenceRationale: e.target.value }))}
-                      className="input input-sm"
+                      className="input input-sm text-black"
                       rows={2}
                       placeholder="Why is this confidence level appropriate?"
                     />

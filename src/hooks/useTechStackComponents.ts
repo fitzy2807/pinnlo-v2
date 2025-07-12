@@ -144,15 +144,31 @@ export function useTechStackComponents(strategyId: number) {
         // Ensure universal card fields exist
         title: component.title || component.technology_name,
         description: component.description || `${component.category} technology`,
-        tags: component.tags || [],
-        relationships: component.relationships || [],
+        tags: Array.isArray(component.tags) ? component.tags : [],
+        relationships: Array.isArray(component.relationships) ? component.relationships : [],
         // Ensure JSONB fields are arrays/objects
-        primary_functions: component.primary_functions || [],
+        primary_functions: Array.isArray(component.primary_functions) ? component.primary_functions : [],
         our_implementation: component.our_implementation || {},
         our_integrations: component.our_integrations || {},
         our_workflow: component.our_workflow || {},
         our_support: component.our_support || {},
-        common_issues: component.common_issues || {}
+        common_issues: component.common_issues || {},
+        // Ensure nested array fields from blueprint config
+        'our_implementation.key_features_enabled': Array.isArray(component.our_implementation?.key_features_enabled) 
+          ? component.our_implementation.key_features_enabled 
+          : [],
+        'our_integrations.connects_to': Array.isArray(component.our_integrations?.connects_to) 
+          ? component.our_integrations.connects_to 
+          : [],
+        'our_integrations.data_flow_patterns': Array.isArray(component.our_integrations?.data_flow_patterns) 
+          ? component.our_integrations.data_flow_patterns 
+          : [],
+        'our_support.internal_expertise': Array.isArray(component.our_support?.internal_expertise) 
+          ? component.our_support.internal_expertise 
+          : [],
+        'common_issues.typical_problems': Array.isArray(component.common_issues?.typical_problems) 
+          ? component.common_issues.typical_problems 
+          : []
       }))
 
       setComponents(mappedComponents)
