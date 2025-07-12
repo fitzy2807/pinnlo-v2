@@ -6,7 +6,9 @@ import { useAuth } from '@/providers/AuthProvider'
 import { useStrategies } from '@/hooks/useStrategies'
 import { supabase } from '@/lib/supabase'
 import DevelopmentBank from './DevelopmentBank'
+import TechnicalRequirements from './TechnicalRequirements'
 import SpecificationDisplay from './SpecificationDisplay'
+import TaskList from './TaskList'
 import type { DevBankAsset } from '@/services/developmentBankService'
 
 interface DevelopmentBankModalProps {
@@ -31,7 +33,7 @@ export default function DevelopmentBankModal({
   const [currentTaskAsset, setCurrentTaskAsset] = useState<DevBankAsset | null>(null)
   const [selectedStack, setSelectedStack] = useState<any>(null)
   const [cards, setCards] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<string>('tech-stack')
+  const [activeTab, setActiveTab] = useState<string>('spec')
   
   // Supabase client is imported above
 
@@ -215,7 +217,9 @@ export default function DevelopmentBankModal({
           </div>
 
           <div className="space-y-3">
-            {strategies.map((strategy) => (
+            {strategies.map((strategy) => {
+              console.log('Strategy data:', strategy); // Debug log
+              return (
               <button
                 key={strategy.id}
                 onClick={() => setSelectedStrategyId(strategy.id.toString())}
@@ -224,16 +228,20 @@ export default function DevelopmentBankModal({
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-gray-900 group-hover:text-blue-900">
-                      {strategy.name}
+                      {strategy.title || strategy.name || `Strategy #${strategy.id}` || 'Untitled Strategy'}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
                       {strategy.description || 'No description provided'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      ID: {strategy.id} | User: {strategy.userId} | Status: {strategy.status || 'unknown'}
                     </p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-6 text-center">
@@ -288,8 +296,8 @@ export default function DevelopmentBankModal({
 
   // Main Development Bank interface
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full h-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
@@ -310,36 +318,26 @@ export default function DevelopmentBankModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Tab Navigation for Demo */}
           <div className="border-b border-gray-200 px-6">
             <nav className="flex space-x-8">
               <button
-                onClick={() => setActiveTab('tech-stack')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'tech-stack'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Tech Stack
-              </button>
-              <button
                 onClick={() => setActiveTab('spec')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'spec'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-600 hover:text-black hover:border-gray-300'
                 }`}
               >
-                Specifications
+                Technical Requirements
               </button>
               <button
                 onClick={() => setActiveTab('test')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'test'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-600 hover:text-black hover:border-gray-300'
                 }`}
               >
                 Test Scenarios
@@ -348,8 +346,8 @@ export default function DevelopmentBankModal({
                 onClick={() => setActiveTab('task')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'task'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-600 hover:text-black hover:border-gray-300'
                 }`}
               >
                 Task Lists
@@ -359,46 +357,11 @@ export default function DevelopmentBankModal({
 
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto">
-            {activeTab === 'tech-stack' && (
-              <DevelopmentBank 
+            {activeTab === 'spec' && (
+              <TechnicalRequirements 
                 strategyId={selectedStrategyId} 
                 onClose={onClose}
               />
-            )}
-
-            {activeTab === 'spec' && selectedStack && (
-              <div>
-                {!currentSpecAsset && !generatingSpec && (
-                  <div className="text-center py-12">
-                    <FileCode className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 mb-4">
-                      Generate technical specifications from your {cards.filter(c => c.card_type === 'feature').length} feature cards
-                    </p>
-                    <button 
-                      onClick={generateSpecification}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Generate Specification</span>
-                    </button>
-                  </div>
-                )}
-                
-                <SpecificationDisplay
-                  asset={currentSpecAsset}
-                  loading={generatingSpec}
-                  onRegenerate={generateSpecification}
-                />
-              </div>
-            )}
-
-            {activeTab === 'spec' && !selectedStack && (
-              <div className="text-center py-12">
-                <FileCode className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-4">
-                  Select a tech stack first to generate specifications
-                </p>
-              </div>
             )}
 
             {activeTab === 'test' && selectedStack && (
@@ -411,7 +374,7 @@ export default function DevelopmentBankModal({
                     </p>
                     <button 
                       onClick={generateTestScenarios}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
+                      className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors inline-flex items-center space-x-2"
                     >
                       <Sparkles className="w-4 h-4" />
                       <span>Generate Test Scenarios</span>
@@ -436,39 +399,8 @@ export default function DevelopmentBankModal({
               </div>
             )}
 
-            {activeTab === 'task' && selectedStack && (
-              <div>
-                {!currentTaskAsset && !generatingTasks && (
-                  <div className="text-center py-12">
-                    <ListTodo className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 mb-4">
-                      Break down features into actionable development tasks
-                    </p>
-                    <button 
-                      onClick={generateTaskList}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Generate Task List</span>
-                    </button>
-                  </div>
-                )}
-                
-                <SpecificationDisplay
-                  asset={currentTaskAsset}
-                  loading={generatingTasks}
-                  onRegenerate={generateTaskList}
-                />
-              </div>
-            )}
-
-            {activeTab === 'task' && !selectedStack && (
-              <div className="text-center py-12">
-                <ListTodo className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-4">
-                  Select a tech stack first to generate task lists
-                </p>
-              </div>
+            {activeTab === 'task' && (
+              <TaskList strategyId={selectedStrategyId} />
             )}
           </div>
         </div>

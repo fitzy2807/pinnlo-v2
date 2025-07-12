@@ -2,68 +2,16 @@
 
 export const developmentBankTools = [
   {
-    name: 'generate_tech_stack_recommendations',
-    description: 'Generate AI-powered technology stack recommendations based on project requirements',
+    name: 'generate_technical_requirement',
+    description: 'Generate comprehensive technical requirements using Claude 4 based on selected features',
     inputSchema: {
       type: 'object',
       properties: {
-        companyProfile: {
-          type: 'object',
-          properties: {
-            size: { 
-              type: 'string', 
-              enum: ['startup', 'growth', 'enterprise'] 
-            },
-            budget: { 
-              type: 'object',
-              properties: {
-                min: { type: 'number' },
-                max: { type: 'number' },
-                currency: { type: 'string' }
-              }
-            },
-            teamSize: { type: 'number' },
-            existingSkills: { 
-              type: 'array', 
-              items: { type: 'string' } 
-            }
-          },
-          required: ['size', 'budget']
-        },
-        projectRequirements: {
-          type: 'object',
-          properties: {
-            projectType: { 
-              type: 'array',
-              items: { type: 'string' }
-            },
-            features: {
-              type: 'array',
-              items: { type: 'string' }
-            },
-            constraints: {
-              type: 'object',
-              properties: {
-                hasRealtime: { type: 'boolean' },
-                hasAuth: { type: 'boolean' },
-                hasPayments: { type: 'boolean' },
-                scalability: { type: 'boolean' },
-                performance: { type: 'string' },
-                compliance: { 
-                  type: 'array',
-                  items: { type: 'string' }
-                }
-              }
-            }
-          },
-          required: ['projectType']
-        },
         strategyContext: {
           type: 'object',
           properties: {
-            vision: { type: 'string' },
-            targetMarket: { type: 'string' },
-            timeframe: { type: 'string' },
+            title: { type: 'string' },
+            description: { type: 'string' },
             cards: {
               type: 'array',
               items: {
@@ -71,106 +19,32 @@ export const developmentBankTools = [
                 properties: {
                   title: { type: 'string' },
                   description: { type: 'string' },
-                  cardType: { type: 'string' },
-                  techConsiderations: { type: 'string' }
+                  card_type: { type: 'string' }
                 }
               }
             }
           }
-        }
-      },
-      required: ['companyProfile', 'projectRequirements']
-    }
-  },
-  {
-    name: 'generate_technical_specification',
-    description: 'Generate technical specifications from feature cards and tech stack',
-    inputSchema: {
-      type: 'object',
-      properties: {
+        },
         features: {
           type: 'array',
           items: {
             type: 'object',
             properties: {
               id: { type: 'string' },
-              title: { type: 'string' },
-              description: { type: 'string' },
-              userStories: { type: 'object' },
-              acceptanceCriteria: { type: 'object' },
-              techConsiderations: { type: 'string' },
-              dependencies: { type: 'array', items: { type: 'string' } },
-              linkedPersona: { type: 'string' }
+              name: { type: 'string' },
+              description: { type: 'string' }
             }
-          }
-        },
-        epics: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              title: { type: 'string' },
-              description: { type: 'string' },
-              outcomes: { type: 'array' },
-              successCriteria: { type: 'array' }
-            }
-          }
-        },
-        techStack: {
-          type: 'object',
-          properties: {
-            stackName: { type: 'string' },
-            layers: { type: 'object' }
           }
         },
         options: {
           type: 'object',
           properties: {
-            format: { 
-              type: 'string', 
-              enum: ['ai-ready', 'markdown', 'detailed'] 
-            },
-            includeExamples: { type: 'boolean' },
-            includeDiagrams: { type: 'boolean' }
-          }
-        }
-      },
-      required: ['features', 'techStack']
-    }
-  },
-  {
-    name: 'generate_test_scenarios',
-    description: 'Generate test scenarios from feature acceptance criteria',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        features: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              title: { type: 'string' },
-              acceptanceCriteria: { type: 'object' },
-              userStories: { type: 'object' },
-              linkedPersona: { type: 'string' }
-            }
-          }
-        },
-        techStack: {
-          type: 'object',
-          properties: {
-            stackName: { type: 'string' },
-            layers: { type: 'object' }
-          }
-        },
-        options: {
-          type: 'object',
-          properties: {
-            includeEdgeCases: { type: 'boolean' },
-            includeTestData: { type: 'boolean' },
-            format: { type: 'string', enum: ['bdd', 'standard', 'ai-ready'] }
+            model: { type: 'string', enum: ['claude-4', 'gpt-4'] },
+            includeArchitecture: { type: 'boolean' },
+            includeDataModels: { type: 'boolean' },
+            includeAPIs: { type: 'boolean' },
+            includeSecurityRequirements: { type: 'boolean' },
+            format: { type: 'string', enum: ['comprehensive', 'concise'] }
           }
         }
       },
@@ -178,109 +52,142 @@ export const developmentBankTools = [
     }
   },
   {
-    name: 'generate_task_list',
-    description: 'Generate development tasks from features and epics',
+    name: 'commit_trd_to_task_list',
+    description: 'Commit a Technical Requirements Document to a structured task list with categories and tasks',
     inputSchema: {
       type: 'object',
       properties: {
-        features: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              title: { type: 'string' },
-              description: { type: 'string' },
-              dependencies: { type: 'array', items: { type: 'string' } },
-              estimation: { type: 'string' }
-            }
-          }
-        },
-        epics: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string' },
-              title: { type: 'string' },
-              milestones: { type: 'object' }
-            }
-          }
-        },
-        techStack: {
+        trdId: { type: 'string' },
+        trdTitle: { type: 'string' },
+        trdContent: {
           type: 'object',
           properties: {
-            stackName: { type: 'string' },
-            layers: { type: 'object' }
+            featureRequirements: { type: 'object' },
+            technicalArchitecture: { type: 'object' },
+            securityRequirements: { type: 'object' },
+            performanceRequirements: { type: 'object' }
           }
-        }
+        },
+        strategyId: { type: 'string' },
+        userId: { type: 'string' }
       },
-      required: ['features', 'techStack']
+      required: ['trdId', 'trdTitle', 'strategyId', 'userId']
     }
   }
 ];
 
-export async function handleGenerateTechStackRecommendations(args: any) {
+export async function handleGenerateTechnicalRequirement(args: any) {
   try {
-    // Debug: Preparing tech stack recommendation request
+    console.log('🚀 Generating technical requirement with Claude 4');
     
-    const { companyProfile, projectRequirements, strategyContext } = args;
+    const { strategyContext, features, options = {} } = args;
     
-    // Build the prompt for AI
-    const systemPrompt = `You are an expert technology architect helping companies choose the right tech stack.
-Your recommendations should be:
-1. Practical and proven in production
-2. Aligned with team skills and budget
-3. Scalable for future growth
-4. Based on current best practices (as of 2024)
-5. Include specific version numbers where relevant
+    // Build comprehensive context
+    const featureList = features.map((f: any) => `- **${f.name}**: ${f.description}`).join('\n');
+    
+    const strategyInfo = strategyContext ? 
+      `Strategy: ${strategyContext.title}\n${strategyContext.description}\n\nRelated Cards:\n${strategyContext.cards?.map((c: any) => `- ${c.title}: ${c.description}`).join('\n') || 'None'}` : 
+      'No strategy context provided';
+    
+    // Create comprehensive prompt for Claude 4
+    const systemPrompt = `You are a senior technical architect with 15+ years of experience creating comprehensive technical requirements documents. You specialize in translating business features into detailed, actionable technical specifications.
 
-For each recommendation, provide:
-- Clear rationale for why it fits their needs
-- Monthly cost estimates
-- Pros and cons
-- Common pairings with other technologies`;
+Your technical requirements should be:
+1. **Comprehensive**: Cover all technical aspects needed for implementation
+2. **Specific**: Include concrete details, not generic statements
+3. **Actionable**: Developers can use this to build the system
+4. **Structured**: Well-organized with clear sections
+5. **Complete**: Address architecture, data models, APIs, security, and performance
 
-    const userPrompt = `Generate 2-3 tech stack recommendations for:
+Always consider:
+- System architecture and component design
+- Data models and database schema requirements
+- API design and integration patterns
+- Security and authentication requirements
+- Performance and scalability considerations
+- Error handling and edge cases
+- Testing strategies
+- Deployment and infrastructure needs
 
-Company Profile:
-- Size: ${companyProfile.size}
-- Budget: ${companyProfile.budget.min}-${companyProfile.budget.max} ${companyProfile.budget.currency}/month
-- Team Size: ${companyProfile.teamSize || 'Not specified'}
-- Existing Skills: ${companyProfile.existingSkills?.join(', ') || 'Not specified'}
+Format your response as a comprehensive technical requirements document.`;
 
-Project Requirements:
-- Type: ${projectRequirements.projectType.join(', ')}
-- Key Features: ${projectRequirements.features?.join(', ') || 'Standard web app features'}
-- Constraints: ${JSON.stringify(projectRequirements.constraints)}
+    const userPrompt = `Generate comprehensive technical requirements for the following features:
 
-${strategyContext ? `Strategy Context:
-- Vision: ${strategyContext.vision || 'Not specified'}
-- Target Market: ${strategyContext.targetMarket || 'Not specified'}
-- Timeframe: ${strategyContext.timeframe || 'Not specified'}` : ''}
+${featureList}
 
-Return a JSON array with 2-3 recommendations. Each should have:
-{
-  "stackName": "Descriptive name",
-  "stackType": "ai-generated",
-  "layers": {
-    "frontend": [{ "vendor": "...", "product": "...", "version": "...", "pricing": { "model": "free|freemium|usage|seat|flat", "monthlyCost": 0 }, "rationale": "..." }],
-    "backend": [...],
-    "database": [...],
-    "infrastructure": [...],
-    "auth": [...],
-    "monitoring": [...]
-  },
-  "metadata": {
-    "totalMonthlyCost": 0,
-    "confidenceScore": 0.0-1.0,
-    "strengths": ["..."],
-    "considerations": ["..."],
-    "bestFor": "..."
-  }
-}`;
+**Project Context:**
+${strategyInfo}
 
-    // Return the prepared prompt data for the HTTP server or API to process
+**Requirements to Include:**
+${options.includeArchitecture !== false ? '✓ System Architecture' : ''}
+${options.includeDataModels !== false ? '✓ Data Models & Database Schema' : ''}
+${options.includeAPIs !== false ? '✓ API Specifications' : ''}
+${options.includeSecurityRequirements !== false ? '✓ Security Requirements' : ''}
+
+**Output Format:** ${options.format || 'comprehensive'}
+
+Create a detailed technical requirements document that covers:
+
+1. **Executive Summary**
+   - Brief overview of the technical solution
+   - Key architectural decisions
+
+2. **System Architecture**
+   - High-level system design
+   - Component interactions
+   - Technology stack recommendations
+
+3. **Feature-Specific Requirements**
+   For each feature, provide:
+   - Technical implementation approach
+   - Required components/services
+   - Data flow and processing
+   - Integration points
+
+4. **Data Architecture**
+   - Database schema design
+   - Data models and relationships
+   - Data validation rules
+   - Migration strategies
+
+5. **API Specifications**
+   - Endpoint definitions
+   - Request/response formats
+   - Authentication methods
+   - Rate limiting and throttling
+
+6. **Security Requirements**
+   - Authentication and authorization
+   - Data encryption and protection
+   - Input validation and sanitization
+   - Security headers and protocols
+
+7. **Performance & Scalability**
+   - Performance targets and metrics
+   - Caching strategies
+   - Load balancing approaches
+   - Database optimization
+
+8. **Infrastructure Requirements**
+   - Hosting and deployment needs
+   - Environment configurations
+   - Monitoring and logging
+   - Backup and disaster recovery
+
+9. **Testing Strategy**
+   - Unit testing requirements
+   - Integration testing approach
+   - Performance testing criteria
+   - Security testing protocols
+
+10. **Implementation Guidelines**
+    - Development standards and conventions
+    - Code organization and structure
+    - Documentation requirements
+    - Version control strategies
+
+Ensure the document is detailed enough that a development team can use it to implement the features successfully.`;
+
     return {
       content: [
         {
@@ -292,24 +199,29 @@ Return a JSON array with 2-3 recommendations. Each should have:
               user: userPrompt
             },
             config: {
-              model: 'gpt-4-turbo-preview',
-              temperature: 0.7,
-              responseFormat: 'json'
+              model: options.model || 'claude-4', // Explicitly use Claude 4
+              temperature: 0.3, // Lower temperature for more consistent technical output
+              max_tokens: 4000
             },
-            requestData: args
+            metadata: {
+              features: features.map((f: any) => f.name),
+              featureCount: features.length,
+              generatedWith: 'claude-4',
+              timestamp: new Date().toISOString()
+            }
           })
         }
       ]
     };
   } catch (error: any) {
-    console.error('❌ Error preparing tech stack recommendation request:', error);
+    console.error('❌ Error generating technical requirement:', error);
     return {
       content: [
         {
           type: 'text',
           text: JSON.stringify({
             success: false,
-            error: error.message || 'Failed to prepare recommendation request'
+            error: error.message || 'Failed to generate technical requirement'
           })
         }
       ],
@@ -318,67 +230,123 @@ Return a JSON array with 2-3 recommendations. Each should have:
   }
 }
 
-export async function handleGenerateTechnicalSpecification(args: any) {
+export async function handleCommitTrdToTaskList(args: any) {
   try {
-    // Debug: Generating technical specification
+    console.log('📋 MCP: Committing TRD to structured task list');
+    console.log('📊 MCP: Input data:', JSON.stringify(args, null, 2));
     
-    const { features, epics, techStack, options = {} } = args;
-    const format = options.format || 'ai-ready';
+    const { trdId, trdTitle, trdContent, strategyId, userId } = args;
     
-    // Extract key information from features
-    const featureRequirements = features.map((f: any) => ({
-      title: f.title,
-      stories: f.userStories,
-      acceptance: f.acceptanceCriteria,
-      technical: f.techConsiderations,
-      dependencies: f.dependencies || []
-    }));
-    
-    // Build tech context
-    const techContext = Object.entries(techStack.layers)
-      .map(([layer, choices]) => 
-        `${layer}: ${(choices as any[]).map((c: any) => c.product).join(', ')}`
-      ).join('\n');
-    
-    // Create the specification prompt
-    const systemPrompt = `You are a senior technical architect creating comprehensive technical specifications.
-Your specifications should be:
-1. Detailed and actionable for developers
-2. Specific to the chosen tech stack
-3. Include concrete implementation details
-4. Address security, performance, and scalability
-5. Follow industry best practices
+    // Create system prompt for generating structured task list
+    const systemPrompt = `You are a senior technical project manager who creates comprehensive implementation plans from Technical Requirements Documents.
 
-Format: ${format === 'ai-ready' ? 'Optimized for AI coding assistants' : 
-         format === 'markdown' ? 'Well-structured markdown documentation' : 
-         'Detailed technical documentation'}`;
+Your task is to convert a TRD into a structured task list with 9 categories of development tasks. Each task should be:
+1. **Specific and Actionable** - Can be completed by a developer in 1-5 days
+2. **Well-Defined** - Clear acceptance criteria and definition of done
+3. **Properly Categorized** - Fits into the correct implementation category
+4. **Effort-Estimated** - Realistic story point estimates (1-13 scale)
+5. **Dependency-Aware** - Understands what blocks what
 
-    const userPrompt = `Generate a technical specification for the following features:
+You must create tasks across these 9 categories:
+1. 🏗️ Infrastructure & Foundation (INFRA-001, INFRA-002, etc.)
+2. 🔐 Security & Authentication (SEC-001, SEC-002, etc.)
+3. 🗄️ Database & Data Management (DATA-001, DATA-002, etc.)
+4. 🔄 Real-Time & Collaboration (RT-001, RT-002, etc.)
+5. 🎨 Frontend & User Experience (FE-001, FE-002, etc.)
+6. 🔌 API & Integration (API-001, API-002, etc.)
+7. 🧪 Testing & Quality Assurance (QA-001, QA-002, etc.)
+8. 📊 Monitoring & Observability (MON-001, MON-002, etc.)
+9. 📚 Documentation & Knowledge Transfer (DOC-001, DOC-002, etc.)
 
-Features:
-${JSON.stringify(featureRequirements, null, 2)}
+Return a JSON object with this structure:
+{
+  "taskListMetadata": {
+    "name": "Implementation Plan: [TRD Title]",
+    "status": "Not Started",
+    "priority": "Critical",
+    "estimatedEffort": [total story points],
+    "totalTasks": [number of tasks]
+  },
+  "categories": [
+    {
+      "id": "infrastructure",
+      "name": "Infrastructure & Foundation", 
+      "icon": "🏗️",
+      "estimatedEffort": [category total points],
+      "taskCount": [number of tasks in category]
+    },
+    // ... other categories
+  ],
+  "tasks": [
+    {
+      "taskId": "INFRA-001",
+      "title": "Development Environment Setup",
+      "category": "infrastructure",
+      "priority": "Critical",
+      "effort": 3,
+      "status": "Not Started",
+      "description": {
+        "objective": "Configure local development environment with Docker",
+        "businessValue": "Enables team productivity and consistent development",
+        "technicalContext": "Based on TRD infrastructure requirements"
+      },
+      "acceptanceCriteria": [
+        {"criterion": "Docker containers running locally", "status": "Not Started"},
+        {"criterion": "Database migrations execute successfully", "status": "Not Started"},
+        {"criterion": "All team members can run project locally", "status": "Not Started"}
+      ],
+      "dependencies": {
+        "blocks": ["INFRA-002"],
+        "blockedBy": [],
+        "related": []
+      },
+      "technicalImplementation": {
+        "approach": "Use Docker Compose for local development stack",
+        "filesToCreate": [
+          {"path": "docker-compose.yml", "status": "Not Started"},
+          {"path": "Dockerfile", "status": "Not Started"},
+          {"path": "README.md", "status": "Not Started"}
+        ]
+      },
+      "definitionOfDone": [
+        "All acceptance criteria met",
+        "Code review approved", 
+        "Tests passing with >90% coverage",
+        "Documentation updated"
+      ]
+    },
+    // ... more tasks
+  ]
+}`;
 
-${epics ? `Epics Context:\n${JSON.stringify(epics.map((e: any) => ({ title: e.title, outcomes: e.outcomes })), null, 2)}\n` : ''}
+    const userPrompt = `Convert this Technical Requirements Document into a comprehensive implementation task list:
 
-Tech Stack:
-${techContext}
+**TRD Title:** ${trdTitle}
+**TRD ID:** ${trdId}
 
-Create a comprehensive technical specification that includes:
-1. Overview and objectives
-2. System architecture
-3. Data models and schemas
-4. API specifications
-5. Security requirements
-6. Performance considerations
-7. Implementation guidelines
-8. Testing approach
+**TRD Content:**
+${JSON.stringify(trdContent, null, 2)}
 
-${format === 'ai-ready' ? 'Format the output to be easily consumed by AI coding assistants like Claude or Cursor.' :
-  format === 'markdown' ? 'Use proper markdown formatting with headers, code blocks, and lists.' :
-  'Provide detailed technical documentation suitable for a development team.'}
+Create 15-25 specific, actionable development tasks distributed across all 9 categories. Each task should:
 
-${options.includeExamples ? 'Include code examples for key implementations.' : ''}
-${options.includeDiagrams ? 'Include mermaid diagrams for architecture and data flow.' : ''}`;
+1. **Be derived from the TRD content** - Reference specific requirements, architecture decisions, security needs, etc.
+2. **Include realistic effort estimates** - Use story points (1=very simple, 3=small, 5=medium, 8=large, 13=very large)
+3. **Have clear acceptance criteria** - 2-5 specific, testable requirements
+4. **Specify files to create** - Actual file paths and names developers will work on
+5. **Define dependencies** - Which tasks block or depend on others
+6. **Include implementation guidance** - Technical approach and considerations
+
+Focus on:
+- Infrastructure setup based on TRD architecture requirements
+- Security implementation from TRD security requirements  
+- Database design from TRD data architecture
+- API development from TRD API specifications
+- Frontend components from TRD user interface requirements
+- Testing strategies from TRD quality requirements
+- Monitoring from TRD performance requirements
+- Documentation from TRD technical specifications
+
+Make each task specific enough that a developer could pick it up and complete it without asking clarifying questions.`;
 
     return {
       content: [
@@ -386,126 +354,40 @@ ${options.includeDiagrams ? 'Include mermaid diagrams for architecture and data 
           type: 'text',
           text: JSON.stringify({
             success: true,
-            tool: 'generate_technical_specification',
-            prompt: {
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt }
-              ],
-              model: 'gpt-4-turbo-preview',
-              temperature: 0.7,
-              max_tokens: 4000
+            prompts: {
+              system: systemPrompt,
+              user: userPrompt
+            },
+            config: {
+              model: 'claude-4',
+              temperature: 0.3,
+              max_tokens: 6000
+            },
+            metadata: {
+              trdId,
+              trdTitle,
+              strategyId,
+              userId,
+              generatedWith: 'claude-4',
+              timestamp: new Date().toISOString()
             }
           })
         }
       ]
     };
   } catch (error: any) {
-    console.error('❌ Error preparing technical specification:', error);
+    console.error('❌ MCP: Error committing TRD to task list:', error);
     return {
       content: [
         {
           type: 'text',
           text: JSON.stringify({
             success: false,
-            error: error.message || 'Failed to prepare specification'
+            error: error.message || 'Failed to commit TRD to task list'
           })
         }
       ],
       isError: true
     };
-  }
-}
-
-export async function handleGenerateTestScenarios(args: any) {
-  try {
-    // Debug: Generating test scenarios
-    
-    const { features, techStack, options = {} } = args;
-    const format = options.format || 'ai-ready';
-    
-    const systemPrompt = `You are a QA architect creating comprehensive test scenarios.
-Create test scenarios that:
-1. Cover all acceptance criteria
-2. Include positive, negative, and edge cases
-3. Are specific to the tech stack
-4. Include test data examples
-5. Follow ${format} format`;
-
-    const userPrompt = `Generate test scenarios for these features:
-${JSON.stringify(features, null, 2)}
-
-Tech Stack: ${techStack.stackName}
-
-Create scenarios in ${format} format with:
-- Happy path tests
-- Error scenarios
-- Edge cases
-- Performance tests
-- Security tests
-${options.includeTestData ? 'Include sample test data' : ''}`;
-
-    return {
-      success: true,
-      tool: 'generate_test_scenarios',
-      prompt: {
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        model: 'gpt-4-turbo-preview',
-        temperature: 0.7
-      }
-    };
-  } catch (error: any) {
-    console.error('❌ Error preparing test scenarios:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-export async function handleGenerateTaskList(args: any) {
-  try {
-    // Debug: Generating task list
-    
-    const { features, epics, techStack } = args;
-    
-    const systemPrompt = `You are a technical project manager breaking down features into development tasks.
-Create tasks that:
-1. Are atomic and completable in 1-3 days
-2. Include clear acceptance criteria
-3. Consider dependencies
-4. Are specific to the tech stack
-5. Include effort estimates`;
-
-    const userPrompt = `Break down these features into development tasks:
-${JSON.stringify(features, null, 2)}
-
-${epics ? `Epics context:\n${JSON.stringify(epics, null, 2)}\n` : ''}
-
-Tech Stack: ${techStack.stackName}
-
-For each task provide:
-- Task title
-- Description
-- Dependencies
-- Effort estimate (hours)
-- Acceptance criteria
-- Implementation notes`;
-
-    return {
-      success: true,
-      tool: 'generate_task_list',
-      prompt: {
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        model: 'gpt-4-turbo-preview',
-        temperature: 0.7
-      }
-    };
-  } catch (error: any) {
-    console.error('❌ Error preparing task list:', error);
-    return { success: false, error: error.message };
   }
 }

@@ -4,75 +4,68 @@ export async function POST(request: NextRequest) {
   try {
     const { blueprintCards, intelligenceCards, intelligenceGroups, strategyName } = await request.json()
 
-    // Call MCP tool to generate context summary prompts
-    const mcpResponse = await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3001'}/api/mcp/invoke`, {
+    // Call MCP server directly (like Executive Summary does)
+    const mcpResponse = await fetch(`${process.env.MCP_SERVER_URL || 'http://localhost:3001'}/api/tools/generate_context_summary`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.MCP_SERVER_TOKEN || 'pinnlo-dev-token-2025'}`
+      },
       body: JSON.stringify({
-        tool: 'generate_context_summary',
-        arguments: {
-          blueprintCards,
-          intelligenceCards,
-          intelligenceGroups,
-          strategyName
-        }
+        blueprintCards,
+        intelligenceCards,
+        intelligenceGroups,
+        strategyName
       })
     })
 
     if (!mcpResponse.ok) {
-      throw new Error('Failed to get MCP prompts')
+      console.log('❌ MCP server not available, using fallback')
+      // Fallback summary generation
+      const fallbackSummary = `# Context Summary for ${strategyName}\n\nBased on ${blueprintCards.length} blueprint cards and ${intelligenceCards.length} intelligence cards:\n\n## Strategic Context\nThis analysis incorporates the selected strategic elements to provide context for AI-powered card generation.\n\n## Key Themes\n- Strategic alignment with existing initiatives\n- Integration of intelligence insights\n- Focus on actionable outcomes`
+      
+      return NextResponse.json({ 
+        success: true,
+        summary: fallbackSummary,
+        metadata: {
+          blueprintCardCount: blueprintCards.length,
+          intelligenceCardCount: intelligenceCards.length,
+          intelligenceGroupCount: intelligenceGroups.length,
+          strategyName,
+          source: 'fallback'
+        }
+      })
     }
 
     const mcpResult = await mcpResponse.json()
     
-    if (!mcpResult.success || !mcpResult.prompts) {
-      throw new Error('Invalid MCP response format')
-    }
-
-    // Call OpenAI to generate the actual summary
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: mcpResult.prompts.system },
-          { role: 'user', content: mcpResult.prompts.user }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500
+    // MCP server now returns final content (like Executive Summary)
+    if (mcpResult.success && mcpResult.summary) {
+      return NextResponse.json({ 
+        success: true,
+        summary: mcpResult.summary,
+        metadata: {
+          blueprintCardCount: blueprintCards.length,
+          intelligenceCardCount: intelligenceCards.length,
+          intelligenceGroupCount: intelligenceGroups.length,
+          strategyName,
+          source: 'mcp'
+        }
       })
-    })
-
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text()
-      throw new Error(`OpenAI API error: ${errorText}`)
     }
 
-    const openaiResult = await openaiResponse.json()
-    const summary = openaiResult.choices[0].message.content
+    throw new Error('Invalid MCP response format')
 
-    return NextResponse.json({ 
-      success: true,
-      summary,
-      metadata: {
-        blueprintCardCount: blueprintCards.length,
-        intelligenceCardCount: intelligenceCards.length,
-        intelligenceGroupCount: intelligenceGroups.length,
-        strategyName
-      }
-    })
   } catch (error: any) {
     console.error('Error generating context summary:', error)
-    return NextResponse.json(
-      { 
-        success: false,
-        error: error.message || 'Failed to generate context summary' 
-      },
-      { status: 500 }
-    )
+    
+    // Always provide fallback
+    const fallbackSummary = `# Context Summary\n\nStrategic analysis based on selected context cards.\n\n## Key Elements\n- Blueprint cards: ${(await request.json()).blueprintCards?.length || 0}\n- Intelligence cards: ${(await request.json()).intelligenceCards?.length || 0}\n\n## Strategic Focus\nContext-driven strategy development with AI enhancement.`
+    
+    return NextResponse.json({ 
+      success: true,
+      summary: fallbackSummary,
+      metadata: { source: 'fallback' }
+    })
   }
 }

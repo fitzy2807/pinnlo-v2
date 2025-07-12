@@ -12,8 +12,14 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { createClient } from '@supabase/supabase-js';
-import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards } from './tools/strategy-creator-tools.js';
+import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards, handleGenerateUniversalExecutiveSummary } from './tools/strategy-creator-tools.js';
 import { intelligenceTools, handleAnalyzeUrl, handleProcessIntelligenceText, handleGenerateAutomationIntelligence } from './tools/ai-generation.js';
+import { 
+  developmentBankTools, 
+  handleGenerateTechnicalRequirement,
+  handleCommitTrdToTaskList
+} from './tools/development-bank-tools.js';
+import { batchedDevelopmentBankTools, handleCommitTrdToTaskListBatched } from './tools/development-bank-tools-batched.js';
 import { 
   terminalTools, 
   handleExecuteCommand, 
@@ -111,6 +117,10 @@ class SupabaseMCPServer {
         ...strategyCreatorTools,
         // Add all intelligence tools
         ...intelligenceTools,
+        // Add all development bank tools
+        ...developmentBankTools,
+        // Add all batched development bank tools
+        ...batchedDevelopmentBankTools,
         // Add all terminal tools
         ...terminalTools
       ];
@@ -133,6 +143,22 @@ class SupabaseMCPServer {
             return await handleGenerateContextSummary(args);
           case 'generate_strategy_cards':
             return await handleGenerateStrategyCards(args);
+          case 'generate_universal_executive_summary':
+            return await handleGenerateUniversalExecutiveSummary(args);
+          
+          // Development Bank Tools
+          case 'generate_technical_requirement':
+            return await handleGenerateTechnicalRequirement(args);
+          case 'generate_tech_stack_recommendations':
+            return await handleGenerateTechStackRecommendations(args);
+          case 'generate_technical_specification':
+            return await handleGenerateTechnicalSpecification(args);
+          case 'generate_test_scenarios':
+            return await handleGenerateTestScenarios(args);
+          case 'generate_task_list':
+            return await handleGenerateTaskList(args);
+          case 'commit_trd_to_task_list_batched':
+            return await handleCommitTrdToTaskListBatched(args);
           
           // Intelligence Tools
           case 'analyze_url':

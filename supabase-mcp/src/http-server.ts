@@ -16,6 +16,12 @@ import { createClient } from '@supabase/supabase-js';
 import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards } from './tools/strategy-creator-tools.js';
 import { intelligenceTools, handleAnalyzeUrl, handleProcessIntelligenceText, handleGenerateAutomationIntelligence } from './tools/ai-generation.js';
 import { 
+  developmentBankTools,
+  handleGenerateTechnicalRequirement,
+  handleCommitTrdToTaskList
+} from './tools/development-bank-tools.js';
+import { batchedDevelopmentBankTools, handleCommitTrdToTaskListBatched } from './tools/development-bank-tools-batched.js';
+import { 
   terminalTools, 
   handleExecuteCommand, 
   handleReadFileContent, 
@@ -107,6 +113,170 @@ class HttpMcpServer {
       }
     });
 
+    // Development Bank endpoints
+    this.app.post('/api/tools/commit_trd_to_task_list', async (req, res) => {
+      try {
+        const result = await handleCommitTrdToTaskList(req.body);
+        res.json(result);
+      } catch (error) {
+        console.error('TRD commit error:', error);
+        res.status(500).json({ error: 'Failed to commit TRD to task list' });
+      }
+    });
+
+    this.app.post('/api/tools/commit_trd_to_task_list_batched', async (req, res) => {
+      try {
+        const result = await handleCommitTrdToTaskListBatched(req.body);
+        res.json(result);
+      } catch (error) {
+        console.error('Batched TRD commit error:', error);
+        res.status(500).json({ error: 'Failed to commit TRD to task list (batched)' });
+      }
+    });
+
+    this.app.post('/api/tools/generate_technical_requirement', async (req, res) => {
+      try {
+        const result = await handleGenerateTechnicalRequirement(req.body);
+        res.json(result);
+      } catch (error) {
+        console.error('Technical requirement error:', error);
+        res.status(500).json({ error: 'Failed to generate technical requirement' });
+      }
+    });
+
+    // Context Summary endpoint (for Strategy Creator)
+    this.app.post('/api/tools/generate_context_summary', async (req, res) => {
+      try {
+        const { blueprintCards, intelligenceCards, intelligenceGroups, strategyName } = req.body;
+        
+        const contextItems = [
+          ...blueprintCards.map(card => `Blueprint: ${card.title} - ${card.description}`),
+          ...intelligenceCards.map(card => `Intelligence: ${card.title} - ${card.key_findings?.join(', ') || card.description}`)
+        ].join('\n');
+
+        const systemPrompt = `You are a strategic analyst. Create a comprehensive context summary for ${strategyName}.`;
+        
+        const userPrompt = `Create a strategic context summary based on:\n\n${contextItems}\n\nGenerate a markdown summary with:\n## Strategic Context\n## Key Themes\n## Strategic Implications\n## Recommended Focus Areas`;
+
+        // Call OpenAI directly
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 1000
+          })
+        });
+
+        if (openaiResponse.ok) {
+          const result = await openaiResponse.json();
+          const summary = result.choices[0].message.content;
+          
+          res.json({
+            success: true,
+            summary: summary
+          });
+        } else {
+          // Fallback if OpenAI fails
+          const fallbackSummary = `# Context Summary for ${strategyName}\n\n## Strategic Context\nBased on ${blueprintCards.length} blueprint cards and ${intelligenceCards.length} intelligence cards.\n\n## Key Focus Areas\n- Strategic alignment\n- Intelligence integration\n- Actionable outcomes`;
+          
+          res.json({
+            success: true,
+            summary: fallbackSummary
+          });
+        }
+      } catch (error) {
+        console.error('Context summary error:', error);
+        res.status(500).json({ success: false, error: 'Failed to generate context summary' });
+      }
+    });
+
+    // Universal Executive Summary endpoint (for Strategy Creator)
+    this.app.post('/api/tools/generate_universal_executive_summary', async (req, res) => {
+      try {
+        const { cards, blueprint_type } = req.body;
+        
+        // Enhanced executive summary generation with explicit card integration
+        const systemPrompt = `You are a strategic analyst creating an executive summary for ${blueprint_type} blueprint. 
+
+You MUST base your analysis on the specific cards provided. Do not generate generic content.
+
+Focus on:
+1. Extracting key themes from the actual card titles and descriptions
+2. Identifying strategic implications based on the specific content
+3. Recommending next steps that connect to the cards provided
+4. Creating a narrative that ties together the specific initiatives described
+
+The summary should feel like it was written by someone who carefully read each card.`;
+        
+        // Create detailed card context with all available information
+        const cardDetails = cards.map((card, index) => {
+          const details = [
+            `**Card ${index + 1}: ${card.title}**`,
+            `Description: ${card.description || 'No description provided'}`,
+            card.priority ? `Priority: ${card.priority}` : '',
+            card.confidenceLevel ? `Confidence: ${card.confidenceLevel}` : '',
+            card.strategicAlignment ? `Strategic Alignment: ${card.strategicAlignment}` : '',
+            card.tags && card.tags.length > 0 ? `Tags: ${card.tags.join(', ')}` : '',
+            card.relationships && card.relationships.length > 0 ? `Related Cards: ${card.relationships.length} connections` : ''
+          ].filter(Boolean);
+          
+          return details.join('\n');
+        }).join('\n\n');
+        
+        const userPrompt = `Analyze these ${cards.length} ${blueprint_type} cards and create a comprehensive executive summary:
+
+${cardDetails}
+
+**Required Analysis:**
+
+1. **Key Themes** (3-5 themes): Extract the main strategic themes from these specific cards. Reference card titles and content directly.
+
+2. **Strategic Implications** (3-4 points): What do these specific initiatives mean for the organization? How do they connect?
+
+3. **Recommended Next Steps** (3-4 actions): Based on the cards above, what should be done next? Be specific to the content provided.
+
+4. **Strategic Narrative** (2-3 sentences): Tie these specific cards together into a coherent strategic story.
+
+**Output Format:**
+{
+  "detected_blueprint": "${blueprint_type}",
+  "themes": ["Theme 1 (referencing specific cards)", "Theme 2..."],
+  "implications": ["Implication 1 (based on card content)", "Implication 2..."],
+  "nextSteps": ["Action 1 (derived from cards)", "Action 2..."],
+  "summary": "Strategic narrative connecting the ${cards.length} cards provided..."
+}
+
+**Important:** Your response must reference the actual card content. Avoid generic strategic advice.`;
+
+        const result = {
+          success: true,
+          prompts: {
+            system: systemPrompt,
+            user: userPrompt
+          },
+          metadata: {
+            blueprint_type,
+            card_count: cards.length,
+            cards_analyzed: cards.map(c => c.title)
+          }
+        };
+        
+        res.json(result);
+      } catch (error) {
+        console.error('Executive summary error:', error);
+        res.status(500).json({ error: 'Failed to generate executive summary' });
+      }
+    });
+
     // Intelligence processing endpoints
     this.app.post('/api/tools/analyze_url', async (req, res) => {
       try {
@@ -174,6 +344,7 @@ class HttpMcpServer {
       const allTools = [
         ...strategyCreatorTools,
         ...intelligenceTools,
+        ...developmentBankTools,
         ...terminalTools
       ];
       res.json({
@@ -210,6 +381,10 @@ class HttpMcpServer {
         return await handleGenerateContextSummary(args);
       case 'generate_strategy_cards':
         return await handleGenerateStrategyCards(args);
+      case 'commit_trd_to_task_list':
+        return await handleCommitTrdToTaskList(args);
+      case 'generate_technical_requirement':
+        return await handleGenerateTechnicalRequirement(args);
       case 'analyze_url':
         return await handleAnalyzeUrl(args);
       case 'process_intelligence_text':

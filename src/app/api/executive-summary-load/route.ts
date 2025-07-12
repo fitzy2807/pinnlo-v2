@@ -16,9 +16,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const strategyId = searchParams.get('strategyId')
-    const blueprintId = searchParams.get('blueprintId')
+    const blueprintType = searchParams.get('blueprintType') || searchParams.get('blueprintId')
 
-    if (!strategyId || !blueprintId) {
+    if (!strategyId || !blueprintType) {
       return NextResponse.json(
         { success: false, error: 'Missing required parameters' },
         { status: 400 }
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       .from('executive_summaries')
       .select('*')
       .eq('strategy_id', strategyId)
-      .eq('blueprint_type', blueprintId)
+      .eq('blueprint_type', blueprintType)
       .single()
 
     if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
@@ -43,10 +43,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         summary: {
-          themes: data.metadata?.themes || [],
-          implications: data.metadata?.implications || [],
+          themes: data.summary_data?.themes || [],
+          implications: data.summary_data?.implications || [],
+          nextSteps: data.summary_data?.nextSteps || [],
+          summary: data.summary_data?.summary || '',
+          detected_blueprint: data.summary_data?.detected_blueprint || blueprintType,
           lastUpdated: data.generated_at,
-          cardCount: data.word_count || 0
+          cardCount: data.cards_count || 0
         }
       })
     }

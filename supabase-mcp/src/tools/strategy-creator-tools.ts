@@ -2,6 +2,34 @@
 
 export const strategyCreatorTools = [
   {
+    name: 'generate_universal_executive_summary',
+    description: 'Generate executive summary using universal prompt that detects blueprint type',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        cards: {
+          type: 'array',
+          description: 'Array of cards to analyze',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              title: { type: 'string' },
+              description: { type: 'string' },
+              card_type: { type: 'string' },
+              card_data: { type: 'object' }
+            }
+          }
+        },
+        blueprint_type: {
+          type: 'string',
+          description: 'Blueprint type hint (optional)'
+        }
+      },
+      required: ['cards']
+    }
+  },
+  {
     name: 'generate_context_summary',
     description: 'Generate comprehensive context summary from blueprint and intelligence cards',
     inputSchema: {
@@ -80,6 +108,90 @@ export const strategyCreatorTools = [
     }
   }
 ];
+
+export async function handleGenerateUniversalExecutiveSummary(args: any) {
+  try {
+    const { cards, blueprint_type } = args;
+    
+    const systemPrompt = `You are an expert strategic analyst. Analyze the provided cards to automatically detect the blueprint type and generate a focused 3-5 bullet point executive summary.
+
+**Detection Process:**
+First, identify the blueprint type from the card content, titles, and field patterns. Blueprint types include: Strategic Context, Vision Statement, Value Proposition, Strategic Bet, Personas, Customer Journey, SWOT Analysis, Competitive Analysis, Market Insight, Experiment, OKRs, Problem Statement, Workstream, Epic, Feature, Business Model, Go-to-Market, GTM Play, Risk Assessment, Roadmap, User Journey, Experience Section, Service Blueprint, Organizational Capability, Tech Stack, Technical Requirement, Cost Driver, Revenue Driver, KPIs, and Financial Projections.
+
+**Summary Framework by Type:**
+
+**Strategy & Vision**: Focus on strategic landscape, competitive positioning, stakeholder considerations, vision scope/timeline, value creation, and differentiation.
+
+**Research & Analysis**: Emphasize user insights, market forces, competitive dynamics, SWOT implications, personas' goals/pain points, journey stages, and improvement opportunities.
+
+**Planning & Execution**: Highlight objectives, success criteria, timelines, ownership, dependencies, feature outcomes, business model mechanics, and go-to-market approach.
+
+**Organizational & Technical**: Cover capability gaps, technical architecture, system requirements, tool justifications, implementation constraints, and strategic alignment.
+
+**Measurement & Financial**: Detail metrics definitions, targets, revenue/cost drivers, scaling potential, financial projections, and performance visibility.
+
+**Output Requirements:**
+- Generate exactly 3-5 bullet points
+- Each bullet should be specific, actionable, and grounded in card data
+- Avoid generic statements; extract real insights
+- Maintain strategic perspective while being tactically relevant
+- Use clear, executive-level language
+- Ensure bullets reflect meaningful insights that guide decision-making
+
+**Format:**
+Start with the detected blueprint type, then provide the summary bullets. Each bullet should capture strategic implications, not just descriptions. Focus on what stakeholders need to know to make informed decisions and understand strategic direction.`;
+
+    const userPrompt = `Analyze these ${cards.length} cards${blueprint_type ? ` from the ${blueprint_type} blueprint` : ''}:
+
+${cards.map((card: any, i: number) => `
+Card ${i + 1}: ${card.title || 'Untitled'}
+Description: ${card.description || 'No description'}
+Type: ${card.card_type || 'Unknown'}
+${card.card_data ? `Data: ${JSON.stringify(card.card_data, null, 2)}` : ''}
+`).join('')}
+
+Generate a JSON response with:
+{
+  "detected_blueprint": "Blueprint Type Name",
+  "themes": ["theme 1", "theme 2", "theme 3"],
+  "implications": ["implication 1", "implication 2"], 
+  "nextSteps": ["step 1", "step 2"],
+  "summary": "Overall strategic narrative"
+}`;
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            success: true,
+            prompts: {
+              system: systemPrompt,
+              user: userPrompt
+            },
+            metadata: {
+              blueprint_type: blueprint_type || 'auto-detect',
+              card_count: cards.length
+            }
+          })
+        }
+      ]
+    };
+  } catch (error: any) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            success: false,
+            error: error.message
+          })
+        }
+      ],
+      isError: true
+    };
+  }
+}
 
 export async function handleGenerateContextSummary(args: any) {
   try {

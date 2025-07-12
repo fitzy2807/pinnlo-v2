@@ -139,8 +139,8 @@ export default function DevelopmentBank({ strategyId, onClose }: DevelopmentBank
                 onClick={() => setActiveTab(id as ActiveTab)}
                 className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   activeTab === id
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'bg-gray-100 text-black'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-100'
                 }`}
               >
                 <div className="flex items-center space-x-2">
@@ -149,7 +149,7 @@ export default function DevelopmentBank({ strategyId, onClose }: DevelopmentBank
                 </div>
                 {count > 0 && (
                   <span className={`px-2 py-1 text-xs rounded-full ${
-                    activeTab === id ? 'bg-blue-200 text-blue-700' : 'bg-gray-200 text-gray-600'
+                    activeTab === id ? 'bg-gray-200 text-black' : 'bg-gray-200 text-gray-600'
                   }`}>
                     {count}
                   </span>
@@ -169,7 +169,7 @@ export default function DevelopmentBank({ strategyId, onClose }: DevelopmentBank
                   onClick={() => setSelectedTechStack(stack)}
                   className={`w-full text-left p-3 rounded-lg border transition-colors ${
                     selectedTechStack?.id === stack.id
-                      ? 'border-blue-300 bg-blue-50'
+                      ? 'border-black bg-gray-50'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
@@ -203,7 +203,7 @@ export default function DevelopmentBank({ strategyId, onClose }: DevelopmentBank
                   onClick={() => setSelectedSpecification(spec)}
                   className={`w-full text-left p-3 rounded-lg border transition-colors ${
                     selectedSpecification?.id === spec.id
-                      ? 'border-blue-300 bg-blue-50'
+                      ? 'border-black bg-gray-50'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >

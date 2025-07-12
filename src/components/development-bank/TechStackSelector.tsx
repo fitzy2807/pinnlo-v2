@@ -16,6 +16,7 @@ import {
   Clock
 } from 'lucide-react'
 import { useAuth } from '@/providers/AuthProvider'
+import { supabase } from '@/lib/supabase'
 import { DevelopmentBankService, type TechStackSelection } from '@/services/developmentBankService'
 
 interface TechStackSelectorProps {
@@ -83,12 +84,16 @@ export default function TechStackSelector({
   }, [])
 
   const generateRecommendations = useCallback(async () => {
-    if (!session) return
+    if (!user) return
 
     setLoading(true)
     setError(null)
 
     try {
+      // Get session for auth
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+      if (!session) throw new Error('No session')
       // Map budget to numeric values
       const budgetMapping = {
         minimal: { min: 0, max: 100 },
@@ -157,7 +162,7 @@ export default function TechStackSelector({
     } finally {
       setLoading(false)
     }
-  }, [session, strategyId, answers])
+  }, [user, strategyId, answers])
 
   const selectTechStack = useCallback(async (techStack: TechStackSelection) => {
     try {
