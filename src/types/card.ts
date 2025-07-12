@@ -20,6 +20,7 @@ export interface CardData {
   lastModified: string
   creator: string
   owner: string
+  group_ids?: string[]
   // Blueprint-specific fields
   [key: string]: any
 }

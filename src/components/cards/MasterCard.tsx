@@ -30,6 +30,8 @@ interface MasterCardProps {
   onDelete: () => void
   onDuplicate: () => void
   onAIEnhance: () => void
+  isSelected?: boolean
+  onSelect?: () => void
   availableCards?: Array<{ id: string; title: string; cardType: string }>
 }
 
@@ -72,6 +74,8 @@ export default function MasterCard({
   onDelete,
   onDuplicate,
   onAIEnhance,
+  isSelected = false,
+  onSelect,
   availableCards = []
 }: MasterCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -252,7 +256,23 @@ export default function MasterCard({
   }
 
   return (
-    <div className={`card transition-all duration-200 group ${isPinned ? 'ring-2 ring-yellow-400' : ''}`}>
+    <div className={`card transition-all duration-200 group ${
+      isPinned ? 'ring-2 ring-yellow-400' : ''
+    } ${
+      isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+    }`}>
+      {/* Selection Checkbox */}
+      {onSelect && (
+        <div className="absolute top-2 right-2 z-10">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onSelect}
+            onClick={(e) => e.stopPropagation()}
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-white shadow-sm"
+          />
+        </div>
+      )}
       {/* Card Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">

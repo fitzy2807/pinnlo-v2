@@ -129,10 +129,21 @@ export function useStrategies() {
     try {
       setError(null)
 
+      // Ensure the session is set on the supabase client
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        console.error('Session error:', sessionError)
+        setError('No active session found - please log in again')
+        return null
+      }
+
+      console.log('Creating strategy with user ID:', session.user.id)
+
       const { data, error: createError } = await supabase
         .from('strategies')
         .insert({
           userId: user.id,
+          created_by: user.id,
           title: strategyData.title || 'Untitled Strategy',
           client: strategyData.client || '',
           description: strategyData.description || '',
