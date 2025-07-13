@@ -72,7 +72,7 @@ export function AIEnhancedField({
   })
 
   const handleAIEnhance = useCallback(async () => {
-    if (!value.trim()) {
+    if (!String(value || '').trim()) {
       toast.error('Please add some content first before enhancing')
       return
     }
@@ -274,10 +274,10 @@ export function AIEnhancedField({
             )}
             <button
               onClick={handleAIEnhance}
-              disabled={isEnhancing || !value.trim() || disabled}
+              disabled={isEnhancing || !String(value || '').trim() || disabled}
               className={`
                 p-1 rounded transition-colors
-                ${isEnhancing || !value.trim() || disabled
+                ${isEnhancing || !String(value || '').trim() || disabled
                   ? 'text-gray-300 cursor-not-allowed' 
                   : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
                 }

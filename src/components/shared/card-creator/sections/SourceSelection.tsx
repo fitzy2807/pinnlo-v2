@@ -128,7 +128,7 @@ export default function SourceSelection({
       <label 
         key={section.id} 
         className={`
-          relative w-[calc(20%-8px)] min-w-[150px] h-[80px] rounded-lg cursor-pointer transition-all 
+          relative w-[calc(20%-8px)] min-w-[140px] max-w-[180px] h-[80px] rounded-lg cursor-pointer transition-all 
           flex flex-col items-center justify-center gap-1 shadow-md hover:shadow-lg
           ${isSelected 
             ? 'bg-blue-600 hover:bg-blue-700 text-white' 

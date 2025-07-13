@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const organisationalCapabilityConfig: BlueprintConfig = {
-  id: 'organisational-capability',
+  id: 'organisationalCapabilities',
   name: 'Organisational Capability',
   description: 'Assess and plan organizational capabilities needed for strategy execution',
   category: 'Management',

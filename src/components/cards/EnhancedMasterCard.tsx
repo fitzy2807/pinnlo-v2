@@ -112,8 +112,28 @@ function EnhancedMasterCardInternal({
   const { trackAction } = useCardAnalytics(cardData.cardType, cardData.id)
   const { trackSavePerformance } = usePerformanceTracking('EnhancedMasterCard')
 
+  // Map old card types to new blueprint IDs for backward compatibility
+  const cardTypeMapping: Record<string, string> = {
+    'customer-journey': 'customerExperience',
+    'strategic-context': 'strategicContext',
+    'value-proposition': 'valuePropositions',
+    'workstream': 'workstreams',
+    'epic': 'epics',
+    'feature': 'features',
+    'user-journey': 'userJourneys',
+    'experience-section': 'experienceSections',
+    'service-blueprint': 'serviceBlueprints',
+    'organisational-capability': 'organisationalCapabilities',
+    'gtm-play': 'gtmPlays',
+    'tech-stack': 'techStack',
+    'technical-requirement': 'techRequirements'
+  }
+  
+  // Use mapped card type if available, otherwise use original
+  const blueprintId = cardTypeMapping[cardData.cardType] || cardData.cardType
+  
   // Get blueprint configuration
-  const blueprint = getBlueprintConfig(cardData.cardType)
+  const blueprint = getBlueprintConfig(blueprintId)
   
   if (!blueprint) {
     return (

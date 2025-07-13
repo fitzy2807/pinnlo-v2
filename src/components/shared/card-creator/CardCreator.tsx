@@ -403,7 +403,7 @@ export default function CardCreator({
       )}
 
       {/* Step Content */}
-      <div className="mt-2">
+      <div className="mt-2 w-full max-w-5xl mx-auto">
       {currentStep === 1 && (
         <SourceSelection
           config={config}
@@ -424,18 +424,28 @@ export default function CardCreator({
       )}
 
       {currentStep === 3 && (
-        <OutputConfig
-          config={config}
-          targetSection={targetSection}
-          onTargetSectionChange={setTargetSection}
-          cardQuantity={cardQuantity}
-          onQuantityChange={setCardQuantity}
-          quality={quality}
-          onQualityChange={setQuality}
-          selectedCardsCount={selectedCards.length}
-          onGenerate={handleGenerate}
-          isGenerating={isGenerating}
-        />
+        isGenerating ? (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+              <p className="text-sm text-gray-600">Generating {cardQuantity} cards...</p>
+              <p className="text-xs text-gray-500 mt-2">This may take a few moments</p>
+            </div>
+          </div>
+        ) : (
+          <OutputConfig
+            config={config}
+            targetSection={targetSection}
+            onTargetSectionChange={setTargetSection}
+            cardQuantity={cardQuantity}
+            onQuantityChange={setCardQuantity}
+            quality={quality}
+            onQualityChange={setQuality}
+            selectedCardsCount={selectedCards.length}
+            onGenerate={handleGenerate}
+            isGenerating={isGenerating}
+          />
+        )
       )}
 
       {currentStep === 4 && (

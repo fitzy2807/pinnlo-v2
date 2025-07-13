@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const epicConfig: BlueprintConfig = {
-  id: 'epic',
+  id: 'epics',
   name: 'Epic',
   description: 'Large initiatives broken down into manageable features',
   category: 'Planning & Execution',

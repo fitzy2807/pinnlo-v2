@@ -3,7 +3,7 @@ import { CardCreatorConfig } from './types'
 export function createCardCreatorConfig(bankType: CardCreatorConfig['bankType']): CardCreatorConfig {
   // Simplified configuration focusing on working Development Bank first
   const baseConfig: CardCreatorConfig = {
-    bankType: 'development',
+    bankType: bankType,
     sections: [
       // ✅ Development Bank - Known Working Sections
       {
@@ -220,6 +220,10 @@ export function createCardCreatorConfig(bankType: CardCreatorConfig['bankType'])
     }
   }
 
+  // For Card Creator, we want ALL sections available as sources
+  // The bankType only determines what can be created as output
+  // So we keep all sections but mark which bank we're in
+  
   return baseConfig
 }
 

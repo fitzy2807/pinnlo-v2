@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const serviceBlueprintConfig: BlueprintConfig = {
-  id: 'service-blueprint',
+  id: 'serviceBlueprints',
   name: 'Service Blueprint',
   description: 'Map the complete service delivery process including front and backstage',
   category: 'Planning & Execution',

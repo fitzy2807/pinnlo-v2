@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const valuePropositionConfig: BlueprintConfig = {
-  id: 'value-proposition',
+  id: 'valuePropositions',
   name: 'Value Proposition',
   description: 'Define the unique value you provide to customers',
   category: 'Core Strategy',

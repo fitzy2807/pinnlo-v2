@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const userJourneyConfig: BlueprintConfig = {
-  id: 'user-journey',
+  id: 'userJourneys',
   name: 'User Journey',
   description: 'Map user experiences and touchpoints across their journey',
   category: 'Research & Analysis',

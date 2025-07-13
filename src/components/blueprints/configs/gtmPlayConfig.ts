@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const gtmPlayConfig: BlueprintConfig = {
-  id: 'gtm-play',
+  id: 'gtmPlays',
   name: 'Go-To-Market Play',
   description: 'Define go-to-market strategies and execution plans',
   category: 'Planning & Execution',

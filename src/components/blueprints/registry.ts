@@ -34,17 +34,22 @@ import { revenueDriverConfig } from './configs/revenueDriverConfig'
 import { marketInsightConfig } from './configs/marketInsightConfig'
 import { experimentConfig } from './configs/experimentConfig'
 import { strategicBetConfig } from './configs/strategicBetConfig'
+import { organisationConfig } from './configs/organisationConfig'
+import { companyConfig } from './configs/companyConfig'
+import { departmentConfig } from './configs/departmentConfig'
+import { teamConfig } from './configs/teamConfig'
+import { personConfig } from './configs/personConfig'
 
 // Blueprint Registry - Central configuration for all blueprint types
 export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
-  // Core Strategy (Mandatory: strategic-context)
-  'strategic-context': strategicContextConfig,
+  // Core Strategy (Mandatory: strategicContext)
+  'strategicContext': strategicContextConfig,
   'vision': visionConfig,
-  'value-proposition': valuePropositionConfig,
+  'valuePropositions': valuePropositionConfig,
   
   // Research & Analysis
   'personas': personaConfig,
-  'customer-journey': customerJourneyConfig,
+  'customerExperience': customerJourneyConfig,
   'swot-analysis': swotConfig,
   'competitive-analysis': competitiveAnalysisConfig,
   
@@ -63,22 +68,29 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
 
   // 20 New Blueprint Configurations
   'problem-statement': problemStatementConfig,
-  'workstream': workstreamConfig,
-  'epic': epicConfig,
-  'feature': featureConfig,
-  'user-journey': userJourneyConfig,
-  'experience-section': experienceSectionConfig,
-  'service-blueprint': serviceBlueprintConfig,
-  'organisational-capability': organisationalCapabilityConfig,
-  'gtm-play': gtmPlayConfig,
-  'tech-stack': techStackConfig,
-  'technical-requirement': technicalRequirementConfig,
+  'workstreams': workstreamConfig,
+  'epics': epicConfig,
+  'features': featureConfig,
+  'userJourneys': userJourneyConfig,
+  'experienceSections': experienceSectionConfig,
+  'serviceBlueprints': serviceBlueprintConfig,
+  'organisationalCapabilities': organisationalCapabilityConfig,
+  'gtmPlays': gtmPlayConfig,
+  'techStack': techStackConfig,
+  'techRequirements': technicalRequirementConfig,
   'market-insight': marketInsightConfig,
   'experiment': experimentConfig,
   'strategic-bet': strategicBetConfig,
   
   // Template blueprint for testing
   'template': templateConfig,
+  
+  // Organisation blueprints
+  'organisation': organisationConfig,
+  'company': companyConfig,
+  'department': departmentConfig,
+  'team': teamConfig,
+  'person': personConfig,
   
   // TODO: Add remaining blueprint configs when needed
   // 'stakeholder-map': stakeholderMapConfig,
@@ -94,17 +106,18 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
 
 // Blueprint Categories for organization
 export const BLUEPRINT_CATEGORIES: Record<string, string[]> = {
-  'Core Strategy': ['strategic-context', 'vision', 'value-proposition', 'strategic-bet'],
-  'Research & Analysis': ['personas', 'customer-journey', 'swot-analysis', 'competitive-analysis', 'market-insight', 'experiment'],
-  'Planning & Execution': ['okrs', 'problem-statement', 'workstream', 'epic', 'feature', 'business-model', 'go-to-market', 'gtm-play', 'risk-assessment', 'roadmap'],
-  'User Experience': ['user-journey', 'experience-section', 'service-blueprint'],
-  'Organizational & Technical': ['organisational-capability', 'tech-stack', 'technical-requirement'],
+  'Core Strategy': ['strategicContext', 'vision', 'valuePropositions', 'strategic-bet'],
+  'Research & Analysis': ['personas', 'customerExperience', 'swot-analysis', 'competitive-analysis', 'market-insight', 'experiment'],
+  'Planning & Execution': ['okrs', 'problem-statement', 'workstreams', 'epics', 'features', 'business-model', 'go-to-market', 'gtmPlays', 'risk-assessment', 'roadmap'],
+  'User Experience': ['userJourneys', 'experienceSections', 'serviceBlueprints'],
+  'Organizational & Technical': ['organisationalCapabilities', 'techStack', 'techRequirements'],
   'Measurement': ['cost-driver', 'revenue-driver', 'kpis', 'financial-projections'],
-  'Template': ['template']
+  'Template': ['template'],
+  'Organisation': ['organisation', 'company', 'department', 'team', 'person']
 }
 
 // Mandatory blueprints (always enabled)
-export const MANDATORY_BLUEPRINTS = ['strategic-context']
+export const MANDATORY_BLUEPRINTS = ['strategicContext']
 
 // Get blueprint configuration by ID
 export function getBlueprintConfig(blueprintId: string): BlueprintConfig | undefined {

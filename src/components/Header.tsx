@@ -7,6 +7,7 @@ import DevelopmentBankModal from '@/components/development-bank-v2/DevelopmentBa
 import DevelopmentBankModalV1 from '@/components/development-bank/DevelopmentBankModal'
 import StrategyBankModal from '@/components/strategy-bank/StrategyBankModal'
 import IntelligenceBank from '@/components/intelligence-bank/IntelligenceBank'
+import OrganisationBankModal from '@/components/organisation-bank/OrganisationBankModal'
 
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -14,6 +15,7 @@ export default function Header() {
   const [developmentBank2Open, setDevelopmentBank2Open] = useState(false)
   const [strategyBankOpen, setStrategyBankOpen] = useState(false)
   const [intelligenceBankOpen, setIntelligenceBankOpen] = useState(false)
+  const [organisationBankOpen, setOrganisationBankOpen] = useState(false)
   const { user, signOut } = useAuth()
 
   const getInitials = (email: string) => {
@@ -69,6 +71,13 @@ export default function Header() {
             >
               <Database size={14} />
               <span className="text-xs font-medium">Dev Bank v2</span>
+            </button>
+            <button
+              onClick={() => setOrganisationBankOpen(true)}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
+            >
+              <Building2 size={14} />
+              <span className="text-xs font-medium">Organisation Bank</span>
             </button>
           </nav>
         </div>
@@ -154,6 +163,12 @@ export default function Header() {
       <IntelligenceBank
         isOpen={intelligenceBankOpen}
         onClose={() => setIntelligenceBankOpen(false)}
+      />
+      
+      {/* Organisation Bank Modal */}
+      <OrganisationBankModal
+        isOpen={organisationBankOpen}
+        onClose={() => setOrganisationBankOpen(false)}
       />
     </header>
   )

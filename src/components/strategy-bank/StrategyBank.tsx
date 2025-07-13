@@ -4,9 +4,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCards } from '@/hooks/useCards';
 import { supabase } from '@/lib/supabase';
-import { FolderPlus } from 'lucide-react';
+import { FolderPlus, Sparkles } from 'lucide-react';
 import StrategyBankContent from './StrategyBankContent';
 import BlueprintManagerTool from './BlueprintManagerTool';
+import CardCreator from '@/components/shared/card-creator/CardCreator';
+import { createCardCreator } from '@/components/shared/card-creator/factory';
+import { GeneratedCard } from '@/components/shared/card-creator/types';
+import { toast } from 'react-hot-toast';
 
 interface StrategyBankProps {
   strategy: any;
@@ -245,6 +249,45 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
     setDraggedBlueprint(null);
   };
 
+  // Card Creator configuration
+  const cardCreatorConfig = createCardCreator('strategy');
+
+  const handleCardCreatorClose = () => {
+    setActiveTool(null);
+  };
+
+  const handleCardsCreated = async (generatedCards: GeneratedCard[]) => {
+    try {
+      // Get the createCard function from useCards hook
+      const { createCard } = await import('@/hooks/useCards');
+      
+      // Convert GeneratedCard to createCard format
+      for (const generatedCard of generatedCards) {
+        // Create the card
+        await supabase.from('cards').insert({
+          strategy_id: strategy.id,
+          title: generatedCard.title,
+          description: generatedCard.description,
+          card_type: generatedCard.cardType,
+          priority: generatedCard.metadata?.priority || 'medium',
+          confidence_level: generatedCard.metadata?.confidence || 'medium',
+          card_data: generatedCard.data || {},
+          tags: generatedCard.metadata?.tags || [],
+          created_by: user?.email || 'AI Generated'
+        });
+      }
+      
+      toast.success(`Created ${generatedCards.length} cards`);
+      setActiveTool(null);
+      
+      // Reload the page to show new cards
+      window.location.reload();
+    } catch (error) {
+      console.error('Error creating cards:', error);
+      toast.error('Failed to create some cards');
+    }
+  };
+
   return (
     <div className="h-full flex">
       {/* Left Sidebar - Exact Template Bank pattern */}
@@ -277,6 +320,22 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
               `}
             >
               <span className="text-xs">Blueprint Manager</span>
+            </button>
+            
+            <button
+              onClick={() => handleToolSelect('card-creator')}
+              className={`
+                w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
+                ${activeTool === 'card-creator'
+                  ? 'bg-black bg-opacity-50 text-white'
+                  : 'text-black hover:bg-gray-100'
+                }
+              `}
+            >
+              <span className="text-xs flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" />
+                Card Creator
+              </span>
             </button>
           </div>
         </div>
@@ -428,6 +487,13 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
             currentBlueprints={enabledBlueprints}
             onSave={handleBlueprintUpdate}
             onClose={() => setActiveTool(null)}
+          />
+        ) : activeTool === 'card-creator' ? (
+          <CardCreator
+            config={cardCreatorConfig}
+            strategy={strategy}
+            onClose={handleCardCreatorClose}
+            onCardsCreated={handleCardsCreated}
           />
         ) : (
           <StrategyBankContent

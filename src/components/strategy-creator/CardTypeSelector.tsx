@@ -15,8 +15,8 @@ export default function CardTypeSelector({ selectedTypes, onSubmit, onBack, load
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedTypes))
 
   const categories = {
-    'Core Strategy': ['strategic-context', 'vision', 'value-proposition'],
-    'Research & Analysis': ['personas', 'customer-journey', 'swot-analysis', 'competitive-analysis'],
+    'Core Strategy': ['strategicContext', 'vision', 'valuePropositions'],
+    'Research & Analysis': ['personas', 'customerExperience', 'swot-analysis', 'competitive-analysis'],
     'Planning & Execution': ['okrs', 'business-model', 'go-to-market', 'risk-assessment', 'roadmap'],
     'Measurement': ['kpis', 'financial-projections']
   }

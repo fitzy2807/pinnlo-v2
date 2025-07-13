@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const techStackConfig: BlueprintConfig = {
-  id: 'tech-stack',
+  id: 'techStack',
   name: 'Tech Stack Component',
   description: 'Document and manage technology architecture components',
   category: 'Planning & Execution',

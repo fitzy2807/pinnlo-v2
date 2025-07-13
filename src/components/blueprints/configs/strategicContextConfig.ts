@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const strategicContextConfig: BlueprintConfig = {
-  id: 'strategic-context',
+  id: 'strategicContext',
   name: 'Strategic Context',
   description: 'Define the strategic context and foundation for your strategy',
   category: 'Core Strategy',

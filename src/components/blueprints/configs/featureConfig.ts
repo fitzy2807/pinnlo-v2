@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const featureConfig: BlueprintConfig = {
-  id: 'feature',
+  id: 'features',
   name: 'Feature',
   description: 'Product features with detailed specifications and user stories',
   category: 'Planning & Execution',

@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const workstreamConfig: BlueprintConfig = {
-  id: 'workstream',
+  id: 'workstreams',
   name: 'Workstream',
   description: 'Organize work into manageable streams with clear ownership',
   category: 'Planning & Execution',

@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const technicalRequirementConfig: BlueprintConfig = {
-  id: 'technical-requirement',
+  id: 'techRequirements',
   name: 'Technical Requirement',
   description: 'Define detailed technical specifications and implementation requirements',
   category: 'Planning & Execution',

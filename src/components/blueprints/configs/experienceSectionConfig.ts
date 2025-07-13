@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const experienceSectionConfig: BlueprintConfig = {
-  id: 'experience-section',
+  id: 'experienceSections',
   name: 'Experience Section',
   description: 'Define specific sections of the user experience with detailed components',
   category: 'Planning & Execution',
