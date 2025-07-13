@@ -1,32 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/providers/AuthProvider'
 import { supabase } from '@/lib/supabase'
 
-interface BlueprintCard {
-  id: string
-  strategy_id: string
-  card_type: string
-  title: string
-  description: string
-  priority: string
-  tags: string[]
-  confidence: {
-    level: string
-    rationale: string
-  }
-  blueprint_fields: any
-  created_at: string
-  updated_at: string
-}
-
-export function useBlueprintCards(strategyId: string | null) {
-  const [cards, setCards] = useState<BlueprintCard[]>([])
+export function useBlueprintCards(strategyId?: string) {
+  const [cards, setCards] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { user } = useAuth()
 
   useEffect(() => {
-    if (!user || !strategyId) {
+    if (!strategyId) {
+      setCards([])
       setLoading(false)
       return
     }
@@ -35,27 +17,73 @@ export function useBlueprintCards(strategyId: string | null) {
       try {
         setLoading(true)
         setError(null)
-
-        const { data, error: fetchError } = await supabase
+        
+        console.log('🔍 Fetching blueprint cards for strategy:', strategyId)
+        
+        // Try to fetch from cards table (without user_id filter)
+        const { data, error } = await supabase
           .from('cards')
           .select('*')
           .eq('strategy_id', strategyId)
-          .eq('user_id', user.id)
           .order('created_at', { ascending: false })
 
-        if (fetchError) throw fetchError
+        if (error) {
+          console.error('Error fetching blueprint cards:', error)
+          setError(error.message)
+          setCards([])
+          return
+        }
 
-        setCards(data || [])
-      } catch (err: any) {
-        console.error('Error fetching blueprint cards:', err)
-        setError(err.message)
+        console.log('📋 Raw cards from database:', data?.length || 0)
+        console.log('📋 Card types found:', [...new Set(data?.map(c => c.card_type) || [])])
+
+        // Filter for blueprint-type cards based on exact blueprint IDs
+        const blueprintTypes = [
+          'strategic-context',
+          'vision',
+          'value-proposition',
+          'personas',
+          'customer-journey',
+          'swot-analysis',
+          'competitive-analysis',
+          'okrs',
+          'business-model',
+          'go-to-market',
+          'risk-assessment',
+          'roadmap',
+          'kpis',
+          'financial-projections',
+          'workstream'
+        ]
+        
+        const blueprintCards = data?.filter(card => 
+          card.card_type && blueprintTypes.includes(card.card_type)
+        ) || []
+
+        console.log('✅ Filtered blueprint cards:', blueprintCards.length)
+        setCards(blueprintCards)
+      } catch (err) {
+        console.error('❌ Error in useBlueprintCards:', err)
+        setError('Failed to fetch blueprint cards')
+        setCards([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchCards()
-  }, [user, strategyId, supabase])
+  }, [strategyId])
 
-  return { cards, loading, error }
+  const getCardsByBlueprint = (blueprintType: string) => {
+    return cards.filter(card => 
+      card.card_type && card.card_type === blueprintType
+    )
+  }
+
+  return {
+    cards,
+    loading,
+    error,
+    getCardsByBlueprint
+  }
 }

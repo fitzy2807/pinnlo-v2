@@ -4,9 +4,9 @@ import { createClient } from '@/lib/supabase-server'
 export async function POST(request: NextRequest) {
   try {
     const supabase = createClient()
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    if (sessionError || !session) {
+    if (userError || !user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     // For automation, enrich with user context
     if (tool === 'generate_automation_intelligence' && !args.userId) {
-      args.userId = session.user.id
+      args.userId = user.id
     }
 
     // Call MCP server

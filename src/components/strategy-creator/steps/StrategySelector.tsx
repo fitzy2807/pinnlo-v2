@@ -141,7 +141,7 @@ export default function StrategySelector({
 
       {filteredStrategies.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          No strategies found matching "{searchTerm}"
+          No strategies found matching &quot;{searchTerm}&quot;
         </div>
       )}
 

@@ -7,7 +7,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { ChevronDown, Plus, Folder } from 'lucide-react'
+import { ChevronDown, Plus, Folder, Zap } from 'lucide-react'
 import { useIntelligenceGroups } from '@/hooks/useIntelligenceGroups'
 import { IntelligenceCardCategory } from '@/types/intelligence-cards'
 
@@ -272,7 +272,7 @@ export default function TextProcessingOptions({
           disabled={!textContent.trim() || isProcessing}
           className="px-6 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
         >
-          <TestTube className="h-4 w-4" />
+          <Zap className="h-4 w-4" />
           <span>{isProcessing ? 'Processing...' : 'Process Text'}</span>
         </button>
       </div>

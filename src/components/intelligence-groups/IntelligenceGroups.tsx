@@ -152,7 +152,7 @@ export default function IntelligenceGroups({
               isSelectionMode={isSelectionMode}
               setIsSelectionMode={setIsSelectionMode}
             />
-          ))}}
+          ))}
         </div>
       )}
 

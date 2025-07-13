@@ -8,6 +8,9 @@ import { useDevelopmentGroups, DevelopmentGroup } from '@/hooks/useDevelopmentGr
 import TechnicalRequirementCard from './TechnicalRequirementCard'
 import TaskListCard from './TaskListCard'
 import { toast } from 'react-hot-toast'
+import CardCreator from '@/components/shared/card-creator/CardCreator'
+import { createCardCreator } from '@/components/shared/card-creator/factory'
+import { GeneratedCard } from '@/components/shared/card-creator/types'
 
 interface DevelopmentBankProps {
   strategy: any
@@ -267,6 +270,7 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
 
   // Demo tools with development-specific labels
   const tools = [
+    { id: 'card-creator', label: 'Card Creator', icon: Sparkles },
     { id: 'tool1', label: 'PRD Writer' },
     { id: 'tool2', label: 'Tech Stack Diagnostic' },
     { id: 'tool3', label: 'TRD Writer' },
@@ -526,6 +530,33 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
   const handleToolClick = (toolId: string) => {
     setSelectedTool(toolId === selectedTool ? null : toolId)
     toast(`${toolId === selectedTool ? 'Deselected' : 'Selected'} ${tools.find(t => t.id === toolId)?.label}`)
+  }
+
+  // Card Creator functions
+  const cardCreatorConfig = createCardCreator('development')
+
+  const handleCardCreatorClose = () => {
+    setSelectedTool(null)
+  }
+
+  const handleCardsCreated = async (generatedCards: GeneratedCard[]) => {
+    try {
+      // Convert GeneratedCard to createCard format
+      for (const generatedCard of generatedCards) {
+        await createCard({
+          title: generatedCard.title,
+          description: generatedCard.description,
+          card_type: generatedCard.card_type,
+          priority: generatedCard.priority,
+          card_data: generatedCard.card_data
+        })
+      }
+      toast.success(`Added ${generatedCards.length} cards successfully!`)
+      setSelectedTool(null) // Close card creator
+    } catch (error) {
+      console.error('Error creating cards:', error)
+      toast.error('Failed to create cards')
+    }
   }
 
   const handleSectionClick = (sectionId: string) => {
@@ -805,31 +836,33 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
         {selectedTool ? (
           // Tool Content
           <div className="flex-1 flex flex-col">
-          <div className="bg-white border-b border-gray-200">
-            <div className="px-4 pt-2.5 pb-1.5">
-              <h1 className="text-lg font-medium text-gray-900">
-                {tools.find(t => t.id === selectedTool)?.label}
-              </h1>
-              <p className="text-[11px] text-gray-500 mt-0.5">
-                Tool functionality and settings for {tools.find(t => t.id === selectedTool)?.label?.toLowerCase()}
-              </p>
-            </div>
-            <div className="px-4 pb-2">
-              <div className="flex items-center justify-end">
-                {onClose && (
-                  <button
-                    onClick={onClose}
-                    className="p-1 text-black hover:bg-black hover:bg-opacity-10 rounded transition-colors"
-                    title="Close"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
+            <div className="bg-white border-b border-gray-200">
+              <div className="px-4 py-1.5">
+                <h1 className="text-sm font-medium text-gray-900">
+                  {tools.find(t => t.id === selectedTool)?.label}
+                </h1>
+                <p className="text-[10px] text-gray-500">
+                  {selectedTool === 'card-creator' 
+                    ? 'Generate cards using AI based on existing development context'
+                    : `Tool functionality and settings for ${tools.find(t => t.id === selectedTool)?.label?.toLowerCase()}`
+                  }
+                </p>
               </div>
             </div>
-          </div>
-            <div className="flex-1 p-6 text-center text-gray-500">
-              Tool content for {tools.find(t => t.id === selectedTool)?.label} coming soon...
+            
+            <div className="flex-1">
+              {selectedTool === 'card-creator' ? (
+                <CardCreator
+                  config={cardCreatorConfig}
+                  strategy={strategy}
+                  onClose={handleCardCreatorClose}
+                  onCardsCreated={handleCardsCreated}
+                />
+              ) : (
+                <div className="flex-1 p-6 text-center text-gray-500">
+                  Tool content for {tools.find(t => t.id === selectedTool)?.label} coming soon...
+                </div>
+              )}
             </div>
           </div>
         ) : (

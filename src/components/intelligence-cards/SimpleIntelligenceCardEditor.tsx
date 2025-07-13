@@ -173,7 +173,7 @@ export default function SimpleIntelligenceCardEditor({
               color: '#6b7280',
               fontStyle: 'italic'
             }}>
-              Current: "{title}"
+              Current: &quot;{title}&quot;
             </div>
           </div>
 
@@ -209,7 +209,7 @@ export default function SimpleIntelligenceCardEditor({
               color: '#6b7280',
               fontStyle: 'italic'
             }}>
-              Current: "{summary}"
+              Current: &quot;{summary}&quot;
             </div>
           </div>
 
@@ -245,7 +245,7 @@ export default function SimpleIntelligenceCardEditor({
               color: '#6b7280',
               fontStyle: 'italic'
             }}>
-              Current: "{content}"
+              Current: &quot;{content}&quot;
             </div>
           </div>
 
