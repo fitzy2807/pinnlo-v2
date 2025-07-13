@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 
 // Development-specific card types
 const DEVELOPMENT_CARD_TYPES = [
+  'prd', // Add PRD card type
   'technical-requirement-structured',
   'technical-requirement', 
   'feature',
@@ -198,12 +199,12 @@ export function useDevelopmentCards(strategyId?: number) {
   const getCardsBySection = useCallback((section: string) => {
     // Map sections to card types for development context
     const sectionTypeMap: Record<string, string[]> = {
-      'prd': ['feature'],
+      'prd': ['prd'], // PRD mapping
       'tech-stack': ['tech-stack'],
       'technical-requirements': ['technical-requirement-structured', 'technical-requirement'],
       'task-lists': ['task-list'],
-      // Generic fallback for Template Bank sections
-      'section1': ['feature'],
+      // Template Bank compatibility mapping
+      'section1': ['prd'], // Changed from 'feature' to 'prd'
       'section2': ['tech-stack'], 
       'section3': ['technical-requirement-structured', 'technical-requirement'],
       'section4': ['task-list'],
@@ -220,13 +221,13 @@ export function useDevelopmentCards(strategyId?: number) {
   // Get section counts for sidebar display
   const getSectionCounts = useCallback(() => {
     return {
-      prd: getCardsByType('feature').length,
+      prd: getCardsByType('prd').length, // Changed from 'feature' to 'prd'
       'tech-stack': getCardsByType('tech-stack').length,
       'technical-requirements': getCardsByType('technical-requirement-structured').length + 
                                getCardsByType('technical-requirement').length,
       'task-lists': getCardsByType('task-list').length,
       // Template Bank compatibility
-      section1: getCardsByType('feature').length,
+      section1: getCardsByType('prd').length, // Changed from 'feature' to 'prd'
       section2: getCardsByType('tech-stack').length,
       section3: getCardsByType('technical-requirement-structured').length + 
                getCardsByType('technical-requirement').length,

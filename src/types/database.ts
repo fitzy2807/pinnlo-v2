@@ -36,6 +36,7 @@ export interface Strategy {
   serviceBlueprints?: Record<string, any>
   ideasBank?: Record<string, any>
   blueprintConfiguration?: Record<string, any>
+  blueprint_config?: Record<string, any>
   
   // Metadata
   createdAt?: string

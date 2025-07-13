@@ -5,6 +5,7 @@ import { Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Tras
 import MasterCard from '../cards/MasterCard'
 import { useDevelopmentCards } from '@/hooks/useDevelopmentCards'
 import { useDevelopmentGroups, DevelopmentGroup } from '@/hooks/useDevelopmentGroups'
+import PRDCard from './PRDCard'
 import TechnicalRequirementCard from './TechnicalRequirementCard'
 import TaskListCard from './TaskListCard'
 import { toast } from 'react-hot-toast'
@@ -338,7 +339,7 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
   const handleCreateCard = async () => {
     // Map sections to appropriate card types
     const sectionCardTypeMap: Record<string, string> = {
-      'section1': 'feature', // PRD
+      'section1': 'prd', // PRD
       'section2': 'tech-stack', // Tech Stack
       'section3': 'technical-requirement', // Technical Requirements
       'section4': 'task-list', // Task Lists
@@ -365,7 +366,35 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
     console.log('Generate card clicked for section:', selectedSection)
     console.log('Strategy available:', !!strategy, 'Strategy ID:', strategy?.id)
     
-    if (selectedSection === 'section3') {
+    if (selectedSection === 'section1') {
+      // Create sample PRD for testing
+      try {
+        await createCard({
+          title: 'Sample Product Requirements Document',
+          description: 'Product requirements for new feature development',
+          card_type: 'prd',
+          priority: 'High',
+          card_data: {
+            prd_id: `PRD-${Date.now()}`,
+            version: '1.0',
+            status: 'draft',
+            product_manager: 'Product Manager',
+            last_reviewed: new Date().toISOString().split('T')[0],
+            
+            // Sample content
+            product_vision: 'Create a revolutionary product that solves user problems',
+            problem_statement: 'Users currently face challenges with existing solutions',
+            solution_overview: 'Our solution provides a comprehensive approach',
+            target_audience: 'Primary: Enterprise users, Secondary: SMB customers',
+            value_proposition: 'Unique value through innovative features',
+            success_summary: 'Success measured by user adoption and satisfaction'
+          }
+        })
+        toast.success('Sample PRD created!')
+      } catch (error) {
+        toast.error('Failed to create PRD')
+      }
+    } else if (selectedSection === 'section3') {
       // Create sample technical requirement for testing
       try {
         await createCard({
@@ -484,7 +513,7 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
     try {
       // Map sections to appropriate card types
       const sectionCardTypeMap: Record<string, string> = {
-        'section1': 'feature', // PRD
+        'section1': 'prd', // PRD
         'section2': 'tech-stack', // Tech Stack
         'section3': 'technical-requirement', // Technical Requirements
         'section4': 'task-list', // Task Lists
@@ -964,13 +993,13 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
                   {/* Add Controls (only show in section view) */}
                   {viewType === 'section' && (
                     <>
-                      {/* For sections 3 & 4, only show Add button that directly creates cards */}
-                      {(selectedSection === 'section3' || selectedSection === 'section4') ? (
+                      {/* For sections 1, 3 & 4, only show Add button that directly creates cards */}
+                      {(selectedSection === 'section1' || selectedSection === 'section3' || selectedSection === 'section4') ? (
                         <button 
                           onClick={handleGenerateCard}
                           className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
                         >
-                          {selectedSection === 'section3' ? 'Add TRD' : 'Add Task List'}
+                          {selectedSection === 'section1' ? 'Add PRD' : selectedSection === 'section3' ? 'Add TRD' : 'Add Task List'}
                         </button>
                       ) : (
                         <>
@@ -1260,7 +1289,36 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
                       )}
                       
                       {/* Use specialized cards for different types */}
-                      {card.card_type === 'technical-requirement-structured' ? (
+                      {card.card_type === 'prd' ? (
+                        <PRDCard
+                          prd={{
+                            id: card.id,
+                            title: card.title,
+                            description: card.description || '',
+                            card_data: card.card_data || {},
+                            created_at: card.created_at,
+                            updated_at: card.updated_at
+                          }}
+                          onUpdate={(id, updates) => updateCard(id, updates)}
+                          onDelete={(id) => deleteCard(id)}
+                          onDuplicate={(id) => {
+                            const originalCard = displayCards.find(c => c.id === id)
+                            if (originalCard) {
+                              createCard({
+                                title: `${originalCard.title} (Copy)`,
+                                description: originalCard.description,
+                                card_type: originalCard.card_type,
+                                priority: originalCard.priority,
+                                card_data: { ...originalCard.card_data }
+                              })
+                            }
+                          }}
+                          onConvertToTRD={() => toast('PRD to TRD conversion coming soon!')}
+                          onConvertToTasks={() => toast('PRD to Tasks conversion coming soon!')}
+                          isSelected={selectedCards.has(card.id)}
+                          onSelect={handleSelectCard}
+                        />
+                      ) : card.card_type === 'technical-requirement-structured' ? (
                         <TechnicalRequirementCard
                           requirement={{
                             id: card.id,

@@ -30,6 +30,7 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
   const [viewType, setViewType] = useState<'section' | 'group'>('section');
   const [showCreateGroupForm, setShowCreateGroupForm] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [draggedBlueprint, setDraggedBlueprint] = useState<string | null>(null);
 
   const [newGroupColor, setNewGroupColor] = useState('blue');
 
@@ -45,7 +46,8 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
 
   useEffect(() => {
     // Load enabled blueprints from strategy config
-    const config = strategy.blueprint_config as any;
+    // Try both naming conventions (database might have either)
+    const config = strategy.blueprint_config || strategy.blueprintConfiguration;
     if (config?.enabledBlueprints) {
       setEnabledBlueprints(config.enabledBlueprints);
       // Set first enabled blueprint as active section
@@ -53,6 +55,7 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
         setActiveSection(config.enabledBlueprints[0]);
       }
     }
+    // If no config exists, keep the default ['strategic-context']
   }, [strategy]);
 
   // Load groups for this strategy
@@ -84,20 +87,30 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
     }
   };
 
-  // 🔧 DEBUG: Validate data flow
-  console.log('🔍 StrategyBank Debug:');
-  console.log('- Strategy ID:', strategy.id);
-  console.log('- User:', user?.email);
-  console.log('- All Cards Count:', allCards.length);
-  console.log('- Enabled Blueprints:', enabledBlueprints);
-  console.log('- Active Section:', activeSection);
   
   const handleBlueprintUpdate = async (newBlueprints: string[]) => {
     try {
-      // TODO: Update database when blueprint update functionality is ready
       console.log('🔄 Blueprint update requested:', newBlueprints);
       
-      // Update local state
+      // Update database
+      const { error } = await supabase
+        .from('strategies')
+        .update({
+          blueprint_config: {
+            enabledBlueprints: newBlueprints,
+            mandatoryBlueprints: ['strategic-context'],
+            lastUpdated: new Date().toISOString()
+          }
+        })
+        .eq('id', strategy.id);
+
+      if (error) {
+        console.error('Error saving blueprints to database:', error);
+        alert('Failed to save blueprint changes. Please try again.');
+        return;
+      }
+
+      // Update local state only after successful database update
       setEnabledBlueprints(newBlueprints);
       
       // If current active section is no longer enabled, switch to first available
@@ -106,8 +119,10 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
       }
       
       setActiveTool(null); // Close Blueprint Manager
+      console.log('✓ Blueprints saved successfully');
     } catch (error) {
       console.error('Error updating blueprints:', error);
+      alert('Failed to save blueprint changes. Please try again.');
     }
   };
 
@@ -166,6 +181,70 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
     setActiveTool(activeTool === toolId ? null : toolId);
   };
 
+  // Drag and drop handlers for reordering blueprints
+  const handleDragStart = (e: React.DragEvent, blueprintId: string) => {
+    setDraggedBlueprint(blueprintId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetBlueprintId: string) => {
+    e.preventDefault();
+    
+    if (!draggedBlueprint || draggedBlueprint === targetBlueprintId) {
+      return;
+    }
+
+    const draggedIndex = enabledBlueprints.indexOf(draggedBlueprint);
+    const targetIndex = enabledBlueprints.indexOf(targetBlueprintId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      return;
+    }
+
+    // Create a new array with the reordered blueprints
+    const newBlueprints = [...enabledBlueprints];
+    newBlueprints.splice(draggedIndex, 1);
+    newBlueprints.splice(targetIndex, 0, draggedBlueprint);
+
+    // Update local state
+    setEnabledBlueprints(newBlueprints);
+
+    // Save the new order to the database
+    try {
+      const { error } = await supabase
+        .from('strategies')
+        .update({
+          blueprint_config: {
+            enabledBlueprints: newBlueprints,
+            mandatoryBlueprints: ['strategic-context'],
+            lastUpdated: new Date().toISOString()
+          }
+        })
+        .eq('id', strategy.id);
+
+      if (error) {
+        console.error('Error saving blueprint order:', error);
+        // Revert on error
+        setEnabledBlueprints(enabledBlueprints);
+      }
+    } catch (error) {
+      console.error('Error updating blueprint order:', error);
+      // Revert on error
+      setEnabledBlueprints(enabledBlueprints);
+    }
+
+    setDraggedBlueprint(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBlueprint(null);
+  };
+
   return (
     <div className="h-full flex">
       {/* Left Sidebar - Exact Template Bank pattern */}
@@ -210,24 +289,41 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
             {enabledBlueprints.map((blueprintId) => {
               const cardCount = allCards.filter(card => card.cardType === blueprintId).length;
               return (
-                <button
+                <div
                   key={blueprintId}
-                  onClick={() => handleSectionSelect(blueprintId)}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, blueprintId)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, blueprintId)}
+                  onDragEnd={handleDragEnd}
                   className={`
-                    w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
-                    ${activeSection === blueprintId && viewType === 'section' && !activeTool
-                      ? 'bg-black bg-opacity-50 text-white'
-                      : 'text-black hover:bg-gray-100'
-                    }
+                    cursor-move select-none
+                    ${draggedBlueprint === blueprintId ? 'opacity-50' : ''}
                   `}
                 >
-                  <span className="text-xs capitalize">{blueprintId.replace('-', ' ')}</span>
-                  <span className={`text-xs ${
-                    activeSection === blueprintId && viewType === 'section' && !activeTool
-                      ? 'text-white'
-                      : 'text-black'
-                  }`}>{cardCount}</span>
-                </button>
+                  <button
+                    onClick={() => handleSectionSelect(blueprintId)}
+                    className={`
+                      w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
+                      ${activeSection === blueprintId && viewType === 'section' && !activeTool
+                        ? 'bg-black bg-opacity-50 text-white'
+                        : 'text-black hover:bg-gray-100'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                      </svg>
+                      <span className="text-xs capitalize">{blueprintId.replace('-', ' ')}</span>
+                    </div>
+                    <span className={`text-xs ${
+                      activeSection === blueprintId && viewType === 'section' && !activeTool
+                        ? 'text-white'
+                        : 'text-black'
+                    }`}>{cardCount}</span>
+                  </button>
+                </div>
               );
             })}
           </div>
