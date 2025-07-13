@@ -11,7 +11,7 @@ interface FeatureFlags {
 }
 
 const DEFAULT_FLAGS: FeatureFlags = {
-  MASTERCARD_NEW_UI: false, // Start with false, enable gradually
+  MASTERCARD_NEW_UI: true, // ✅ ENABLED - Full enhanced UI active
   MASTERCARD_AUTO_SAVE: true,
   ENABLE_UNDO_REDO: true,
   ENABLE_OFFLINE_MODE: true,
@@ -147,6 +147,32 @@ export function resetFeatureFlags() {
     localStorage.removeItem('featureFlags')
     window.location.reload()
   }
+}
+
+// 🚀 ONE-CLICK FULL ENABLEMENT
+export function enableAllFeatures() {
+  if (typeof window !== 'undefined') {
+    const allEnabled: FeatureFlags = {
+      MASTERCARD_NEW_UI: true,
+      MASTERCARD_AUTO_SAVE: true,
+      ENABLE_UNDO_REDO: true,
+      ENABLE_OFFLINE_MODE: true,
+      ENABLE_AI_ENHANCEMENT: true,
+      ENABLE_VALIDATION: true,
+      ENABLE_KEYBOARD_SHORTCUTS: true
+    }
+    
+    localStorage.setItem('featureFlags', JSON.stringify(allEnabled))
+    
+    // Trigger update event
+    window.dispatchEvent(new CustomEvent('featureFlagsUpdated', { 
+      detail: { enabled: 'all' } 
+    }))
+    
+    console.log('🚀 All Enhanced MasterCard features enabled!')
+    return true
+  }
+  return false
 }
 
 // Development helper to show current flags

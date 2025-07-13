@@ -51,17 +51,12 @@ function MasterCardInternal(props: MasterCardProps) {
     return <LegacyMasterCard {...props} />
   }
   
-  // Check card type specific rollout
-  // For example, start with specific card types
-  const enhancedCardTypes = ['vision', 'strategic-context', 'okrs']
-  const isCardTypeEnabled = enhancedCardTypes.includes(props.cardData.cardType)
-  
-  // Use feature flag and card type check
-  if (flags.MASTERCARD_NEW_UI && isCardTypeEnabled) {
+  // 🚀 FULL ENABLEMENT - Enhanced UI for ALL card types
+  if (flags.MASTERCARD_NEW_UI) {
     return <EnhancedMasterCard {...props} />
   }
   
-  // Default to legacy
+  // Fallback to legacy (should rarely happen now)
   return <LegacyMasterCard {...props} />
 }
 
