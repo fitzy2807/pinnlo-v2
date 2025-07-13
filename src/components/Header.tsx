@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useAuth } from '@/providers/AuthProvider'
 import { ChevronDown, Home, BarChart3, Building2, Database, Settings, Sparkles, Brain, Layout, Layers } from 'lucide-react'
-import DevelopmentBankModal from '@/components/development-bank/DevelopmentBankModal'
+import DevelopmentBankModal from '@/components/development-bank-v2/DevelopmentBankModal'
+import DevelopmentBankModalV1 from '@/components/development-bank/DevelopmentBankModal'
 import StrategyBankModal from '@/components/strategy-bank/StrategyBankModal'
 import IntelligenceBank from '@/components/intelligence-bank/IntelligenceBank'
 import TemplateBankModal from '@/components/template-bank/TemplateBankModal'
@@ -11,6 +12,7 @@ import TemplateBankModal from '@/components/template-bank/TemplateBankModal'
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [developmentBankOpen, setDevelopmentBankOpen] = useState(false)
+  const [developmentBank2Open, setDevelopmentBank2Open] = useState(false)
   const [strategyBankOpen, setStrategyBankOpen] = useState(false)
   const [intelligenceBankOpen, setIntelligenceBankOpen] = useState(false)
   const [templateBankOpen, setTemplateBankOpen] = useState(false)
@@ -55,6 +57,13 @@ export default function Header() {
             >
               <Building2 size={14} />
               <span className="text-xs font-medium">Development Bank</span>
+            </button>
+            <button
+              onClick={() => setDevelopmentBank2Open(true)}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
+            >
+              <Database size={14} />
+              <span className="text-xs font-medium">Dev Bank v2</span>
             </button>
             <button
               onClick={() => setStrategyBankOpen(true)}
@@ -138,10 +147,16 @@ export default function Header() {
         </div>
       </div>
       
-      {/* Development Bank Modal */}
-      <DevelopmentBankModal
+      {/* Development Bank V1 Modal */}
+      <DevelopmentBankModalV1
         isOpen={developmentBankOpen}
         onClose={() => setDevelopmentBankOpen(false)}
+      />
+      
+      {/* Development Bank V2 Modal */}
+      <DevelopmentBankModal
+        isOpen={developmentBank2Open}
+        onClose={() => setDevelopmentBank2Open(false)}
       />
       
 
