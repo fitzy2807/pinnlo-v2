@@ -7,7 +7,7 @@ import StrategySelectionGateway from '@/components/strategy-bank/StrategySelecti
 
 export default function StrategyBankPage() {
   const router = useRouter();
-  const { strategies, loading, createStrategy } = useStrategies();
+  const { strategies, loading, createStrategy, updateStrategy, deleteStrategy, duplicateStrategy } = useStrategies();
   const [creating, setCreating] = useState(false);
 
   const handleSelectStrategy = (strategyId: number) => {
@@ -42,6 +42,9 @@ export default function StrategyBankPage() {
       creating={creating}
       onSelectStrategy={handleSelectStrategy}
       onCreateStrategy={handleCreateStrategy}
+      onUpdateStrategy={updateStrategy}
+      onDeleteStrategy={deleteStrategy}
+      onDuplicateStrategy={duplicateStrategy}
     />
   );
 }

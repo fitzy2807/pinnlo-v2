@@ -194,6 +194,96 @@ export function useStrategies() {
     }
   }
 
+  // Update strategy
+  const updateStrategy = async (strategyId: number, updates: { title?: string; client?: string; description?: string }): Promise<boolean> => {
+    if (!user) {
+      setError('User not authenticated')
+      return false
+    }
+
+    try {
+      setError(null)
+
+      const { data, error: updateError } = await supabase
+        .from('strategies')
+        .update({
+          title: updates.title,
+          client: updates.client,
+          description: updates.description,
+          updatedAt: new Date().toISOString()
+        })
+        .eq('id', strategyId)
+        .eq('userId', user.id) // Ensure user can only update their own strategies
+        .select()
+        .single()
+
+      if (updateError) {
+        throw updateError
+      }
+
+      // Update local state
+      setStrategies(prev => prev.map(strategy => 
+        strategy.id === strategyId ? { ...strategy, ...data } : strategy
+      ))
+      return true
+    } catch (err) {
+      console.error('Error updating strategy:', err)
+      setError(err instanceof Error ? err.message : 'Failed to update strategy')
+      return false
+    }
+  }
+
+  // Duplicate strategy
+  const duplicateStrategy = async (strategyId: number): Promise<Strategy | null> => {
+    if (!user) {
+      setError('User not authenticated')
+      return null
+    }
+
+    try {
+      setError(null)
+
+      // First, get the original strategy
+      const { data: originalStrategy, error: fetchError } = await supabase
+        .from('strategies')
+        .select('*')
+        .eq('id', strategyId)
+        .eq('userId', user.id)
+        .single()
+
+      if (fetchError || !originalStrategy) {
+        throw fetchError || new Error('Strategy not found')
+      }
+
+      // Create duplicate with modified title
+      const duplicateData = {
+        ...originalStrategy,
+        title: `${originalStrategy.title || 'Untitled Strategy'} (Copy)`,
+        id: undefined, // Remove ID so it gets auto-generated
+        createdAt: undefined, // Remove timestamps so they get auto-generated
+        updatedAt: undefined,
+      }
+
+      const { data, error: createError } = await supabase
+        .from('strategies')
+        .insert(duplicateData)
+        .select()
+        .single()
+
+      if (createError) {
+        throw createError
+      }
+
+      // Add to local state
+      setStrategies(prev => [data, ...prev])
+      return data
+    } catch (err) {
+      console.error('Error duplicating strategy:', err)
+      setError(err instanceof Error ? err.message : 'Failed to duplicate strategy')
+      return null
+    }
+  }
+
   // Delete strategy
   const deleteStrategy = async (strategyId: number): Promise<boolean> => {
     if (!user) {
@@ -262,6 +352,8 @@ export function useStrategies() {
     loading,
     error,
     createStrategy,
+    updateStrategy,
+    duplicateStrategy,
     deleteStrategy,
     refreshStrategies,
   }

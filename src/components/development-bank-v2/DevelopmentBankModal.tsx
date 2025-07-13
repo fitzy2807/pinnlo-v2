@@ -4,30 +4,29 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useStrategies } from '@/hooks/useStrategies';
-import StrategySelectionGateway from './StrategySelectionGateway';
-import StrategyBank from './StrategyBank';
+import DevelopmentBankSelectionGateway from './DevelopmentBankSelectionGateway';
+import DevelopmentBank from './DevelopmentBank';
 
-interface StrategyBankModalProps {
+interface DevelopmentBankModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function StrategyBankModal({ isOpen, onClose }: StrategyBankModalProps) {
+export default function DevelopmentBankModal({ isOpen, onClose }: DevelopmentBankModalProps) {
   const router = useRouter();
-  const { strategies, loading, createStrategy, updateStrategy, deleteStrategy, duplicateStrategy } = useStrategies();
-  const [creating, setCreating] = useState(false);
+  const { strategies, loading } = useStrategies();
   const [selectedStrategy, setSelectedStrategy] = useState(null);
 
   // Reset selection when modal opens
   React.useEffect(() => {
     if (isOpen) {
       setSelectedStrategy(null);
-      console.log('🔄 Strategy Bank Modal opened - reset to selection screen');
+      console.log('🔄 Development Bank Modal opened - reset to selection screen');
     }
   }, [isOpen]);
 
   // Debug: Log when modal opens and what strategies are available
-  console.log('🏦 StrategyBankModal Debug:');
+  console.log('🏗️ DevelopmentBankModal Debug:');
   console.log('- Modal isOpen:', isOpen);
   console.log('- Strategies loaded:', strategies.length);
   console.log('- Selected strategy:', selectedStrategy?.title || 'None');
@@ -37,27 +36,6 @@ export default function StrategyBankModal({ isOpen, onClose }: StrategyBankModal
     const strategy = strategies.find(s => s.id === strategyId);
     if (strategy) {
       setSelectedStrategy(strategy);
-    }
-  };
-
-  const handleCreateStrategy = async (title: string, client: string, description: string) => {
-    setCreating(true);
-    try {
-      const newStrategy = await createStrategy({
-        title,
-        client,
-        description,
-        status: 'draft'
-      });
-      
-      if (newStrategy) {
-        setSelectedStrategy(newStrategy);
-      }
-    } catch (error) {
-      console.error('Error creating strategy:', error);
-      alert('Failed to create strategy. Please try again.');
-    } finally {
-      setCreating(false);
     }
   };
 
@@ -73,7 +51,7 @@ export default function StrategyBankModal({ isOpen, onClose }: StrategyBankModal
         {/* Header with close button */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold">
-            {selectedStrategy ? `Strategy Bank - ${selectedStrategy.title}` : 'Strategy Bank'}
+            {selectedStrategy ? `Development Bank - ${selectedStrategy.title}` : 'Development Bank'}
           </h2>
           <button
             onClick={onClose}
@@ -86,20 +64,15 @@ export default function StrategyBankModal({ isOpen, onClose }: StrategyBankModal
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {selectedStrategy ? (
-            <StrategyBank 
+            <DevelopmentBank 
               strategy={selectedStrategy} 
               onBack={handleBackToSelection}
             />
           ) : (
-            <StrategySelectionGateway
+            <DevelopmentBankSelectionGateway
               strategies={strategies}
               loading={loading}
-              creating={creating}
               onSelectStrategy={handleSelectStrategy}
-              onCreateStrategy={handleCreateStrategy}
-              onUpdateStrategy={updateStrategy}
-              onDeleteStrategy={deleteStrategy}
-              onDuplicateStrategy={duplicateStrategy}
             />
           )}
         </div>
