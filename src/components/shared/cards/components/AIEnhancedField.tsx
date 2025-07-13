@@ -40,6 +40,7 @@ export function AIEnhancedField({
   error,
   disabled = false,
   rows = 3,
+  debounceMs = 300,
   cardType,
   enableSuggestions = true,
   suggestionTrigger = 'both'
