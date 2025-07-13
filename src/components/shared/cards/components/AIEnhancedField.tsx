@@ -42,7 +42,7 @@ export function AIEnhancedField({
   rows = 3,
   debounceMs = 300,
   cardType,
-  enableSuggestions = true,
+  enableSuggestions = false,
   suggestionTrigger = 'both'
 }: AIEnhancedFieldProps) {
   const [isEnhancing, setIsEnhancing] = useState(false)

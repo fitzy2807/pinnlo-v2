@@ -21,7 +21,7 @@ export function DateField({ value, onChange, required, placeholder }: DateFieldP
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           required={required}
-          className="input flex-1"
+          className="input flex-1 text-black"
           onFocus={() => setIsEditing(true)}
           onBlur={() => setIsEditing(false)}
         />

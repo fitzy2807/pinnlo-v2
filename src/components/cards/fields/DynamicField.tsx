@@ -70,7 +70,7 @@ export default function DynamicField({
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={field.placeholder}
-            className="input input-sm"
+            className="input input-sm text-black"
             maxLength={field.type === 'text' ? field.maxLength : undefined}
             pattern={field.type === 'text' ? field.pattern : undefined}
             required={field.required}
@@ -91,7 +91,7 @@ export default function DynamicField({
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={field.placeholder}
-            className="input input-sm"
+            className="input input-sm text-black"
             rows={field.type === 'textarea' ? field.rows || 3 : undefined}
             maxLength={field.type === 'textarea' ? field.maxLength : undefined}
             required={field.required}
@@ -133,7 +133,7 @@ export default function DynamicField({
             <select
               value={value || ''}
               onChange={(e) => onChange(e.target.value)}
-              className="input input-sm"
+              className="input input-sm text-black"
               required={field.required}
             >
               <option value="">Select {field.label.toLowerCase()}...</option>
@@ -179,7 +179,7 @@ export default function DynamicField({
             value={value || ''}
             onChange={(e) => onChange(e.target.value ? Number(e.target.value) : '')}
             placeholder={field.placeholder}
-            className="input input-sm"
+            className="input input-sm text-black"
             min={field.type === 'number' ? field.min : undefined}
             max={field.type === 'number' ? field.max : undefined}
             step={field.type === 'number' ? field.step : undefined}
@@ -201,7 +201,7 @@ export default function DynamicField({
             type="date"
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            className="input input-sm"
+            className="input input-sm text-black"
             required={field.required}
           />
         </div>
@@ -223,7 +223,7 @@ export default function DynamicField({
               value={dateRangeValue.start || ''}
               onChange={(e) => onChange({ ...dateRangeValue, start: e.target.value })}
               placeholder="Start date"
-              className="input input-sm"
+              className="input input-sm text-black"
               required={field.required}
             />
             <input
@@ -231,7 +231,7 @@ export default function DynamicField({
               value={dateRangeValue.end || ''}
               onChange={(e) => onChange({ ...dateRangeValue, end: e.target.value })}
               placeholder="End date"
-              className="input input-sm"
+              className="input input-sm text-black"
               required={field.required}
             />
           </div>

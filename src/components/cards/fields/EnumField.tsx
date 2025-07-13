@@ -19,7 +19,7 @@ export function EnumField({ value, options, onChange, placeholder, required }: E
         value={stringValue}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        className="input appearance-none pr-8"
+        className="input appearance-none pr-8 text-black"
       >
         {placeholder && (
           <option value="" disabled>

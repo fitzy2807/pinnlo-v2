@@ -50,7 +50,7 @@ export function ObjectField({ value, onChange, placeholder }: ObjectFieldProps) 
               newValue[e.target.value] = val
               onChange(newValue)
             }}
-            className="input-sm text-xs font-medium flex-1"
+            className="input-sm text-xs font-medium flex-1 text-black"
             placeholder="Property name"
           />
           <span className="text-gray-400">:</span>
@@ -58,7 +58,7 @@ export function ObjectField({ value, onChange, placeholder }: ObjectFieldProps) 
             type="text"
             value={String(val)}
             onChange={(e) => updateProperty(key, e.target.value)}
-            className="input-sm text-xs flex-2"
+            className="input-sm text-xs flex-2 text-black"
             placeholder="Property value"
           />
           <button
@@ -77,7 +77,7 @@ export function ObjectField({ value, onChange, placeholder }: ObjectFieldProps) 
           type="text"
           value={newKey}
           onChange={(e) => setNewKey(e.target.value)}
-          className="input-sm text-xs flex-1"
+          className="input-sm text-xs flex-1 text-black"
           placeholder="Property name"
         />
         <span className="text-gray-400">:</span>
@@ -85,7 +85,7 @@ export function ObjectField({ value, onChange, placeholder }: ObjectFieldProps) 
           type="text"
           value={newValue}
           onChange={(e) => setNewValue(e.target.value)}
-          className="input-sm text-xs flex-2"
+          className="input-sm text-xs flex-2 text-black"
           placeholder="Property value"
           onKeyPress={(e) => e.key === 'Enter' && addProperty()}
         />

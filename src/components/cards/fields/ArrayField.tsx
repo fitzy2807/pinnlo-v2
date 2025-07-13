@@ -79,14 +79,14 @@ export default function ArrayField({
                   type="text"
                   value={item}
                   onChange={(e) => updateItem(index, e.target.value)}
-                  className="input input-sm"
+                  className="input input-sm text-black"
                   placeholder={placeholder}
                 />
               ) : (
                 <textarea
                   value={item}
                   onChange={(e) => updateItem(index, e.target.value)}
-                  className="input input-sm"
+                  className="input input-sm text-black"
                   rows={2}
                   placeholder={placeholder}
                 />
@@ -114,14 +114,14 @@ export default function ArrayField({
                 value={newItem}
                 onChange={(e) => setNewItem(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="input input-sm"
+                className="input input-sm text-black"
                 placeholder={placeholder || `Add new ${label.toLowerCase()}...`}
               />
             ) : (
               <textarea
                 value={newItem}
                 onChange={(e) => setNewItem(e.target.value)}
-                className="input input-sm"
+                className="input input-sm text-black"
                 rows={2}
                 placeholder={placeholder || `Add new ${label.toLowerCase()}...`}
               />

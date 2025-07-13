@@ -163,7 +163,7 @@ export default function RelationshipEditor({
             <select
               value={selectedRelationType}
               onChange={(e) => setSelectedRelationType(e.target.value as Relationship['type'])}
-              className="input input-sm"
+              className="input input-sm text-black"
             >
               {RELATIONSHIP_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -183,7 +183,7 @@ export default function RelationshipEditor({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search for cards to link..."
-                className="input input-sm pl-9"
+                className="input input-sm pl-9 text-black"
               />
             </div>
           </div>

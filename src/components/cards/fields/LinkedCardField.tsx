@@ -135,7 +135,7 @@ export default function LinkedCardField({
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsOpen(true)}
               placeholder={`Search ${targetBlueprintType.replace('-', ' ')} cards...`}
-              className="input input-sm pl-9"
+              className="input input-sm pl-9 text-black"
             />
           </div>
 
