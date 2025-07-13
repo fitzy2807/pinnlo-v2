@@ -584,12 +584,18 @@ function EnhancedMasterCardInternal({
               <div className="space-y-4">
                 {/* Priority */}
                 <div>
-                  <EnumField
+                  <AIEnhancedField
                     label="Priority"
-                    value={localData.priority}
+                    value={localData.priority || ''}
                     onChange={(value) => handleFieldChange('priority', value)}
-                    options={['High', 'Medium', 'Low']}
-                    disabled={!isEditMode}
+                    fieldType="select"
+                    selectOptions={[
+                      { value: 'High', label: 'High' },
+                      { value: 'Medium', label: 'Medium' },
+                      { value: 'Low', label: 'Low' }
+                    ]}
+                    isEditMode={isEditMode}
+                    aiContext={`${cardData.cardType}_priority`}
                   />
                   <AIEnhancedField
                     label="Priority Rationale"
@@ -604,12 +610,18 @@ function EnhancedMasterCardInternal({
 
                 {/* Confidence */}
                 <div>
-                  <EnumField
+                  <AIEnhancedField
                     label="Confidence Level"
-                    value={localData.confidenceLevel}
+                    value={localData.confidenceLevel || ''}
                     onChange={(value) => handleFieldChange('confidenceLevel', value)}
-                    options={['High', 'Medium', 'Low']}
-                    disabled={!isEditMode}
+                    fieldType="select"
+                    selectOptions={[
+                      { value: 'High', label: 'High' },
+                      { value: 'Medium', label: 'Medium' },
+                      { value: 'Low', label: 'Low' }
+                    ]}
+                    isEditMode={isEditMode}
+                    aiContext={`${cardData.cardType}_confidence`}
                   />
                   <AIEnhancedField
                     label="Confidence Rationale"
