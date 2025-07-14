@@ -172,8 +172,13 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
   const [showFunctionsMenu, setShowFunctionsMenu] = useState(false)
   
   // Get agents for intelligence hub
-  const intelligenceAgents = getAgentsForHub('intelligence')
+  const [intelligenceAgents, setIntelligenceAgents] = useState<any[]>([])
   const [currentFunction, setCurrentFunction] = useState<string | null>(null)
+  
+  // Load agents on client side to avoid hydration mismatch
+  React.useEffect(() => {
+    setIntelligenceAgents(getAgentsForHub('intelligence'))
+  }, [])
   
   // Controller states
   const [showCreateCard, setShowCreateCard] = useState(false)
