@@ -2,20 +2,20 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/providers/AuthProvider'
-import { ChevronDown, Home, BarChart3, Building2, Database, Settings, Sparkles, Brain, Layout, Layers } from 'lucide-react'
+import { ChevronDown, Home, BarChart3, Building2, Database, Settings, Sparkles, Brain, Layout, Layers, Bot } from 'lucide-react'
 import DevelopmentBankModal from '@/components/development-bank-v2/DevelopmentBankModal'
-import DevelopmentBankModalV1 from '@/components/development-bank/DevelopmentBankModal'
 import StrategyBankModal from '@/components/strategy-bank/StrategyBankModal'
 import IntelligenceBank from '@/components/intelligence-bank/IntelligenceBank'
 import OrganisationBankModal from '@/components/organisation-bank/OrganisationBankModal'
+import AgentHubModal from '@/components/agent-hub/AgentHubModal'
 
 export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [developmentBankOpen, setDevelopmentBankOpen] = useState(false)
   const [developmentBank2Open, setDevelopmentBank2Open] = useState(false)
   const [strategyBankOpen, setStrategyBankOpen] = useState(false)
   const [intelligenceBankOpen, setIntelligenceBankOpen] = useState(false)
   const [organisationBankOpen, setOrganisationBankOpen] = useState(false)
+  const [agentHubOpen, setAgentHubOpen] = useState(false)
   const { user, signOut } = useAuth()
 
   const getInitials = (email: string) => {
@@ -49,35 +49,35 @@ export default function Header() {
               className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
             >
               <Brain size={14} />
-              <span className="text-xs font-medium">Intelligence Bank</span>
+              <span className="text-xs font-medium">Intelligence Hub</span>
             </button>
             <button
               onClick={() => setStrategyBankOpen(true)}
               className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
             >
               <Layers size={14} />
-              <span className="text-xs font-medium">Strategy Bank</span>
-            </button>
-            <button
-              onClick={() => setDevelopmentBankOpen(true)}
-              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
-            >
-              <Building2 size={14} />
-              <span className="text-xs font-medium">Development Bank</span>
+              <span className="text-xs font-medium">Strategy Hub</span>
             </button>
             <button
               onClick={() => setDevelopmentBank2Open(true)}
               className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
             >
               <Database size={14} />
-              <span className="text-xs font-medium">Dev Bank v2</span>
+              <span className="text-xs font-medium">Development Hub</span>
             </button>
             <button
               onClick={() => setOrganisationBankOpen(true)}
               className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
             >
               <Building2 size={14} />
-              <span className="text-xs font-medium">Organisation Bank</span>
+              <span className="text-xs font-medium">Organisation Hub</span>
+            </button>
+            <button
+              onClick={() => setAgentHubOpen(true)}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-white hover:bg-white hover:bg-opacity-10 transition-colors"
+            >
+              <Bot size={14} />
+              <span className="text-xs font-medium">Agent Hub</span>
             </button>
           </nav>
         </div>
@@ -140,13 +140,7 @@ export default function Header() {
         </div>
       </div>
       
-      {/* Development Bank V1 Modal */}
-      <DevelopmentBankModalV1
-        isOpen={developmentBankOpen}
-        onClose={() => setDevelopmentBankOpen(false)}
-      />
-      
-      {/* Development Bank V2 Modal */}
+      {/* Development Bank Modal */}
       <DevelopmentBankModal
         isOpen={developmentBank2Open}
         onClose={() => setDevelopmentBank2Open(false)}
@@ -169,6 +163,12 @@ export default function Header() {
       <OrganisationBankModal
         isOpen={organisationBankOpen}
         onClose={() => setOrganisationBankOpen(false)}
+      />
+      
+      {/* Agent Hub Modal */}
+      <AgentHubModal
+        isOpen={agentHubOpen}
+        onClose={() => setAgentHubOpen(false)}
       />
     </header>
   )

@@ -7,9 +7,9 @@ import { supabase } from '@/lib/supabase';
 import { FolderPlus, Sparkles } from 'lucide-react';
 import StrategyBankContent from './StrategyBankContent';
 import BlueprintManagerTool from './BlueprintManagerTool';
-import CardCreator from '@/components/shared/card-creator/CardCreator';
-import { createCardCreator } from '@/components/shared/card-creator/factory';
+import AgentsSection from './AgentsSection';
 import { GeneratedCard } from '@/components/shared/card-creator/types';
+import { getAgentsForHub } from '@/lib/agentRegistry';
 import { toast } from 'react-hot-toast';
 
 interface StrategyBankProps {
@@ -37,6 +37,9 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
   const [draggedBlueprint, setDraggedBlueprint] = useState<string | null>(null);
 
   const [newGroupColor, setNewGroupColor] = useState('blue');
+  
+  // Get agents for strategy hub
+  const strategyAgents = getAgentsForHub('strategy');
 
   // Color options for groups
   const colorOptions = [
@@ -183,6 +186,8 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
 
   const handleToolSelect = (toolId: string) => {
     setActiveTool(activeTool === toolId ? null : toolId);
+    setActiveSection('');
+    setActiveGroup(null);
   };
 
   // Drag and drop handlers for reordering blueprints
@@ -249,13 +254,6 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
     setDraggedBlueprint(null);
   };
 
-  // Card Creator configuration
-  const cardCreatorConfig = createCardCreator('strategy');
-
-  const handleCardCreatorClose = () => {
-    setActiveTool(null);
-  };
-
   const handleCardsCreated = async (generatedCards: GeneratedCard[]) => {
     try {
       // Get the createCard function from useCards hook
@@ -279,6 +277,7 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
       
       toast.success(`Created ${generatedCards.length} cards`);
       setActiveTool(null);
+      setShowAgents(false);
       
       // Reload the page to show new cards
       window.location.reload();
@@ -306,7 +305,7 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
 
         {/* Tools Section */}
         <div className="p-4 border-b border-gray-200">
-          <h3 className="text-[10px] font-semibold text-black uppercase tracking-wider mb-2">Tools</h3>
+          <h3 className="text-[10px] font-semibold text-black uppercase tracking-wider mb-2">Agent Tools</h3>
           
           <div className="space-y-1">
             <button
@@ -322,21 +321,22 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
               <span className="text-xs">Blueprint Manager</span>
             </button>
             
-            <button
-              onClick={() => handleToolSelect('card-creator')}
-              className={`
-                w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
-                ${activeTool === 'card-creator'
-                  ? 'bg-black bg-opacity-50 text-white'
-                  : 'text-black hover:bg-gray-100'
-                }
-              `}
-            >
-              <span className="text-xs flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3" />
-                Card Creator
-              </span>
-            </button>
+            {/* Dynamic Agents as Tools */}
+            {strategyAgents.map((agent) => (
+              <button
+                key={agent.id}
+                onClick={() => handleToolSelect(`agent-${agent.id}`)}
+                className={`
+                  w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
+                  ${activeTool === `agent-${agent.id}`
+                    ? 'bg-black bg-opacity-50 text-white'
+                    : 'text-black hover:bg-gray-100'
+                  }
+                `}
+              >
+                <span className="text-xs">{agent.name}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -488,11 +488,11 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
             onSave={handleBlueprintUpdate}
             onClose={() => setActiveTool(null)}
           />
-        ) : activeTool === 'card-creator' ? (
-          <CardCreator
-            config={cardCreatorConfig}
+        ) : activeTool?.startsWith('agent-') ? (
+          <AgentsSection
             strategy={strategy}
-            onClose={handleCardCreatorClose}
+            selectedAgentId={activeTool.replace('agent-', '')}
+            onClose={() => setActiveTool(null)}
             onCardsCreated={handleCardsCreated}
           />
         ) : (

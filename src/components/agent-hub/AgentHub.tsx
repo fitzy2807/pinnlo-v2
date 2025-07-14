@@ -1,27 +1,25 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, Pin, Upload, Link2, Zap, ArrowUpDown, Sparkles, Edit2, FolderPlus, ChevronDown, User, EyeOff, Layers, MoreHorizontal, X, Users, Folder, FolderPlus as FolderPlusIcon } from 'lucide-react'
-import MasterCard from '../cards/MasterCard'
-import { useOrganisationCards } from '@/hooks/organisation/useOrganisationCards'
-import { useOrganisationGroups, OrganisationGroup } from '@/hooks/organisation/useOrganisationGroups'
-import AgentsSection from './AgentsSection'
+import { Bot, Search, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, Pin, Upload, Link2, Zap, ArrowUpDown, Sparkles, Edit2, FolderPlus, ChevronDown, User, EyeOff, Layers, MoreHorizontal, X, Users, Folder, FolderPlus as FolderPlusIcon, Brain, FileText, Type, Wrench, GitBranch, Package, Archive } from 'lucide-react'
+import { useAgentCards } from '@/hooks/useAgentCards'
+import { useAgentGroups, AgentGroup } from '@/hooks/useAgentGroups'
+import AgentConfigurationPanel from './AgentConfigurationPanel'
 import { toast } from 'react-hot-toast'
-import { getAgentsForHub } from '@/lib/agentRegistry'
 
-interface OrganisationBankProps {
+interface AgentHubProps {
   onClose?: () => void
 }
 
-export default function OrganisationBank({ onClose }: OrganisationBankProps) {
-  const [selectedSection, setSelectedSection] = useState('companies')
+export default function AgentHub({ onClose }: AgentHubProps) {
+  const [selectedSection, setSelectedSection] = useState('content-creation')
   const [selectedTool, setSelectedTool] = useState<string | null>(null)
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
   const [viewType, setViewType] = useState<'section' | 'group'>('section')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('created')
   const [filterBy, setFilterBy] = useState('all')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set())
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
@@ -34,12 +32,10 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
   const [newGroupDescription, setNewGroupDescription] = useState('')
   const [newGroupColor, setNewGroupColor] = useState('blue')
   const [groupCards, setGroupCards] = useState<any[]>([])
+  const [configuringAgent, setConfiguringAgent] = useState<any | null>(null)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const quickAddRef = useRef<HTMLDivElement>(null)
-  
-  // Get agents for organisation hub
-  const organisationAgents = getAgentsForHub('organisation')
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -67,7 +63,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const { cards, loading, createCard, updateCard, deleteCard } = useOrganisationCards()
+  const { cards, loading, createCard, updateCard, deleteCard } = useAgentCards()
   const { 
     groups, 
     loading: groupsLoading, 
@@ -78,7 +74,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
     addCardToGroup,
     removeCardFromGroup,
     addCardsToGroup
-  } = useOrganisationGroups()
+  } = useAgentGroups()
 
   // Load group cards when a group is selected
   useEffect(() => {
@@ -105,16 +101,16 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
   const sortOptions = [
     { value: 'created', label: 'Created Date' },
     { value: 'updated', label: 'Updated Date' },
-    { value: 'title', label: 'Title A-Z' },
-    { value: 'priority', label: 'Priority' },
+    { value: 'name', label: 'Name A-Z' },
+    { value: 'type', label: 'Agent Type' },
   ]
 
   // Filter options
   const filterOptions = [
-    { value: 'all', label: 'All Cards' },
-    { value: 'high', label: 'High Priority' },
-    { value: 'medium', label: 'Medium Priority' },
-    { value: 'low', label: 'Low Priority' },
+    { value: 'all', label: 'All Agents' },
+    { value: 'active', label: 'Active Agents' },
+    { value: 'beta', label: 'Beta Agents' },
+    { value: 'deprecated', label: 'Deprecated' },
     { value: 'recent', label: 'Recent (7 days)' },
   ]
 
@@ -128,25 +124,25 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
     { value: 'gray', label: 'Gray', color: 'bg-gray-500' },
   ]
 
-  // Organisation-specific sections with their corresponding card types
+  // Agent categories (replacing sections)
   const sections = [
-    { id: 'companies', label: 'Companies', count: 0, cardType: 'company' },
-    { id: 'departments', label: 'Departments', count: 0, cardType: 'department' },
-    { id: 'teams', label: 'Teams', count: 0, cardType: 'team' },
-    { id: 'people', label: 'People', count: 0, cardType: 'person' },
-    { id: 'divisions', label: 'Divisions', count: 0, cardType: 'department' },
-    { id: 'business_units', label: 'Business Units', count: 0, cardType: 'department' },
-    { id: 'partners', label: 'Partners', count: 0, cardType: 'company' },
-    { id: 'archived', label: 'Archived', count: 0, cardType: 'organisation' },
+    { id: 'content-creation', label: 'Content Creation', icon: FileText, count: 1 },
+    { id: 'data-analysis', label: 'Data Analysis', icon: Database, count: 1 },
+    { id: 'research-discovery', label: 'Research & Discovery', icon: Search, count: 1 },
+    { id: 'automation', label: 'Automation', icon: Zap, count: 1 },
+    { id: 'integration', label: 'Integration', icon: GitBranch, count: 0 },
+    { id: 'utilities', label: 'Utilities', icon: Wrench, count: 0 },
+    { id: 'custom-agents', label: 'Custom Agents', icon: Package, count: 0 },
+    { id: 'archived', label: 'Archived', icon: Archive, count: 0 },
   ]
 
-  // Demo tools with generic template labels
+  // Agent management tools
   const tools = [
-    { id: 'tool1', label: 'Tool 1' },
-    { id: 'tool2', label: 'Tool 2' },
-    { id: 'tool3', label: 'Tool 3' },
-    { id: 'tool4', label: 'Tool 4' },
-    { id: 'tool5', label: 'Tool 5' },
+    { id: 'agent-builder', label: 'Agent Builder' },
+    { id: 'agent-testing', label: 'Agent Testing' },
+    { id: 'performance-metrics', label: 'Performance Metrics' },
+    { id: 'version-control', label: 'Version Control' },
+    { id: 'permissions', label: 'Permissions' },
   ]
 
   const handleSelectAll = () => {
@@ -171,16 +167,16 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
   const handleBulkDelete = async () => {
     if (selectedCards.size === 0) return
     
-    const confirmed = window.confirm(`Delete ${selectedCards.size} selected cards?`)
+    const confirmed = window.confirm(`Delete ${selectedCards.size} selected agents?`)
     if (!confirmed) return
 
     try {
       await Promise.all(Array.from(selectedCards).map(id => deleteCard(id)))
       setSelectedCards(new Set())
       if (viewType === 'group') await loadGroupCards()
-      toast.success(`Deleted ${selectedCards.size} cards`)
+      toast.success(`Deleted ${selectedCards.size} agents`)
     } catch (error) {
-      toast.error('Failed to delete cards')
+      toast.error('Failed to delete agents')
     }
   }
 
@@ -192,40 +188,47 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
       const selectedCardData = currentCards.filter(card => selectedCards.has(card.id))
       await Promise.all(selectedCardData.map(card => 
         createCard({
-          title: `${card.title} (Copy)`,
+          name: `${card.name} (Copy)`,
           description: card.description,
-          card_type: card.card_type,
-          priority: card.priority,
-          card_data: { ...card.card_data, section: selectedSection }
+          type: card.type,
+          capabilities: card.capabilities,
+          availableInHubs: card.availableInHubs,
+          configuration: card.configuration,
+          icon: card.icon,
+          component: card.component,
+          status: card.status,
+          version: card.version,
+          author: card.author,
+          section: selectedSection
         })
       ))
-      toast.success(`Duplicated ${selectedCards.size} cards`)
+      toast.success(`Duplicated ${selectedCards.size} agents`)
       setSelectedCards(new Set())
     } catch (error) {
-      toast.error('Failed to duplicate cards')
+      toast.error('Failed to duplicate agents')
     }
   }
 
   const handleCreateCard = async () => {
-    const currentSection = sections.find(s => s.id === selectedSection)
-    const cardType = currentSection?.cardType || 'organisation'
-    const title = `New ${currentSection?.label.slice(0, -1) || 'Organisation'}`
-    
     const newCard = await createCard({
-      title,
-      description: `New ${currentSection?.label.toLowerCase().slice(0, -1) || 'organisation'}`,
-      card_type: cardType,
-      priority: 'medium',
-      card_data: { 
-        section: selectedSection,
-        status: 'active'
-      }
+      name: 'New Agent',
+      description: 'Configure this agent for your needs',
+      type: 'creator',
+      capabilities: [],
+      availableInHubs: [],
+      configuration: {},
+      icon: 'Bot',
+      component: 'PlaceholderAgent',
+      status: 'beta',
+      version: '1.0.0',
+      author: 'User',
+      section: selectedSection
     })
-    toast.success(`${currentSection?.label.slice(0, -1) || 'Organisation'} card created`)
+    toast.success('Agent created')
   }
 
   const handleGenerateCard = () => {
-    toast('AI generation coming soon!')
+    toast('AI agent generation coming soon!')
   }
 
   const handleSortChange = (sortValue: string) => {
@@ -252,32 +255,32 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
 
   const handleQuickAddSubmit = async () => {
     if (!quickAddTitle.trim()) {
-      toast.error('Please enter a card title')
+      toast.error('Please enter an agent name')
       return
     }
 
-    const currentSection = sections.find(s => s.id === selectedSection)
-    const cardType = currentSection?.cardType || 'organisation'
-
     try {
       await createCard({
-        title: quickAddTitle.trim(),
-        description: quickAddDescription.trim() || `New ${currentSection?.label.toLowerCase().slice(0, -1) || 'organisation'}`,
-        card_type: cardType,
-        priority: 'medium',
-        card_data: { 
-          source: 'quick_add', 
-          section: selectedSection,
-          status: 'active'
-        }
+        name: quickAddTitle.trim(),
+        description: quickAddDescription.trim() || 'Quick add agent',
+        type: 'creator',
+        capabilities: [],
+        availableInHubs: [],
+        configuration: {},
+        icon: 'Bot',
+        component: 'PlaceholderAgent',
+        status: 'beta',
+        version: '1.0.0',
+        author: 'User',
+        section: selectedSection
       })
       
       setQuickAddTitle('')
       setQuickAddDescription('')
       setShowQuickAddForm(false)
-      toast.success('Card created successfully!')
+      toast.success('Agent created successfully!')
     } catch (error) {
-      toast.error('Failed to create card')
+      toast.error('Failed to create agent')
     }
   }
 
@@ -352,20 +355,20 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
     if (selectedCards.size === 0) return
 
     try {
-      console.log('Adding cards to group:', groupId)
-      console.log('Selected card IDs:', Array.from(selectedCards))
+      console.log('Adding agents to group:', groupId)
+      console.log('Selected agent IDs:', Array.from(selectedCards))
       await addCardsToGroup(groupId, Array.from(selectedCards))
       setSelectedCards(new Set())
       setShowGroupSelectionModal(false)
       // Refresh group cards if we're currently viewing this group
       if (selectedGroup === groupId && viewType === 'group') {
-        console.log('Refreshing group view after adding cards')
+        console.log('Refreshing group view after adding agents')
         await loadGroupCards()
       }
-      console.log('Cards added successfully')
+      console.log('Agents added successfully')
     } catch (error) {
       console.error('Error in handleAddToGroup:', error)
-      toast.error('Failed to add cards to group')
+      toast.error('Failed to add agents to group')
     }
   }
 
@@ -376,33 +379,33 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
       await removeCardFromGroup(selectedGroup, cardId)
       await loadGroupCards()
     } catch (error) {
-      toast.error('Failed to remove card from group')
+      toast.error('Failed to remove agent from group')
     }
   }
 
   const filteredCards = cards.filter(card => {
     // Filter by search query
-    if (searchQuery && !card.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
+    if (searchQuery && !card.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
         !card.description?.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false
     }
     
     // Filter by section (only for section view)
     if (viewType === 'section') {
-      const cardSection = card.card_data?.section || 'companies'
+      const cardSection = card.section || 'content-creation'
       if (cardSection !== selectedSection) {
         return false
       }
     }
     
-    // Filter by priority/type
+    // Filter by status
     if (filterBy !== 'all') {
       if (filterBy === 'recent') {
         const weekAgo = new Date()
         weekAgo.setDate(weekAgo.getDate() - 7)
-        return new Date(card.created_at) >= weekAgo
-      } else if (['high', 'medium', 'low'].includes(filterBy)) {
-        return card.priority === filterBy
+        return new Date(card.lastUpdated) >= weekAgo
+      } else if (['active', 'beta', 'deprecated'].includes(filterBy)) {
+        return card.status === filterBy
       }
     }
     
@@ -410,17 +413,15 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
   }).sort((a, b) => {
     // Apply sorting
     switch (sortBy) {
-      case 'title':
-        return a.title.localeCompare(b.title)
-      case 'priority':
-        const priorityOrder = { high: 3, medium: 2, low: 1 }
-        return (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) - 
-               (priorityOrder[a.priority as keyof typeof priorityOrder] || 0)
+      case 'name':
+        return a.name.localeCompare(b.name)
+      case 'type':
+        return a.type.localeCompare(b.type)
       case 'updated':
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
       case 'created':
       default:
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     }
   })
 
@@ -434,27 +435,9 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
       <div className="w-64 bg-white border-r border-gray-200">
         {/* Tools Section */}
         <div className="p-4 border-b border-gray-200">
-          <h3 className="text-[10px] font-semibold text-black uppercase tracking-wider mb-2">Agent Tools</h3>
+          <h3 className="text-[10px] font-semibold text-black uppercase tracking-wider mb-2">Agent Management</h3>
           
           <div className="space-y-1">
-            {/* Dynamic Agents */}
-            {organisationAgents.map((agent) => (
-              <button
-                key={agent.id}
-                onClick={() => handleToolClick(`agent-${agent.id}`)}
-                className={`
-                  w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
-                  ${selectedTool === `agent-${agent.id}`
-                    ? 'bg-black bg-opacity-50 text-white'
-                    : 'text-black hover:bg-gray-100'
-                  }
-                `}
-              >
-                <span className="text-xs">{agent.name}</span>
-              </button>
-            ))}
-            
-            {/* Other Tools */}
             {tools.map((tool) => (
               <button
                 key={tool.id}
@@ -473,31 +456,37 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
           </div>
         </div>
 
-        {/* Sections */}
+        {/* Agent Categories */}
         <div className="p-4 border-b border-gray-200">
-          <h3 className="text-[10px] font-semibold text-black uppercase tracking-wider mb-2">Sections</h3>
+          <h3 className="text-[10px] font-semibold text-black uppercase tracking-wider mb-2">Agent Categories</h3>
           
           <div className="space-y-1">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => handleSectionClick(section.id)}
-                className={`
-                  w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
-                  ${selectedSection === section.id && viewType === 'section' && !selectedTool
-                    ? 'bg-black bg-opacity-50 text-white'
-                    : 'text-black hover:bg-gray-100'
-                  }
-                `}
-              >
-                <span className="text-xs">{section.label}</span>
-                <span className={`text-xs ${
-                  selectedSection === section.id && viewType === 'section' && !selectedTool
-                    ? 'text-white'
-                    : 'text-black'
-                }`}>{section.count}</span>
-              </button>
-            ))}
+            {sections.map((section) => {
+              const Icon = section.icon
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => handleSectionClick(section.id)}
+                  className={`
+                    w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
+                    ${selectedSection === section.id && viewType === 'section' && !selectedTool
+                      ? 'bg-black bg-opacity-50 text-white'
+                      : 'text-black hover:bg-gray-100'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-3 h-3" />
+                    <span className="text-xs">{section.label}</span>
+                  </div>
+                  <span className={`text-xs ${
+                    selectedSection === section.id && viewType === 'section' && !selectedTool
+                      ? 'text-white'
+                      : 'text-black'
+                  }`}>{section.count}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -594,18 +583,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {selectedTool?.startsWith('agent-') ? (
-          <AgentsSection
-            selectedAgentId={selectedTool.replace('agent-', '')}
-            onClose={() => setSelectedTool(null)}
-            onCardsCreated={(cards) => {
-              toast.success(`Created ${cards.length} cards`)
-              setSelectedTool(null)
-              // Reload to show new cards
-              window.location.reload()
-            }}
-          />
-        ) : selectedTool ? (
+        {selectedTool ? (
           // Tool Content
           <div className="flex-1 flex flex-col">
           <div className="bg-white border-b border-gray-200">
@@ -614,7 +592,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
                 {tools.find(t => t.id === selectedTool)?.label}
               </h1>
               <p className="text-[11px] text-gray-500 mt-0.5">
-                Tool functionality and settings for {tools.find(t => t.id === selectedTool)?.label?.toLowerCase()}
+                Manage and configure {tools.find(t => t.id === selectedTool)?.label?.toLowerCase()}
               </p>
             </div>
             <div className="px-4 pb-2">
@@ -632,7 +610,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
             </div>
           </div>
             <div className="flex-1 p-6 text-center text-gray-500">
-              Tool content for {tools.find(t => t.id === selectedTool)?.label} coming soon...
+              {tools.find(t => t.id === selectedTool)?.label} functionality coming soon...
             </div>
           </div>
         ) : (
@@ -644,14 +622,14 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
               <div className="px-4 pt-2.5 pb-1.5">
                 <h1 className="text-lg font-medium text-gray-900">
                   {viewType === 'section' 
-                    ? `${currentSection?.label}` 
+                    ? `${currentSection?.label} Agents` 
                     : `${currentGroup?.name}`
                   }
                 </h1>
                 <p className="text-[11px] text-gray-500 mt-0.5">
                   {viewType === 'section' 
-                    ? 'Define the template foundation and context for your testing'
-                    : currentGroup?.description || 'Group collection of template cards'
+                    ? 'Browse and configure AI agents for your hubs'
+                    : currentGroup?.description || 'Group collection of agents'
                   }
                 </p>
               </div>
@@ -664,7 +642,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
                     <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search"
+                      placeholder="Search agents"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-7 pr-2.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none"
@@ -738,7 +716,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
                         onClick={handleCreateCard}
                         className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
                       >
-                        Add
+                        Add Agent
                       </button>
 
                       <button 
@@ -881,7 +859,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
                 <div className="px-4 py-2">
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-gray-700">Quick Add Card to {currentSection?.label}</span>
+                      <span className="text-xs font-medium text-gray-700">Quick Add Agent to {currentSection?.label}</span>
                     </div>
                     <button
                       onClick={handleQuickAddCancel}
@@ -894,7 +872,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
                   <div className="flex gap-2 mt-2">
                     <input
                       type="text"
-                      placeholder="Card title"
+                      placeholder="Agent name"
                       value={quickAddTitle}
                       onChange={(e) => setQuickAddTitle(e.target.value)}
                       onKeyPress={handleQuickAddKeyPress}
@@ -920,7 +898,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
                       disabled={!quickAddTitle.trim()}
                       className="px-1.5 py-0.5 text-xs text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Create Card
+                      Create Agent
                     </button>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
@@ -934,7 +912,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
             <div className="flex-1 p-4">
               {loading || groupsLoading ? (
                 <div className="flex items-center justify-center h-32">
-                  <div className="text-sm text-gray-500">Loading...</div>
+                  <div className="text-sm text-gray-500">Loading agents...</div>
                 </div>
               ) : displayCards.length === 0 ? (
                 <div className="flex items-center justify-center h-64">
@@ -945,27 +923,18 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
                     }`}
                   >
                     <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                      <Plus className="w-6 h-6 text-gray-400" />
+                      <Bot className="w-6 h-6 text-gray-400" />
                     </div>
                     <div>
                       <div className="text-sm font-medium text-gray-900">
-                        {viewType === 'section' ? 'Add New Card' : 'No Cards in Group'}
+                        {viewType === 'section' ? 'Add New Agent' : 'No Agents in Group'}
                       </div>
                       <div className="text-xs text-gray-500">
                         {viewType === 'section' 
-                          ? `Create a new ${sections.find(s => s.id === selectedSection)?.label.toLowerCase().slice(0, -1) || 'organisation'} card`
-                          : 'Add cards to this group from sections'
+                          ? 'Create a new AI agent for your hubs'
+                          : 'Add agents to this group from categories'
                         }
                       </div>
-                      {viewType === 'group' && (
-                        <div className="text-xs text-gray-400 mt-2">
-                          Debug Info:<br/>
-                          Group ID: {selectedGroup}<br/>
-                          Cards in state: {groupCards.length}<br/>
-                          View Type: {viewType}<br/>
-                          Display Cards: {displayCards.length}
-                        </div>
-                      )}
                     </div>
                   </button>
                 </div>
@@ -997,38 +966,53 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
                           </button>
                         </div>
                       )}
-                      <MasterCard
-                        cardData={{
-                          id: card.id,
-                          title: card.title,
-                          description: card.description || '',
-                          cardType: card.card_type,
-                          priority: card.priority.charAt(0).toUpperCase() + card.priority.slice(1) as 'High' | 'Medium' | 'Low',
-                          confidenceLevel: card.card_data?.confidenceLevel || 'Medium',
-                          priorityRationale: card.card_data?.priorityRationale || '',
-                          confidenceRationale: card.card_data?.confidenceRationale || '',
-                          tags: card.card_data?.tags || [],
-                          relationships: card.card_data?.relationships || [],
-                          strategicAlignment: card.card_data?.strategicAlignment || '',
-                          createdDate: card.created_at,
-                          lastModified: card.updated_at,
-                          creator: 'User',
-                          owner: 'User',
-                          ...card.card_data
-                        }}
-                        onUpdate={(updates) => updateCard(card.id, updates)}
-                        onDelete={() => deleteCard(card.id)}
-                        onDuplicate={() => {
-                          createCard({
-                            title: `${card.title} (Copy)`,
-                            description: card.description,
-                            card_type: card.card_type,
-                            priority: card.priority,
-                            card_data: { ...card.card_data, section: selectedSection }
-                          })
-                        }}
-                        onAIEnhance={() => toast('AI Enhancement coming soon!')}
-                      />
+                      {/* Agent Card Display */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <Bot className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-900">{card.name}</h3>
+                              <p className="text-xs text-gray-500">{card.type}</p>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            card.status === 'active' ? 'bg-green-100 text-green-800' :
+                            card.status === 'beta' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {card.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-3">{card.description}</p>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Available in:</span>
+                            <div className="flex gap-1">
+                              {card.availableInHubs.map((hub) => (
+                                <span key={hub} className="px-1.5 py-0.5 text-xs bg-gray-100 rounded">
+                                  {hub}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>v{card.version}</span>
+                            <span>{card.author}</span>
+                          </div>
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <button
+                              onClick={() => setConfiguringAgent(card)}
+                              className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors"
+                            >
+                              <Settings className="w-3 h-3" />
+                              Configure Agent
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1057,7 +1041,7 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
                       <div className="text-sm text-gray-500">{group.description}</div>
                     )}
                   </div>
-                  <div className="text-sm text-gray-500">{group.card_count || 0} cards</div>
+                  <div className="text-sm text-gray-500">{group.card_count || 0} agents</div>
                 </button>
               ))}
             </div>
@@ -1071,6 +1055,15 @@ export default function OrganisationBank({ onClose }: OrganisationBankProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Agent Configuration Panel */}
+      {configuringAgent && (
+        <AgentConfigurationPanel
+          agent={configuringAgent}
+          onClose={() => setConfiguringAgent(null)}
+          onUpdate={updateCard}
+        />
       )}
     </div>
   )

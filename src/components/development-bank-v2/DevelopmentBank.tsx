@@ -9,9 +9,9 @@ import PRDCard from './PRDCard'
 import TechnicalRequirementCard from './TechnicalRequirementCard'
 import TaskListCard from './TaskListCard'
 import { toast } from 'react-hot-toast'
-import CardCreator from '@/components/shared/card-creator/CardCreator'
-import { createCardCreator } from '@/components/shared/card-creator/factory'
+import AgentsSection from './AgentsSection'
 import { GeneratedCard } from '@/components/shared/card-creator/types'
+import { getAgentsForHub } from '@/lib/agentRegistry'
 
 interface DevelopmentBankProps {
   strategy: any
@@ -43,6 +43,9 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const quickAddRef = useRef<HTMLDivElement>(null)
+  
+  // Get agents for development hub
+  const developmentAgents = getAgentsForHub('development')
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -561,13 +564,6 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
     toast(`${toolId === selectedTool ? 'Deselected' : 'Selected'} ${tools.find(t => t.id === toolId)?.label}`)
   }
 
-  // Card Creator functions
-  const cardCreatorConfig = createCardCreator('development')
-
-  const handleCardCreatorClose = () => {
-    setSelectedTool(null)
-  }
-
   const handleCardsCreated = async (generatedCards: GeneratedCard[]) => {
     try {
       // Convert GeneratedCard to createCard format
@@ -720,9 +716,27 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
       <div className="w-64 bg-white border-r border-gray-200">
         {/* Tools Section */}
         <div className="p-4 border-b border-gray-200">
-          <h3 className="text-[10px] font-semibold text-black uppercase tracking-wider mb-2">Tools</h3>
+          <h3 className="text-[10px] font-semibold text-black uppercase tracking-wider mb-2">Agent Tools</h3>
           
           <div className="space-y-1">
+            {/* Dynamic Agents */}
+            {developmentAgents.map((agent) => (
+              <button
+                key={agent.id}
+                onClick={() => handleToolClick(`agent-${agent.id}`)}
+                className={`
+                  w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
+                  ${selectedTool === `agent-${agent.id}`
+                    ? 'bg-black bg-opacity-50 text-white'
+                    : 'text-black hover:bg-gray-100'
+                  }
+                `}
+              >
+                <span className="text-xs">{agent.name}</span>
+              </button>
+            ))}
+            
+            {/* Other Tools */}
             {tools.map((tool) => (
               <button
                 key={tool.id}
@@ -862,7 +876,13 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {selectedTool ? (
+        {showAgents ? (
+          <AgentsSection
+            strategy={strategy}
+            onClose={() => setShowAgents(false)}
+            onCardsCreated={handleCardsCreated}
+          />
+        ) : selectedTool ? (
           // Tool Content
           <div className="flex-1 flex flex-col">
             <div className="bg-white border-b border-gray-200">
@@ -880,18 +900,9 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
             </div>
             
             <div className="flex-1">
-              {selectedTool === 'card-creator' ? (
-                <CardCreator
-                  config={cardCreatorConfig}
-                  strategy={strategy}
-                  onClose={handleCardCreatorClose}
-                  onCardsCreated={handleCardsCreated}
-                />
-              ) : (
-                <div className="flex-1 p-6 text-center text-gray-500">
-                  Tool content for {tools.find(t => t.id === selectedTool)?.label} coming soon...
-                </div>
-              )}
+              <div className="flex-1 p-6 text-center text-gray-500">
+                Tool content for {tools.find(t => t.id === selectedTool)?.label} coming soon...
+              </div>
             </div>
           </div>
         ) : (

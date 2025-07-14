@@ -23,7 +23,6 @@ import {
   Lightbulb,
   Bookmark,
   Archive,
-  TestTube,
   Plus,
   ChevronDown,
   Grid3X3,
@@ -35,7 +34,8 @@ import {
   Menu,
   Folder,
   FolderPlus,
-  Zap
+  Zap,
+  Bot
 } from 'lucide-react'
 import IntelligenceProfile from './IntelligenceProfile'
 import IntelligenceCardList from '../intelligence-cards/IntelligenceCardList'
@@ -43,8 +43,9 @@ import IntelligenceCardEditor from '../intelligence-cards/IntelligenceCardEditor
 import IntelligenceGroups from '../intelligence-groups/IntelligenceGroups'
 import BulkActionsToolbar from '../intelligence-groups/BulkActionsToolbar'
 import CardGroupSelector from '../intelligence-groups/CardGroupSelector'
-import AutomationDashboard from '../intelligence/AutomationDashboard'
 import GroupsSelector from './GroupsSelector'
+import AgentsSection from './AgentsSection'
+import { getAgentsForHub } from '@/lib/agentRegistry'
 import { 
   IntelligenceCard as IntelligenceCardType,
   IntelligenceCardCategory,
@@ -55,6 +56,7 @@ import {
 import { useIntelligenceCardCounts, useCreateIntelligenceCard, useUpdateIntelligenceCard, useIntelligenceCardActions } from '@/hooks/useIntelligenceCards'
 import { useIntelligenceGroups } from '@/hooks/useIntelligenceGroups'
 import { useTextProcessing } from '@/hooks/useTextProcessing'
+import { useUrlAnalysis } from '@/hooks/useUrlAnalysis'
 
 interface IntelligenceBankProps {
   isOpen: boolean
@@ -166,6 +168,9 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
   const [searchQuery, setSearchQuery] = useState('')
   const [showProfileConfig, setShowProfileConfig] = useState(false)
   const [showFunctionsMenu, setShowFunctionsMenu] = useState(false)
+  
+  // Get agents for intelligence hub
+  const intelligenceAgents = getAgentsForHub('intelligence')
   const [currentFunction, setCurrentFunction] = useState<string | null>(null)
   
   // Controller states
@@ -288,76 +293,28 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
                 </button>
               </div>
               
-              {/* Intelligence Tools Button */}
-              <button 
-                onClick={() => setShowFunctionsMenu(!showFunctionsMenu)}
-                className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 transition-colors mb-3 functions-menu"
-              >
-                <Menu className="w-3 h-3" />
-                <span>Intelligence Tools</span>
-              </button>
-              
-              {/* Functions Dropdown in Sidebar */}
-              {showFunctionsMenu && (
-                <div className="mb-3 space-y-1 functions-menu">
+              {/* Agent Tools */}
+              <div className="space-y-1 mb-3">
+                <button
+                  onClick={() => setSelectedCategory('profile')}
+                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 rounded flex items-center space-x-2 text-gray-700"
+                >
+                  <Settings className="w-3 h-3 text-gray-500" />
+                  <span>Intelligence Profile</span>
+                </button>
+                
+                
+                {/* Dynamic Agents */}
+                {intelligenceAgents.map((agent) => (
                   <button
-                    onClick={() => {
-                      setSelectedCategory('profile')
-                      setShowFunctionsMenu(false)
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 rounded flex items-center space-x-2 text-gray-900"
+                    key={agent.id}
+                    onClick={() => setSelectedCategory(`agent-${agent.id}`)}
+                    className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 rounded flex items-center space-x-2 text-gray-700"
                   >
-                    <Settings className="w-3 h-3 text-gray-500" />
-                    <span className="text-xs">Intelligence Profile</span>
+                    <span>{agent.name}</span>
                   </button>
-                  
-                  <button
-                    onClick={() => {
-                      setSelectedCategory('upload-data')
-                      setShowFunctionsMenu(false)
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 rounded flex items-center space-x-2 text-gray-900"
-                  >
-                    <Upload className="w-3 h-3 text-gray-500" />
-                    <span className="text-xs">Upload Data</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      setSelectedCategory('upload-link')
-                      setShowFunctionsMenu(false)
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 rounded flex items-center space-x-2 text-gray-900"
-                  >
-                    <Link className="w-3 h-3 text-gray-500" />
-                    <span className="text-xs">Upload Link</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      setSelectedCategory('text-paste')
-                      setShowFunctionsMenu(false)
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 rounded flex items-center space-x-2 text-gray-900"
-                  >
-                    <TestTube className="w-3 h-3 text-gray-500" />
-                    <span className="text-xs">Text/Paste</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      setSelectedCategory('automation')
-                      setShowFunctionsMenu(false)
-                    }}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 rounded flex items-center space-x-2 text-gray-900"
-                  >
-                    <Zap className="w-3 h-3 text-gray-500" />
-                    <span className="text-xs">Automation</span>
-                  </button>
-                </div>
-              )}
-              
-              <p className="text-xs text-gray-600">Strategic intelligence for informed decisions</p>
+                ))}
+              </div>
             </div>
 
             {/* Categories */}
@@ -385,13 +342,6 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
                         <span className="mr-1.5">+</span>
                         <span>{category.name}</span>
                       </div>
-                      <span className={`text-xs px-1 py-0.5 rounded ${
-                        isSelected 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {category.count}
-                      </span>
                     </button>
                   )
                 })}
@@ -507,7 +457,7 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
                     <>
                       {/* Regular Action Buttons - shown when no cards are selected */}
                       {/* Add Card Button */}
-                      {selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && selectedCategory !== 'upload-data' && selectedCategory !== 'upload-link' && selectedCategory !== 'text-paste' && selectedCategory !== 'automation' && (
+                      {selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && selectedCategory !== 'upload-data' && selectedCategory !== 'upload-link' && selectedCategory !== 'text-paste' && (
                         <button 
                           onClick={() => {
                             const event = new CustomEvent('intelligence-bank-create-card', { 
@@ -523,11 +473,6 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
                         </button>
                       )}
                       
-                      <button className="flex items-center space-x-1 px-2 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors">
-                        <TestTube className="w-3 h-3" />
-                        <span className="hidden lg:inline">Test MCP System</span>
-                        <span className="lg:hidden">Test</span>
-                      </button>
                       
                       <div className="text-xs text-gray-600">
                         <span className="font-medium">{totalCards}</span> cards
@@ -538,7 +483,7 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
               </div>
 
               {/* Search and Filters - only for card categories */}
-              {selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && selectedCategory !== 'upload-data' && selectedCategory !== 'upload-link' && selectedCategory !== 'text-paste' && selectedCategory !== 'automation' && (
+              {selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && selectedCategory !== 'upload-data' && selectedCategory !== 'upload-link' && selectedCategory !== 'text-paste' && (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <div className="flex-1 relative">
                     <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
@@ -683,7 +628,7 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
               )}
               
               {/* Advanced Filters Panel */}
-              {showAdvancedFilters && selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && selectedCategory !== 'upload-data' && selectedCategory !== 'upload-link' && selectedCategory !== 'text-paste' && selectedCategory !== 'automation' && (
+              {showAdvancedFilters && selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && selectedCategory !== 'upload-data' && selectedCategory !== 'upload-link' && selectedCategory !== 'text-paste' && (
                 <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-md animate-in slide-in-from-top-2 duration-200">
                   <div className="space-y-4">
                     {/* Date Range */}
@@ -873,24 +818,22 @@ export default function IntelligenceBank({ isOpen, onClose }: IntelligenceBankPr
 
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto">
-              {selectedCategory === 'dashboard' ? (
+              {selectedCategory.startsWith('agent-') ? (
+                <AgentsSection 
+                  selectedAgentId={selectedCategory.replace('agent-', '')}
+                  onClose={() => setSelectedCategory('dashboard')} 
+                />
+              ) : selectedCategory === 'dashboard' ? (
                 <DashboardContent 
                   categoryCounts={categoryCounts}
                   statusCounts={statusCounts}
                   totalCards={totalCards}
+                  setSelectedCategory={setSelectedCategory}
                 />
               ) : selectedCategory === 'profile' ? (
                 <div className="p-6">
                   <IntelligenceProfile />
                 </div>
-              ) : selectedCategory === 'upload-data' ? (
-                <UploadDataContent />
-              ) : selectedCategory === 'upload-link' ? (
-                <UploadLinkContent />
-              ) : selectedCategory === 'text-paste' ? (
-                <TextPasteContent />
-              ) : selectedCategory === 'automation' ? (
-                <AutomationContent />
               ) : selectedCategory === 'groups' ? (
                 <IntelligenceGroups
                   selectedCardIds={selectedCardIds}
@@ -954,9 +897,10 @@ interface DashboardContentProps {
   categoryCounts: Record<string, number>
   statusCounts: { saved: number, archived: number }
   totalCards: number
+  setSelectedCategory: (category: string) => void
 }
 
-function DashboardContent({ categoryCounts, statusCounts, totalCards }: DashboardContentProps) {
+function DashboardContent({ categoryCounts, statusCounts, totalCards, setSelectedCategory }: DashboardContentProps) {
   return (
     <div className="p-6">
       <div className="mb-8">
@@ -1059,28 +1003,6 @@ function DashboardContent({ categoryCounts, statusCounts, totalCards }: Dashboar
               <div>
                 <div className="text-sm font-medium text-gray-900">Add Intelligence Card</div>
                 <div className="text-xs text-gray-500">Create new market intelligence</div>
-              </div>
-            </button>
-            
-            <button 
-              onClick={() => console.log('Upload Data clicked')}
-              className="w-full flex items-center space-x-3 p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Upload className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="text-sm font-medium text-gray-900">Upload Data</div>
-                <div className="text-xs text-gray-500">Convert files to intelligence</div>
-              </div>
-            </button>
-            
-            <button 
-              onClick={() => console.log('Upload Link clicked')}
-              className="w-full flex items-center space-x-3 p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Link className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="text-sm font-medium text-gray-900">Analyze URL</div>
-                <div className="text-xs text-gray-500">Extract intelligence from links</div>
               </div>
             </button>
           </div>
@@ -1244,315 +1166,6 @@ function IntelligenceCardsContent({
   )
 }
 
-// Upload Data Page Component
-function UploadDataContent() {
-  return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Upload Data</h2>
-        <p className="text-sm text-gray-600">Convert files to intelligence cards</p>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="text-center py-8">
-          <Upload className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Upload Data functionality coming soon</p>
-          <p className="text-xs text-gray-400 mt-1">Drag and drop files or select from your device</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Upload Link Page Component
-function UploadLinkContent() {
-  return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Upload Link</h2>
-        <p className="text-sm text-gray-600">Analyze URLs for intelligence extraction</p>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="text-center py-8">
-          <Link className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">URL Analysis functionality coming soon</p>
-          <p className="text-xs text-gray-400 mt-1">Paste URLs to extract intelligence content</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Text/Paste Page Component
-function TextPasteContent() {
-  const [textContent, setTextContent] = React.useState('')
-  const [category, setCategory] = React.useState<IntelligenceCardCategory>(IntelligenceCardCategory.MARKET)
-  const [contentType, setContentType] = React.useState('general')
-  const [context, setContext] = React.useState('')
-  const [targetGroups, setTargetGroups] = React.useState<string[]>([])
-  
-  // Use the text processing hook
-  const { processText, isProcessing, error, result, reset } = useTextProcessing()
-
-  // Detect if content looks like an interview
-  const isLikelyInterview = React.useMemo(() => {
-    return contentType === 'interview' || 
-           textContent.toLowerCase().includes('interviewer') ||
-           textContent.toLowerCase().includes('interviewee') ||
-           /\b(q:|a:|question:|answer:)/i.test(textContent) ||
-           textContent.length > 2000
-  }, [textContent, contentType])
-
-  const handleProcess = async () => {
-    if (!textContent.trim()) {
-      alert('Please enter some text to process')
-      return
-    }
-
-    try {
-      const result = await processText(
-        textContent, 
-        context || `Processing ${contentType} content for ${category} intelligence`,
-        contentType,
-        category,  // targetCategory
-        targetGroups  // targetGroups
-      )
-      
-      if (result) {
-        // Success feedback with detailed information
-        const message = result.isInterview 
-          ? `Successfully extracted ${result.cardsCreated} insights from interview transcript! ${result.minimumCardsMet ? '✅' : '⚠️'} Target: ${result.targetCards} cards`
-          : `Successfully created ${result.cardsCreated} intelligence cards from text`
-        
-        alert(`${message}\n\nCost: ${result.cost.toFixed(4)}\nTokens used: ${result.tokensUsed}`)
-        
-        // Clear text after successful processing
-        setTextContent('')
-        setContext('')
-      }
-    } catch (err: any) {
-      alert(`Processing failed: ${err.message}`)
-    }
-  }
-
-  const handleClear = () => {
-    setTextContent('')
-    setContext('')
-    reset()
-  }
-
-  const wordCount = textContent.trim().split(/\s+/).filter(word => word.length > 0).length
-  const charCount = textContent.length
-  const estimatedCards = isLikelyInterview ? Math.max(10, Math.floor(wordCount / 200)) : Math.max(3, Math.floor(wordCount / 300))
-
-  return (
-    <div className="p-4">
-      <div className="mb-4">
-        <h2 className="text-lg font-medium text-gray-900 mb-1">Text/Paste Intelligence</h2>
-        <p className="text-xs text-gray-600">Convert transcripts into intelligence cards</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Main Text Input Area */}
-        <div className="lg:col-span-3 space-y-3">
-          {/* Content Type and Context */}
-          <div className="bg-white border border-gray-200 rounded">
-            <div className="p-3 border-b border-gray-200">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Processing Options</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Content Type</label>
-                  <select
-                    value={contentType}
-                    onChange={(e) => setContentType(e.target.value)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-900 bg-white"
-                  >
-                    <option value="general">General Text</option>
-                    <option value="interview">Interview Transcript</option>
-                    <option value="meeting">Meeting Notes</option>
-                    <option value="research">Research Document</option>
-                    <option value="feedback">Customer Feedback</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Target Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as IntelligenceCardCategory)}
-                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-900 bg-white"
-                  >
-                    <option value={IntelligenceCardCategory.MARKET}>Market</option>
-                    <option value={IntelligenceCardCategory.COMPETITOR}>Competitor</option>
-                    <option value={IntelligenceCardCategory.CONSUMER}>Consumer</option>
-                    <option value={IntelligenceCardCategory.TECHNOLOGY}>Technology</option>
-                    <option value={IntelligenceCardCategory.TRENDS}>Trends</option>
-                    <option value={IntelligenceCardCategory.STAKEHOLDER}>Stakeholder</option>
-                    <option value={IntelligenceCardCategory.RISK}>Risk</option>
-                    <option value={IntelligenceCardCategory.OPPORTUNITIES}>Opportunities</option>
-                  </select>
-                </div>
-              </div>
-              
-              {/* Groups Selector */}
-              <div className="mt-3">
-                <GroupsSelector 
-                  selectedGroups={targetGroups}
-                  onGroupsChange={setTargetGroups}
-                  className=""
-                />
-              </div>
-              
-              <div className="mt-3">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Additional Context (Optional)</label>
-                <input
-                  type="text"
-                  value={context}
-                  onChange={(e) => setContext(e.target.value)}
-                  placeholder="e.g., Robotics for train maintenance, Customer feedback on mobile app..."
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-900 bg-white"
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Text Input Area */}
-          <div className="bg-white border border-gray-200 rounded">
-            <div className="p-3 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-gray-900">Content Input</h3>
-                <div className="flex items-center space-x-3 text-xs text-gray-500">
-                  <span>{wordCount} words</span>
-                  <span>{charCount} chars</span>
-                  {isLikelyInterview && (
-                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Interview Detected</span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-3">
-              <textarea
-                value={textContent}
-                onChange={(e) => setTextContent(e.target.value)}
-                placeholder="Paste transcript or text content here..."
-                className="w-full h-64 p-3 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-400 resize-none text-gray-900 bg-white"
-                style={{ fontFamily: 'ui-monospace, SFMono-Regular, Monaco, Consolas, monospace' }}
-              />
-            </div>
-            
-            <div className="p-3 border-t border-gray-200 bg-gray-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={handleClear}
-                    className="text-xs text-gray-600 hover:text-gray-800 transition-colors"
-                    disabled={!textContent.trim()}
-                  >
-                    Clear
-                  </button>
-                  {error && (
-                    <span className="text-xs text-red-600">Error: {error}</span>
-                  )}
-                  {estimatedCards > 0 && (
-                    <span className="text-xs text-green-600">
-                      Est. {estimatedCards} cards {isLikelyInterview ? '(Interview: 10+ target)' : ''}
-                    </span>
-                  )}
-                </div>
-                
-                <button
-                  onClick={handleProcess}
-                  disabled={!textContent.trim() || isProcessing}
-                  className="px-4 py-2 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Processing {isLikelyInterview ? 'Interview' : 'Text'}...</span>
-                    </>
-                  ) : (
-                    <>
-                      <TestTube className="w-3 h-3" />
-                      <span>Process {isLikelyInterview ? 'Interview' : 'Text'}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Compact Instructions */}
-        <div className="space-y-3">
-          <div className="bg-gray-50 border border-gray-200 rounded p-3">
-            <h4 className="text-xs font-medium text-gray-900 mb-2 flex items-center">
-              <Lightbulb className="w-3 h-3 mr-1" />
-              Instructions
-            </h4>
-            <div className="space-y-1 text-[10px] text-gray-600">
-              <p>• Choose content type</p>
-              <p>• Set target category</p>
-              <p>• Add context (optional)</p>
-              <p>• Paste content</p>
-              <p>• Click Process</p>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 border border-gray-200 rounded p-3">
-            <h4 className="text-xs font-medium text-gray-900 mb-2">Interview Processing</h4>
-            <div className="space-y-1 text-[10px] text-gray-600">
-              <p className="text-blue-600 font-medium">• Minimum 10 insights</p>
-              <p>• Stakeholder quotes</p>
-              <p>• Strategic themes</p>
-              <p>• Actionable opportunities</p>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 border border-gray-200 rounded p-3">
-            <h4 className="text-xs font-medium text-gray-900 mb-2">Content Types</h4>
-            <div className="space-y-1">
-              {[
-                { type: 'Interviews', icon: '🎤', desc: '10+ insights' },
-                { type: 'Meetings', icon: '📝', desc: '3-5 insights' },
-                { type: 'Research', icon: '📊', desc: '3-5 insights' },
-                { type: 'Feedback', icon: '💬', desc: '3-5 insights' }
-              ].map((content, index) => (
-                <div key={index} className="flex items-center justify-between text-[10px] text-gray-600">
-                  <div className="flex items-center space-x-1">
-                    <span className="text-xs">{content.icon}</span>
-                    <span>{content.type}</span>
-                  </div>
-                  <span className="text-gray-500">{content.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {result && (
-            <div className="bg-green-50 border border-green-200 rounded p-3">
-              <h4 className="text-xs font-medium text-green-900 mb-2">Last Processing Result</h4>
-              <div className="space-y-1 text-[10px] text-green-700">
-                <p>• {result.cardsCreated || 0} cards created</p>
-                <p>• Cost: ${(result.cost || 0).toFixed(4)}</p>
-                <p>• Type: {result.isInterview ? 'Interview' : 'Text'}</p>
-                {result.isInterview && (
-                  <p className={result.minimumCardsMet ? 'text-green-600' : 'text-yellow-600'}>
-                    • Target: {result.targetCards || 'N/A'} {result.minimumCardsMet ? '✅' : '⚠️'}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 
 
-// Automation Content Component
-function AutomationContent() {
-  return <AutomationDashboard />
-}
