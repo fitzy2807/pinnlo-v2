@@ -27,7 +27,7 @@ export default function OrganisationBankModal({ isOpen, onClose }: OrganisationB
         </div>
         
         {/* Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           <OrganisationBank onClose={onClose} />
         </div>
       </div>

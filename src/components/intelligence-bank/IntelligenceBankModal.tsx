@@ -27,7 +27,7 @@ export default function IntelligenceBankModal({ isOpen, onClose }: IntelligenceB
         </div>
         
         {/* Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           <IntelligenceBank onClose={onClose} />
         </div>
       </div>

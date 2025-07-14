@@ -27,7 +27,7 @@ export default function AgentHubModal({ isOpen, onClose }: AgentHubModalProps) {
         </div>
         
         {/* Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           <AgentHub onClose={onClose} />
         </div>
       </div>
