@@ -1,85 +1,54 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect, useCallback } from 'react'
+import { loadIntelligenceCards } from '@/lib/intelligence-cards-api'
+import { IntelligenceCardFilters, IntelligenceCard } from '@/types/intelligence-cards'
 
-export function useIntelligenceCards() {
-  const [cards, setCards] = useState<any[]>([])
+export function useIntelligenceCards(filters?: IntelligenceCardFilters) {
+  const [cards, setCards] = useState<IntelligenceCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [total, setTotal] = useState(0)
+
+  const fetchCards = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      console.log('🔍 Fetching intelligence cards with filters:', filters)
+      
+      const result = await loadIntelligenceCards(filters)
+      
+      if (result.success && result.data) {
+        setCards(result.data.cards)
+        setTotal(result.data.total)
+        console.log(`✅ Loaded ${result.data.cards.length} cards for category: ${filters?.category || 'all'}`)
+      } else {
+        setError(result.error || 'Failed to load cards')
+        setCards([])
+        setTotal(0)
+      }
+    } catch (err) {
+      console.error('❌ Error in useIntelligenceCards:', err)
+      setError('Failed to fetch intelligence cards')
+      setCards([])
+      setTotal(0)
+    } finally {
+      setLoading(false)
+    }
+  }, [JSON.stringify(filters)])
 
   useEffect(() => {
-    const fetchCards = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        
-        console.log('🔍 Fetching intelligence cards')
-        
-        // Check if intelligence_cards table exists, fallback to cards table
-        let { data, error } = await supabase
-          .from('intelligence_cards')
-          .select('*')
-          .order('created_at', { ascending: false })
-
-        // If intelligence_cards table doesn't exist, try cards table
-        if (error && error.code === '42P01') {
-          console.log('📋 Intelligence table not found, using cards table')
-          ({ data, error } = await supabase
-            .from('cards')
-            .select('*')
-            .order('created_at', { ascending: false }))
-        }
-
-        if (error) {
-          console.error('❌ Error fetching intelligence cards:', error)
-          setError(error.message)
-          setCards([])
-          return
-        }
-
-        console.log('📋 Raw intelligence data:', data?.length || 0)
-        console.log('📋 Card types/categories found:', [...new Set(data?.map(c => c.category || c.card_type) || [])])
-
-        // Filter for intelligence-type cards
-        const intelligenceCards = data?.filter(card => {
-          const cardType = card.card_type || ''
-          const category = card.category || ''
-          return (
-            cardType.includes('intelligence') ||
-            cardType.includes('market') ||
-            cardType.includes('competitor') ||
-            cardType.includes('technology') ||
-            cardType.includes('stakeholder') ||
-            cardType.includes('consumer') ||
-            cardType.includes('risk') ||
-            cardType.includes('opportunity') ||
-            cardType.includes('trend') ||
-            category.includes('intelligence') ||
-            category.includes('market') ||
-            category.includes('competitor')
-          )
-        }) || []
-
-        console.log('✅ Filtered intelligence cards:', intelligenceCards.length)
-        setCards(intelligenceCards)
-      } catch (err) {
-        console.error('❌ Error in useIntelligenceCards:', err)
-        setError('Failed to fetch intelligence cards')
-        setCards([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchCards()
-  }, [])
+  }, [fetchCards])
+
+  const refresh = useCallback(() => {
+    console.log('🔄 Refreshing intelligence cards')
+    fetchCards()
+  }, [fetchCards])
 
   const getCardsByCategory = (category: string) => {
     return cards.filter(card => {
-      const cardCategory = card.category || card.card_type || ''
-      return (
-        cardCategory.includes(category.toLowerCase()) ||
-        category.toLowerCase().includes(cardCategory.toLowerCase())
-      )
+      const cardCategory = card.category || ''
+      return cardCategory === category.toLowerCase()
     })
   }
 
@@ -87,6 +56,8 @@ export function useIntelligenceCards() {
     cards,
     loading,
     error,
+    total,
+    refresh,
     getCardsByCategory
   }
 }
@@ -95,15 +66,55 @@ export function useIntelligenceCards() {
 export function useIntelligenceCardCounts() {
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({})
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
+  const [loading, setLoading] = useState(true)
   
-  const refresh = () => {
-    // Placeholder refresh function
-    console.log('Refreshing intelligence card counts')
-  }
+  const refresh = useCallback(async () => {
+    try {
+      setLoading(true)
+      console.log('🔄 Refreshing intelligence card counts')
+      
+      // Fetch counts for each category
+      const categories = ['market', 'competitor', 'trends', 'technology', 
+                        'stakeholder', 'consumer', 'risk', 'opportunities']
+      
+      const counts: Record<string, number> = {}
+      
+      // Fetch counts in parallel for better performance
+      const countPromises = categories.map(async (category) => {
+        const result = await loadIntelligenceCards({ category, limit: 0 })
+        return { category, count: result.success && result.data ? result.data.total : 0 }
+      })
+      
+      const results = await Promise.all(countPromises)
+      
+      results.forEach(({ category, count }) => {
+        counts[category] = count
+      })
+      
+      // Also fetch saved and archived counts
+      const savedResult = await loadIntelligenceCards({ status: 'saved' as any, limit: 0 })
+      counts.saved = savedResult.success && savedResult.data ? savedResult.data.total : 0
+      
+      const archivedResult = await loadIntelligenceCards({ status: 'archived' as any, limit: 0 })
+      counts.archive = archivedResult.success && archivedResult.data ? archivedResult.data.total : 0
+      
+      setCategoryCounts(counts)
+      console.log('✅ Category counts updated:', counts)
+    } catch (error) {
+      console.error('❌ Error fetching category counts:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+  
+  useEffect(() => {
+    refresh()
+  }, [refresh])
   
   return {
     categoryCounts,
     statusCounts,
+    loading,
     refresh
   }
 }
