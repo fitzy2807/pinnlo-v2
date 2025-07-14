@@ -42,24 +42,19 @@ import {
 } from 'lucide-react'
 import IntelligenceProfile from './IntelligenceProfile'
 import IntelligenceCardList from '../intelligence-cards/IntelligenceCardList'
-import IntelligenceCardEditor from '../intelligence-cards/IntelligenceCardEditor'
 import IntelligenceGroups from '../intelligence-groups/IntelligenceGroups'
 import BulkActionsToolbar from '../intelligence-groups/BulkActionsToolbar'
 import CardGroupSelector from '../intelligence-groups/CardGroupSelector'
 import GroupsSelector from './GroupsSelector'
 import AgentsSection from './AgentsSection'
+import DashboardContent from './DashboardContent'
 import { getAgentsForHub } from '@/lib/agentRegistry'
-import { 
-  IntelligenceCard as IntelligenceCardType,
-  IntelligenceCardCategory,
-  IntelligenceCardStatus,
-  CreateIntelligenceCardData,
-  UpdateIntelligenceCardData
-} from '@/types/intelligence-cards'
-import { useIntelligenceCardCounts, useCreateIntelligenceCard, useUpdateIntelligenceCard, useIntelligenceCardActions } from '@/hooks/useIntelligenceCards'
+import { CardData } from '@/types/card'
+import { useIntelligenceBankCards } from '@/hooks/useIntelligenceBankCards'
 import { useIntelligenceGroups } from '@/hooks/useIntelligenceGroups'
 import { useTextProcessing } from '@/hooks/useTextProcessing'
 import { useUrlAnalysis } from '@/hooks/useUrlAnalysis'
+import { toast } from 'react-hot-toast'
 
 interface IntelligenceBankProps {
   onClose?: () => void
@@ -216,23 +211,32 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
   
   // Refresh key for forcing component re-mount
   const [refreshKey, setRefreshKey] = useState(0)
-  
-  // Editor states
-  const [showEditor, setShowEditor] = useState(false)
-  const [editingCard, setEditingCard] = useState<IntelligenceCardType | null>(null)
 
   // Hooks
-  const { categoryCounts, statusCounts, refresh: refreshCounts } = useIntelligenceCardCounts()
-  const { create: createCard } = useCreateIntelligenceCard()
+  const {
+    cards,
+    loading,
+    refetch: refreshCards,
+    getCategoryCounts,
+    getStatusCounts,
+    getCardsByCategory,
+    createCard,
+    updateCard,
+    deleteCard,
+    toggleSaved,
+    toggleArchived
+  } = useIntelligenceBankCards()
   const { groups } = useIntelligenceGroups()
-  const { save: saveCard, archive: archiveCard, delete: deleteCard } = useIntelligenceCardActions()
+  
+  const categoryCounts = getCategoryCounts()
+  const statusCounts = getStatusCounts()
 
   // Global refresh function that updates everything
   const globalRefresh = React.useCallback(() => {
-    refreshCounts()
+    refreshCards()
     setRefreshKey(prev => prev + 1) // Force component re-mount
     setSelectedCardIds(new Set()) // Clear selections as well
-  }, [refreshCounts])
+  }, [refreshCards])
 
   // Update category counts
   const categoriesWithCounts = INTELLIGENCE_CATEGORIES.map(cat => {
@@ -275,7 +279,7 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
   ].filter(Boolean).length
 
   // Handler for saving a new card
-  const handleSaveNewCard = async (data: CreateIntelligenceCardData) => {
+  const handleSaveNewCard = async (data: Partial<CardData>) => {
     const result = await createCard(data)
     if (result.success) {
       setShowCreateCard(false)
@@ -320,19 +324,85 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
     setShowSortDropdown(false)
   }
   
+  const sortOptions = [
+    { value: 'date', label: 'Created Date' },
+    { value: 'updated', label: 'Updated Date' },
+    { value: 'title', label: 'Title A-Z' },
+    { value: 'relevance', label: 'Relevance' },
+    { value: 'credibility', label: 'Credibility' }
+  ]
+  
   const handleFilterChange = (newFilter: string) => {
     setFilterBy(newFilter)
     setShowFilterDropdown(false)
   }
   
-  const handleCreateCard = () => {
-    setEditingCard(null)
-    setShowEditor(true)
+  const filterOptions = [
+    { value: 'all', label: 'All Cards' },
+    { value: 'active', label: 'Active' },
+    { value: 'saved', label: 'Saved' },
+    { value: 'archived', label: 'Archived' },
+    { value: 'recent', label: 'Recent (7 days)' }
+  ]
+  
+  const handleCreateCard = async () => {
+    console.log('=== handleCreateCard START ===')
+    console.log('Function called at:', new Date().toISOString())
+    console.log('Selected category:', selectedCategory)
+    console.log('createCard function:', typeof createCard)
+    console.log('createCard function source:', createCard?.toString().substring(0, 100))
+    
+    const categoryBlueprintMap: Record<string, string> = {
+      'market': 'market-intelligence',
+      'competitor': 'competitor-intelligence',
+      'trends': 'trends-intelligence',
+      'technology': 'technology-intelligence',
+      'stakeholder': 'stakeholder-intelligence',
+      'consumer': 'consumer-intelligence',
+      'risk': 'risk-intelligence',
+      'opportunities': 'opportunities-intelligence'
+    }
+    
+    console.log('Blueprint type:', categoryBlueprintMap[selectedCategory])
+    console.log('Cards array length:', cards?.length)
+    
+    try {
+      const cardData = {
+        title: 'New Intelligence Card',
+        description: 'Click to edit this card',
+        card_type: categoryBlueprintMap[selectedCategory] || 'market-intelligence',
+        priority: 'medium',
+        card_data: {
+          intelligence_content: '',
+          key_findings: [],
+          credibility_score: 5,
+          relevance_score: 5
+        }
+      }
+      
+      console.log('Card data to create:', cardData)
+      const result = await createCard(cardData)
+      console.log('Create card result:', result)
+      
+      if (result.success) {
+        toast.success('Card created successfully!')
+        globalRefresh()
+      } else {
+        console.error('Card creation failed:', result.error)
+        toast.error(result.error || 'Failed to create card')
+      }
+    } catch (error) {
+      console.error('Exception in handleCreateCard:', error)
+      toast.error('An error occurred while creating the card')
+    }
   }
   
   const handleQuickAddToggle = () => {
-    // Quick add functionality to be implemented
-    alert('Quick add feature coming soon')
+    setShowQuickAddForm(!showQuickAddForm)
+    if (!showQuickAddForm) {
+      setQuickAddTitle('')
+      setQuickAddSummary('')
+    }
   }
   
   const handleGenerateCard = () => {
@@ -343,34 +413,39 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
   const handleQuickAddSubmit = async () => {
     if (!quickAddTitle.trim()) return
     
-    const categoryMap: Record<string, IntelligenceCardCategory> = {
-      'market': IntelligenceCardCategory.MARKET,
-      'competitor': IntelligenceCardCategory.COMPETITOR,
-      'trends': IntelligenceCardCategory.TRENDS,
-      'technology': IntelligenceCardCategory.TECHNOLOGY,
-      'stakeholder': IntelligenceCardCategory.STAKEHOLDER,
-      'consumer': IntelligenceCardCategory.CONSUMER,
-      'risk': IntelligenceCardCategory.RISK,
-      'opportunities': IntelligenceCardCategory.OPPORTUNITIES
+    const categoryBlueprintMap: Record<string, string> = {
+      'market': 'market-intelligence',
+      'competitor': 'competitor-intelligence',
+      'trends': 'trends-intelligence',
+      'technology': 'technology-intelligence',
+      'stakeholder': 'stakeholder-intelligence',
+      'consumer': 'consumer-intelligence',
+      'risk': 'risk-intelligence',
+      'opportunities': 'opportunities-intelligence'
     }
     
     const createResult = await createCard({
       title: quickAddTitle,
-      summary: quickAddSummary || quickAddTitle,
-      category: categoryMap[selectedCategory] || IntelligenceCardCategory.MARKET,
-      intelligence_content: '',
-      key_findings: [],
-      status: IntelligenceCardStatus.ACTIVE,
-      credibility_score: 5,
-      relevance_score: 5,
-      tags: []
+      description: quickAddSummary || quickAddTitle,
+      card_type: categoryBlueprintMap[selectedCategory] || 'market-intelligence',
+      priority: 'medium',
+      card_data: {
+        intelligence_content: '',
+        key_findings: [],
+        credibility_score: 5,
+        relevance_score: 5,
+        tags: []
+      }
     })
     
     if (createResult.success) {
+      toast.success('Quick Add card created successfully!')
       setShowQuickAddForm(false)
       setQuickAddTitle('')
       setQuickAddSummary('')
-      setRefreshKey(prev => prev + 1)
+      globalRefresh()
+    } else {
+      toast.error(createResult.error || 'Failed to create card')
     }
   }
   
@@ -586,13 +661,13 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
           <div className="px-4 pt-2.5 pb-1.5">
             <h1 className="text-lg font-medium text-gray-900">
               {viewType === 'category' 
-                ? `${selectedCategoryData?.name || ''} Intelligence`
-                : groups.find(g => g.id === selectedGroup)?.name || 'Group'
+                ? `${selectedCategoryData?.name || ''}`
+                : `${groups.find(g => g.id === selectedGroup)?.name || 'Group'}`
               }
             </h1>
             <p className="text-[11px] text-gray-500 mt-0.5">
               {viewType === 'category'
-                ? selectedCategoryData?.description || ''
+                ? selectedCategoryData?.description || 'Intelligence collection'
                 : groups.find(g => g.id === selectedGroup)?.description || 'Group collection of intelligence cards'
               }
             </p>
@@ -601,867 +676,375 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
           {/* Controls Bar */}
           <div className="px-4 pb-2">
             <div className="flex items-center gap-3 text-xs">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-7 pr-2.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none"
+                />
+              </div>
+
+              {/* Sort */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowSortDropdown(!showSortDropdown)
+                    setShowFilterDropdown(false)
+                  }}
+                  className="flex items-center gap-1 text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
+                >
+                  <ArrowUpDown className="w-3 h-3" />
+                  Sort
+                </button>
                 
-                <div className="flex items-center space-x-2 flex-wrap sm:flex-nowrap">
-                  {/* Selection Action Buttons - shown when cards are selected */}
-                  {selectedCardIds.size > 0 ? (
-                    <>
-                      <div className="flex items-center space-x-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded">
-                        <span className="text-xs font-medium text-blue-700">
-                          {selectedCardIds.size} selected
-                        </span>
-                        <button
-                          onClick={() => {
-                            setSelectedCardIds(new Set())
-                            setIsSelectionMode(false)
-                          }}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                      
+                {showSortDropdown && (
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    {sortOptions.map((option) => (
                       <button
-                        onClick={() => setShowGroupSelector(true)}
-                        className="flex items-center space-x-1 px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700 transition-colors"
+                        key={option.value}
+                        onClick={() => handleSortChange(option.value as any)}
+                        className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 ${
+                          sortBy === option.value ? 'bg-blue-50 text-blue-600' : ''
+                        }`}
                       >
-                        <FolderPlus className="w-3 h-3" />
-                        <span className="hidden sm:inline">Add to Group</span>
-                        <span className="sm:hidden">Group</span>
+                        {option.label}
                       </button>
-                      
-                      <button
-                        onClick={async () => {
-                          try {
-                            const cardIds = Array.from(selectedCardIds)
-                            await Promise.all(cardIds.map(id => saveCard(id)))
-                            setSelectedCardIds(new Set())
-                            setIsSelectionMode(false)
-                            globalRefresh()
-                          } catch (error) {
-                            alert('Failed to save cards. Please try again.')
-                            console.error('Save cards error:', error)
-                          }
-                        }}
-                        className="flex items-center space-x-1 px-2 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors"
-                      >
-                        <Bookmark className="w-3 h-3" />
-                        <span className="hidden sm:inline">Save</span>
-                      </button>
-                      
-                      <button
-                        onClick={async () => {
-                          try {
-                            const cardIds = Array.from(selectedCardIds)
-                            await Promise.all(cardIds.map(id => archiveCard(id)))
-                            setSelectedCardIds(new Set())
-                            setIsSelectionMode(false)
-                            globalRefresh()
-                          } catch (error) {
-                            alert('Failed to archive cards. Please try again.')
-                            console.error('Archive cards error:', error)
-                          }
-                        }}
-                        className="flex items-center space-x-1 px-2 py-1 bg-yellow-600 text-white text-xs font-medium rounded hover:bg-yellow-700 transition-colors"
-                      >
-                        <Archive className="w-3 h-3" />
-                        <span className="hidden sm:inline">Archive</span>
-                      </button>
-                      
-                      <button
-                        onClick={async () => {
-                          if (confirm(`Are you sure you want to delete ${selectedCardIds.size} selected card${selectedCardIds.size > 1 ? 's' : ''}? This action cannot be undone.`)) {
-                            try {
-                              const cardIds = Array.from(selectedCardIds)
-                              await Promise.all(cardIds.map(id => deleteCard(id)))
-                              setSelectedCardIds(new Set())
-                              setIsSelectionMode(false)
-                              globalRefresh()
-                            } catch (error) {
-                              alert('Failed to delete cards. Please try again.')
-                              console.error('Delete cards error:', error)
-                            }
-                          }
-                        }}
-                        className="flex items-center space-x-1 px-2 py-1 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        <span className="hidden sm:inline">Delete</span>
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {/* Regular Action Buttons - shown when no cards are selected */}
-                      {/* Add Card Button */}
-                      {selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && selectedCategory !== 'upload-data' && selectedCategory !== 'upload-link' && selectedCategory !== 'text-paste' && (
-                        <button 
-                          onClick={() => {
-                            const event = new CustomEvent('intelligence-bank-create-card', { 
-                              detail: { category: selectedCategory } 
-                            });
-                            document.dispatchEvent(event);
-                          }}
-                          className="flex items-center space-x-1 px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span className="hidden sm:inline">Add Card</span>
-                          <span className="sm:hidden">Add</span>
-                        </button>
-                      )}
-                      
-                      
-                      <div className="text-xs text-gray-600">
-                        <span className="font-medium">{totalCards}</span> cards
-                      </div>
-                    </>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Search and Filters - only for card categories */}
-              {selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && selectedCategory !== 'upload-data' && selectedCategory !== 'upload-link' && selectedCategory !== 'text-paste' && (
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search intelligence cards..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
-                    />
+              {/* Filter */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowFilterDropdown(!showFilterDropdown)
+                    setShowSortDropdown(false)
+                  }}
+                  className="flex items-center gap-1 text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
+                >
+                  <Filter className="w-3 h-3" />
+                  Filter
+                </button>
+                
+                {showFilterDropdown && (
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    {filterOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleFilterChange(option.value)}
+                        className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 ${
+                          filterBy === option.value ? 'bg-blue-50 text-blue-600' : ''
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
                   </div>
-                  
-                  {/* Sort Dropdown */}
-                  <div className="relative sort-dropdown">
-                    <button
-                      onClick={() => setShowSortDropdown(!showSortDropdown)}
-                      className="flex items-center justify-center space-x-1 px-2 py-1.5 text-xs font-medium rounded border bg-white text-gray-700 border-gray-300 hover:bg-gray-50 transition-colors min-w-[60px]"
-                    >
-                      <span className="hidden sm:inline">Sort</span>
-                      <ChevronDown className="w-3 h-3" />
-                    </button>
-                    
-                    {/* Sort Dropdown Menu */}
-                    {showSortDropdown && (
-                      <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-                        <div className="py-1">
-                          <button
-                            onClick={() => {
-                              setSortBy('date')
-                              setSortOrder('desc')
-                              setShowSortDropdown(false)
-                            }}
-                            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 text-gray-900 ${
-                              sortBy === 'date' && sortOrder === 'desc' ? 'bg-gray-50 font-medium' : ''
-                            }`}
-                          >
-                            Date (Newest First)
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSortBy('date')
-                              setSortOrder('asc')
-                              setShowSortDropdown(false)
-                            }}
-                            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 text-gray-900 ${
-                              sortBy === 'date' && sortOrder === 'asc' ? 'bg-gray-50 font-medium' : ''
-                            }`}
-                          >
-                            Date (Oldest First)
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSortBy('relevance')
-                              setSortOrder('desc')
-                              setShowSortDropdown(false)
-                            }}
-                            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 text-gray-900 ${
-                              sortBy === 'relevance' ? 'bg-gray-50 font-medium' : ''
-                            }`}
-                          >
-                            Relevance (High to Low)
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSortBy('credibility')
-                              setSortOrder('desc')
-                              setShowSortDropdown(false)
-                            }}
-                            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 text-gray-900 ${
-                              sortBy === 'credibility' ? 'bg-gray-50 font-medium' : ''
-                            }`}
-                          >
-                            Credibility (High to Low)
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSortBy('title')
-                              setSortOrder('asc')
-                              setShowSortDropdown(false)
-                            }}
-                            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 text-gray-900 ${
-                              sortBy === 'title' && sortOrder === 'asc' ? 'bg-gray-50 font-medium' : ''
-                            }`}
-                          >
-                            Title (A to Z)
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSortBy('title')
-                              setSortOrder('desc')
-                              setShowSortDropdown(false)
-                            }}
-                            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 text-gray-900 ${
-                              sortBy === 'title' && sortOrder === 'desc' ? 'bg-gray-50 font-medium' : ''
-                            }`}
-                          >
-                            Title (Z to A)
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* View Toggle */}
-                  <div className="flex items-center bg-gray-100 rounded p-0.5">
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-1 rounded transition-colors ${
-                        viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
-                      }`}
-                    >
-                      <List className="w-3 h-3 text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-1 rounded transition-colors ${
-                        viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
-                      }`}
-                    >
-                      <Grid3X3 className="w-3 h-3 text-gray-600" />
-                    </button>
-                  </div>
+                )}
+              </div>
 
-                  <button
-                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                    className={`flex items-center space-x-1 px-2 py-1.5 text-xs font-medium rounded border transition-colors ${
-                      showAdvancedFilters 
-                        ? 'bg-gray-900 text-white border-gray-900' 
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
+              {/* Add Controls (only show in category view) */}
+              {viewType === 'category' && selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && !selectedCategory.startsWith('agent-') && selectedCategory !== 'groups' && (
+                <>
+                  <button 
+                    onClick={() => {
+                      console.log('=== Add Button Clicked ===')
+                      console.log('Selected Category:', selectedCategory)
+                      console.log('ViewType:', viewType)
+                      handleCreateCard()
+                    }}
+                    className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
                   >
-                    <Filter className="w-3 h-3" />
-                    <span className="hidden sm:inline">Advanced Filters</span>
-                    <span className="sm:hidden">Filters</span>
-                    {activeFilterCount > 0 && (
-                      <span className="ml-1 px-1 py-0.5 bg-blue-600 text-white text-[10px] rounded-full">
-                        {activeFilterCount}
-                      </span>
-                    )}
+                    Add
                   </button>
-                </div>
-              )}
-              
-              {/* Advanced Filters Panel */}
-              {showAdvancedFilters && selectedCategory !== 'dashboard' && selectedCategory !== 'profile' && selectedCategory !== 'upload-data' && selectedCategory !== 'upload-link' && selectedCategory !== 'text-paste' && (
-                <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-md animate-in slide-in-from-top-2 duration-200">
-                  <div className="space-y-4">
-                    {/* Date Range */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-2">Date Range</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-[10px] text-gray-500 mb-1">From</label>
-                          <input
-                            type="date"
-                            value={dateRange.from || ''}
-                            onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
-                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-gray-500 mb-1">To</label>
-                          <input
-                            type="date"
-                            value={dateRange.to || ''}
-                            onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
-                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Score Ranges */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                          Credibility Score: {credibilityRange[0]} - {credibilityRange[1]}
-                        </label>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="range"
-                            min="1"
-                            max="10"
-                            value={credibilityRange[0]}
-                            onChange={(e) => setCredibilityRange([parseInt(e.target.value), credibilityRange[1]])}
-                            className="flex-1"
-                          />
-                          <input
-                            type="range"
-                            min="1"
-                            max="10"
-                            value={credibilityRange[1]}
-                            onChange={(e) => setCredibilityRange([credibilityRange[0], parseInt(e.target.value)])}
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                          Relevance Score: {relevanceRange[0]} - {relevanceRange[1]}
-                        </label>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="range"
-                            min="1"
-                            max="10"
-                            value={relevanceRange[0]}
-                            onChange={(e) => setRelevanceRange([parseInt(e.target.value), relevanceRange[1]])}
-                            className="flex-1"
-                          />
-                          <input
-                            type="range"
-                            min="1"
-                            max="10"
-                            value={relevanceRange[1]}
-                            onChange={(e) => setRelevanceRange([relevanceRange[0], parseInt(e.target.value)])}
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Source Type and Status */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">Source Type</label>
-                        <div className="space-y-1">
-                          {['URL', 'Document', 'Manual', 'Transcript'].map(source => (
-                            <label key={source} className="flex items-center text-xs">
-                              <input
-                                type="checkbox"
-                                checked={sourceTypes.includes(source)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSourceTypes([...sourceTypes, source])
-                                  } else {
-                                    setSourceTypes(sourceTypes.filter(s => s !== source))
-                                  }
-                                }}
-                                className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              {source}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">Status</label>
-                        <div className="space-y-1">
-                          {['Active', 'Saved', 'Archived'].map(status => (
-                            <label key={status} className="flex items-center text-xs">
-                              <input
-                                type="checkbox"
-                                checked={statusFilters.includes(status.toLowerCase())}
-                                onChange={(e) => {
-                                  const statusValue = status.toLowerCase()
-                                  if (e.target.checked) {
-                                    setStatusFilters([...statusFilters, statusValue])
-                                  } else {
-                                    setStatusFilters(statusFilters.filter(s => s !== statusValue))
-                                  }
-                                }}
-                                className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              {status}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Tags */}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-2">Tags</label>
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {tagFilters.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-blue-100 text-blue-800"
-                          >
-                            {tag}
-                            <button
-                              onClick={() => setTagFilters(tagFilters.filter((_, i) => i !== index))}
-                              className="ml-1 hover:text-blue-900"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Add tag and press Enter"
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                            setTagFilters([...tagFilters, e.currentTarget.value.trim()])
-                            e.currentTarget.value = ''
-                          }
-                        }}
-                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
-                      />
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex justify-between pt-2">
-                      <button
-                        onClick={() => {
-                          setDateRange({})
-                          setCredibilityRange([1, 10])
-                          setRelevanceRange([1, 10])
-                          setSourceTypes([])
-                          setStatusFilters([])
-                          setTagFilters([])
-                        }}
-                        className="text-xs text-blue-600 hover:text-blue-800"
-                      >
-                        Clear All Filters
-                      </button>
-                      <button
-                        onClick={() => setShowAdvancedFilters(false)}
-                        className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
-                      >
-                        Apply Filters
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {/* Quick Add Form */}
-            {showQuickAddForm && (
-              <div className="bg-gray-50 border-b border-gray-200 transition-all duration-300 ease-in-out overflow-hidden">
-                <div className="px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-gray-700">Quick Add Card to {INTELLIGENCE_CATEGORIES.find(c => c.id === selectedCategory)?.name}</span>
-                    </div>
-                    <button
-                      onClick={() => handleQuickAddToggle()}
-                      className="ml-auto text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors p-1"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                  
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      type="text"
-                      placeholder="Card title"
-                      value={quickAddTitle}
-                      onChange={(e) => setQuickAddTitle(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && quickAddTitle.trim()) {
-                          handleQuickAddSubmit()
-                        }
-                      }}
-                      className="flex-1 px-2.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none text-black"
-                      autoFocus
-                    />
-                    <input
-                      type="text"
-                      placeholder="Summary (optional)"
-                      value={quickAddSummary}
-                      onChange={(e) => setQuickAddSummary(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && quickAddTitle.trim()) {
-                          handleQuickAddSubmit()
-                        }
-                      }}
-                      className="flex-1 px-2.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none text-black"
-                    />
-                    <button
-                      onClick={() => handleQuickAddToggle()}
-                      className="px-1.5 py-0.5 text-xs text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleQuickAddSubmit()}
-                      disabled={!quickAddTitle.trim()}
-                      className="px-1.5 py-0.5 text-xs text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Create Card
-                    </button>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Press Esc to close • Enter to save
-                  </div>
-                </div>
+                  <button 
+                    onClick={handleQuickAddToggle}
+                    className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
+                  >
+                    Quick Add
+                  </button>
+
+                  <button 
+                    onClick={handleGenerateCard}
+                    className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
+                  >
+                    AI Generate
+                  </button>
+                </>
+              )}
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Select All */}
+              <label className="flex items-center gap-1 text-gray-700 cursor-pointer hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors">
+                <input
+                  type="checkbox"
+                  checked={selectedCardIds.size > 0}
+                  onChange={handleSelectAll}
+                  className="w-3 h-3 rounded border-gray-300 text-black focus:ring-black"
+                />
+                <span>Select All</span>
+              </label>
+
+              {/* Icon Actions */}
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={handleBulkEdit}
+                  className={`p-1 rounded transition-colors ${
+                    selectedCardIds.size > 0 
+                      ? 'text-gray-700 hover:bg-black hover:bg-opacity-10' 
+                      : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                  disabled={selectedCardIds.size === 0}
+                  title="Edit"
+                >
+                  <Edit2 className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  className={`p-1 rounded transition-colors ${
+                    selectedCardIds.size > 0 
+                      ? 'text-gray-700 hover:bg-black hover:bg-opacity-10' 
+                      : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                  disabled={selectedCardIds.size === 0}
+                  title="Delete"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={handleBulkDuplicate}
+                  className={`p-1 rounded transition-colors ${
+                    selectedCardIds.size > 0 
+                      ? 'text-gray-700 hover:bg-black hover:bg-opacity-10' 
+                      : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                  disabled={selectedCardIds.size === 0}
+                  title="Duplicate"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={handleBulkGroup}
+                  className={`p-1 rounded transition-colors ${
+                    selectedCardIds.size > 0 
+                      ? 'text-gray-700 hover:bg-black hover:bg-opacity-10' 
+                      : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                  disabled={selectedCardIds.size === 0}
+                  title="Group"
+                >
+                  <FolderPlus className="w-3 h-3" />
+                </button>
               </div>
-            )}
 
-            {/* Content Area */}
-            <div className="flex-1 flex flex-col">
-              {selectedCategory.startsWith('agent-') ? (
-                <AgentsSection 
-                  selectedAgentId={selectedCategory.replace('agent-', '')}
-                  onClose={() => setSelectedCategory('dashboard')} 
-                />
-              ) : selectedCategory === 'dashboard' ? (
-                <DashboardContent 
-                  categoryCounts={categoryCounts}
-                  statusCounts={statusCounts}
-                  totalCards={totalCards}
-                  setSelectedCategory={setSelectedCategory}
-                />
-              ) : selectedCategory === 'profile' ? (
-                <div className="flex-1 p-6 overflow-y-auto">
-                  <IntelligenceProfile />
-                </div>
-              ) : selectedCategory === 'groups' ? (
-                <IntelligenceGroups />
-              ) : (
-                <IntelligenceCardsContent 
-                  key={`cards-${selectedCategory}-${refreshKey}`}
-                  category={selectedCategory}
-                  searchQuery={searchQuery}
-                  sortBy={sortBy}
-                  sortOrder={sortOrder}
-                  viewMode={viewMode}
-                  dateRange={dateRange}
-                  credibilityRange={credibilityRange}
-                  relevanceRange={relevanceRange}
-                  sourceTypes={sourceTypes}
-                  statusFilters={statusFilters}
-                  tagFilters={tagFilters}
-                  selectedCardIds={selectedCardIds}
-                  setSelectedCardIds={setSelectedCardIds}
-                  isSelectionMode={isSelectionMode}
-                  setIsSelectionMode={setIsSelectionMode}
-                  onRefresh={globalRefresh}
-                />
+              {/* View Toggle */}
+              <div className="flex items-center ml-2 bg-gray-100 rounded p-0.5">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1 rounded transition-colors ${
+                    viewMode === 'grid' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Grid view"
+                >
+                  <Grid3X3 className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-1 rounded transition-colors ${
+                    viewMode === 'list' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="List view"
+                >
+                  <List className="w-3 h-3" />
+                </button>
+              </div>
+
+              {/* Close Button */}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="p-1 ml-2 text-black hover:bg-black hover:bg-opacity-10 rounded transition-colors"
+                  title="Close"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {/* Selected Count */}
+              {selectedCardIds.size > 0 && (
+                <span className="text-[11px] text-gray-500 ml-1">
+                  {selectedCardIds.size} selected
+                </span>
               )}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Bulk Actions Toolbar */}
-      <BulkActionsToolbar
-        selectedCount={selectedCardIds.size}
-        onAddToGroup={() => setShowGroupSelector(true)}
-        onClearSelection={() => {
-          setSelectedCardIds(new Set())
-          setIsSelectionMode(false)
-        }}
-      />
-
-      {/* Group Selector Modal */}
-      {showGroupSelector && (
-        <CardGroupSelector
-          cardIds={Array.from(selectedCardIds)}
-          onClose={() => setShowGroupSelector(false)}
-          onComplete={() => {
-            setSelectedCardIds(new Set())
-            setIsSelectionMode(false)
-          }}
-        />
-      )}
-    </>
-  )
-}
-
-// Dashboard Content Component
-interface DashboardContentProps {
-  categoryCounts: Record<string, number>
-  statusCounts: { saved: number, archived: number }
-  totalCards: number
-  setSelectedCategory: (category: string) => void
-}
-
-function DashboardContent({ categoryCounts, statusCounts, totalCards, setSelectedCategory }: DashboardContentProps) {
-  return (
-    <div className="flex-1 p-6 overflow-y-auto">
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Intelligence Bank Overview</h2>
-        <p className="text-sm text-gray-600">Strategic intelligence insights and analytics</p>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Total Cards</p>
-              <p className="text-2xl font-bold text-blue-900">{totalCards}</p>
-            </div>
-            <BarChart3 className="w-8 h-8 text-blue-500" />
-          </div>
-        </div>
-        
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-green-600 uppercase tracking-wide">Active Cards</p>
-              <p className="text-2xl font-bold text-green-900">{totalCards - statusCounts.saved - statusCounts.archived}</p>
-            </div>
-            <TrendingUp className="w-8 h-8 text-green-500" />
-          </div>
-        </div>
-        
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-yellow-600 uppercase tracking-wide">Saved Cards</p>
-              <p className="text-2xl font-bold text-yellow-900">{statusCounts.saved}</p>
-            </div>
-            <Bookmark className="w-8 h-8 text-yellow-500" />
-          </div>
-        </div>
-        
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Archived</p>
-              <p className="text-2xl font-bold text-gray-900">{statusCounts.archived}</p>
-            </div>
-            <Archive className="w-8 h-8 text-gray-500" />
-          </div>
-        </div>
-      </div>
-
-      {/* Category Breakdown & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Intelligence by Category</h3>
-          <div className="space-y-3">
-            {Object.entries(categoryCounts).map(([category, count]) => {
-              const categoryData = INTELLIGENCE_CATEGORIES.find(cat => cat.id === category)
-              if (!categoryData || categoryData.id === 'dashboard') return null
-              
-              const Icon = categoryData.icon
-              const percentage = totalCards > 0 ? Math.round((count / totalCards) * 100) : 0
-              
-              return (
-                <div key={category} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Icon className={`w-4 h-4 ${categoryData.color}`} />
-                    <span className="text-sm font-medium text-gray-900">{categoryData.name}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="text-right">
-                      <span className="text-sm font-medium text-gray-900">{count}</span>
-                      <span className="text-xs text-gray-500 ml-1">({percentage}%)</span>
-                    </div>
-                    <div className="w-20 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
+        {/* Quick Add Form */}
+        {showQuickAddForm && (
+          <div
+            className={`bg-gray-50 border-b border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${
+              showQuickAddForm ? 'max-h-32' : 'max-h-0'
+            }`}
+          >
+            <div className="px-4 py-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-700">Quick Add Card to {selectedCategoryData?.name}</span>
                 </div>
-              )
-            })}
+                <button
+                  onClick={() => {
+                    setShowQuickAddForm(false)
+                    setQuickAddTitle('')
+                    setQuickAddSummary('')
+                  }}
+                  className="ml-auto text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors p-1"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+              
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  placeholder="Card title"
+                  value={quickAddTitle}
+                  onChange={(e) => setQuickAddTitle(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && e.metaKey) {
+                      handleQuickAddSubmit()
+                    } else if (e.key === 'Escape') {
+                      setShowQuickAddForm(false)
+                      setQuickAddTitle('')
+                      setQuickAddSummary('')
+                    }
+                  }}
+                  className="flex-1 px-2.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none text-black"
+                  autoFocus
+                />
+                <input
+                  type="text"
+                  placeholder="Summary (optional)"
+                  value={quickAddSummary}
+                  onChange={(e) => setQuickAddSummary(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && e.metaKey) {
+                      handleQuickAddSubmit()
+                    } else if (e.key === 'Escape') {
+                      setShowQuickAddForm(false)
+                      setQuickAddTitle('')
+                      setQuickAddSummary('')
+                    }
+                  }}
+                  className="flex-1 px-2.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none text-black"
+                />
+                <button
+                  onClick={() => {
+                    setShowQuickAddForm(false)
+                    setQuickAddTitle('')
+                    setQuickAddSummary('')
+                  }}
+                  className="px-1.5 py-0.5 text-xs text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleQuickAddSubmit}
+                  disabled={!quickAddTitle.trim()}
+                  className="px-1.5 py-0.5 text-xs text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create Card
+                </button>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Press Esc to close • ⌘ + Enter to save
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <button 
-              onClick={() => {
-                const event = new CustomEvent('intelligence-bank-create-card', { 
-                  detail: { category: 'market' } 
-                });
-                document.dispatchEvent(event);
+        {/* Cards Content */}
+        <div className="flex-1 p-4">
+          {selectedCategory.startsWith('agent-') ? (
+            <AgentsSection 
+              selectedAgentId={selectedCategory.replace('agent-', '')}
+              onClose={() => setSelectedCategory('dashboard')} 
+            />
+          ) : selectedCategory === 'dashboard' ? (
+            <div className="flex-1 p-6 overflow-y-auto">
+              <DashboardContent 
+                categoryCounts={categoryCounts}
+                statusCounts={statusCounts}
+                totalCards={totalCards}
+                setSelectedCategory={setSelectedCategory}
+              />
+            </div>
+          ) : selectedCategory === 'profile' ? (
+            <div className="flex-1 p-6 overflow-y-auto">
+              <IntelligenceProfile />
+            </div>
+          ) : selectedCategory === 'groups' ? (
+            <IntelligenceGroups />
+          ) : (
+            <IntelligenceCardList
+              cards={
+                selectedCategory === 'saved' ? getCardsByStatus('saved') :
+                selectedCategory === 'archive' ? getCardsByStatus('archived') :
+                getCardsByCategory(selectedCategory)
+              }
+              searchQuery={searchQuery}
+              viewMode={viewMode}
+              selectedCardIds={selectedCardIds}
+              onSelectCard={(cardId) => {
+                const newSelected = new Set(selectedCardIds)
+                if (newSelected.has(cardId)) {
+                  newSelected.delete(cardId)
+                } else {
+                  newSelected.add(cardId)
+                }
+                setSelectedCardIds(newSelected)
               }}
-              className="w-full flex items-center space-x-3 p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Plus className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="text-sm font-medium text-gray-900">Add Intelligence Card</div>
-                <div className="text-xs text-gray-500">Create new market intelligence</div>
-              </div>
-            </button>
-          </div>
+              onEditCard={(card) => {
+                // For duplicating cards
+                if (card.id === '') {
+                  createCard(card)
+                }
+              }}
+              onUpdateCard={updateCard}
+              onDeleteCard={deleteCard}
+              onCreateCard={handleCreateCard}
+              onRefresh={globalRefresh}
+            />
+          )}
         </div>
       </div>
     </div>
+
+    {/* Modals */}
+
+    {showGroupSelector && (
+      <CardGroupSelector
+        cardIds={Array.from(selectedCardIds)}
+        onClose={() => setShowGroupSelector(false)}
+        onComplete={() => {
+          setSelectedCardIds(new Set())
+          setShowGroupSelector(false)
+          globalRefresh()
+        }}
+      />
+    )}
+  </>
   )
 }
-
-// Full Cards Content Component with ALL functionality restored
-interface IntelligenceCardsContentProps {
-  category: string
-  searchQuery: string
-  sortBy: 'date' | 'relevance' | 'credibility' | 'title'
-  sortOrder: 'asc' | 'desc'
-  viewMode: 'list' | 'grid'
-  dateRange: {from?: string, to?: string}
-  credibilityRange: [number, number]
-  relevanceRange: [number, number]
-  sourceTypes: string[]
-  statusFilters: string[]
-  tagFilters: string[]
-  selectedCardIds: Set<string>
-  setSelectedCardIds: (ids: Set<string>) => void
-  isSelectionMode: boolean
-  setIsSelectionMode: (mode: boolean) => void
-  onRefresh?: () => void
-}
-
-function IntelligenceCardsContent({ 
-  category, 
-  searchQuery,
-  sortBy,
-  sortOrder,
-  viewMode,
-  dateRange,
-  credibilityRange,
-  relevanceRange,
-  sourceTypes,
-  statusFilters,
-  tagFilters,
-  selectedCardIds,
-  setSelectedCardIds,
-  isSelectionMode,
-  setIsSelectionMode,
-  onRefresh
-}: IntelligenceCardsContentProps) {
-  const [showEditor, setShowEditor] = useState(false)
-  const [editingCard, setEditingCard] = useState<IntelligenceCardType | null>(null)
-  const { create: createCard } = useCreateIntelligenceCard()
-  const { update: updateCard } = useUpdateIntelligenceCard()
-
-  // Map category to proper type
-  const getCategoryType = (categoryId: string): IntelligenceCardCategory | IntelligenceCardStatus | undefined => {
-    if (categoryId === 'saved') return IntelligenceCardStatus.SAVED
-    if (categoryId === 'archive') return IntelligenceCardStatus.ARCHIVED
-    return categoryId as IntelligenceCardCategory
-  }
-
-  const handleCreateCard = React.useCallback(() => {
-    setEditingCard(null)
-    setShowEditor(true)
-  }, [])
-
-  const handleEditCard = (card: IntelligenceCardType) => {
-    setEditingCard(card)
-    setShowEditor(true)
-  }
-
-  const handleSaveCard = async (data: CreateIntelligenceCardData | UpdateIntelligenceCardData) => {
-    let result
-    
-    if (editingCard) {
-      result = await updateCard(editingCard.id, data)
-    } else {
-      result = await createCard(data as CreateIntelligenceCardData)
-    }
-    
-    if (result.success) {
-      setShowEditor(false)
-      setEditingCard(null)
-      onRefresh?.()
-    } else {
-      alert(`Failed to ${editingCard ? 'update' : 'create'} card: ` + result.error)
-    }
-  }
-
-  const categoryType = getCategoryType(category)
-  const isStatusView = category === 'saved' || category === 'archive'
-  
-  const cardFilters = React.useMemo(() => {
-    if (isStatusView) {
-      return {
-        category: undefined,
-        status: categoryType as IntelligenceCardStatus
-      }
-    } else {
-      return {
-        category: categoryType as IntelligenceCardCategory,
-        status: IntelligenceCardStatus.ACTIVE
-      }
-    }
-  }, [categoryType, isStatusView])
-
-  // Debug logging for filters
-  React.useEffect(() => {
-    console.log(`IntelligenceCardsContent filters for category ${category}:`, cardFilters)
-  }, [category, cardFilters])
-
-  // Listen for Add Card events from the main header
-  React.useEffect(() => {
-    const handleCreateCardEvent = (event: CustomEvent) => {
-      if (event.detail.category === category) {
-        handleCreateCard()
-      }
-    }
-    
-    document.addEventListener('intelligence-bank-create-card', handleCreateCardEvent as EventListener)
-    return () => {
-      document.removeEventListener('intelligence-bank-create-card', handleCreateCardEvent as EventListener)
-    }
-  }, [category, handleCreateCard])
-
-  return (
-    <>
-      {/* Cards Content */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <IntelligenceCardList
-          category={cardFilters.category}
-          status={cardFilters.status}
-          onEditCard={handleEditCard}
-          onRefresh={onRefresh}
-          showFilters={false}
-          showViewToggle={false}
-          sortBy={sortBy}
-          sortOrder={sortOrder}
-          viewMode={viewMode}
-          searchQuery={searchQuery}
-          dateRange={dateRange}
-          credibilityRange={credibilityRange}
-          relevanceRange={relevanceRange}
-          sourceTypes={sourceTypes}
-          statusFilters={statusFilters}
-          tagFilters={tagFilters}
-          selectedCardIds={selectedCardIds}
-          setSelectedCardIds={setSelectedCardIds}
-          isSelectionMode={isSelectionMode}
-          setIsSelectionMode={setIsSelectionMode}
-        />
-      </div>
-
-      {/* Card Editor Modal */}
-      {showEditor && (
-        <IntelligenceCardEditor
-          card={editingCard}
-          category={!isStatusView ? categoryType as IntelligenceCardCategory : IntelligenceCardCategory.MARKET}
-          onSave={handleSaveCard}
-          onCancel={() => setShowEditor(false)}
-          isEditing={!!editingCard}
-        />
-      )}
-    </>
-  )
-}
-
-
-
-
