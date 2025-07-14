@@ -35,7 +35,7 @@ export function useIntelligenceBankCards() {
       const { data, error } = await supabase
         .from('cards')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('created_by', user.id)
         .in('card_type', blueprintTypes)
         .order('created_at', { ascending: false })
 
@@ -98,6 +98,41 @@ export function useIntelligenceBankCards() {
     }
   }
 
+  // Get or create Intelligence Hub strategy
+  const getOrCreateIntelligenceStrategy = async (userId: string) => {
+    // First, try to find existing Intelligence Hub strategy
+    const { data: existingStrategy } = await supabase
+      .from('strategies')
+      .select('id')
+      .eq('"userId"', userId)
+      .eq('title', 'Intelligence Hub')
+      .single()
+
+    if (existingStrategy) {
+      return existingStrategy.id
+    }
+
+    // Create new Intelligence Hub strategy
+    const { data: newStrategy, error } = await supabase
+      .from('strategies')
+      .insert({
+        "userId": userId,
+        title: 'Intelligence Hub',
+        description: 'Central hub for all intelligence cards',
+        visibility: 'private',
+        status: 'active'
+      })
+      .select('id')
+      .single()
+
+    if (error) {
+      console.error('Error creating Intelligence Hub strategy:', error)
+      throw new Error('Failed to create Intelligence Hub strategy')
+    }
+
+    return newStrategy.id
+  }
+
   // Create a new intelligence card
   const createCard = async (cardData: Partial<CardData>) => {
     console.log('=== createCard Hook START ===')
@@ -108,11 +143,16 @@ export function useIntelligenceBankCards() {
       console.log('User from auth:', user?.id)
       if (!user) throw new Error('Not authenticated')
 
+      // Get or create Intelligence Hub strategy
+      const strategyId = await getOrCreateIntelligenceStrategy(user.id)
+      console.log('Strategy ID for intelligence cards:', strategyId)
+
       // Extract intelligence-specific data
       const { title, description, priority, cardType, card_type, card_data, ...otherFields } = cardData
 
       const dbInsertData = {
-        user_id: user.id,
+        strategy_id: strategyId,
+        created_by: user.id,
         title: title || 'Untitled Intelligence',
         description: description || '',
         card_type: card_type || cardType || 'market-intelligence',
