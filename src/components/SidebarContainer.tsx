@@ -1,6 +1,7 @@
 'use client'
 
-import { Zap, FileText, BarChart3, HelpCircle, BookOpen, Lightbulb } from 'lucide-react'
+import { Zap, FileText, BarChart3, HelpCircle, BookOpen, Lightbulb, Palette } from 'lucide-react'
+import Link from 'next/link'
 
 export default function SidebarContainer() {
   const tools = [
@@ -15,6 +16,14 @@ export default function SidebarContainer() {
         { name: 'Report Generator', icon: '📊' },
         { name: 'Maturity Assessment', icon: '📈' }
       ]
+    },
+    {
+      id: 'catalyst-demo',
+      title: 'Catalyst UI Kit',
+      description: 'Preview the Catalyst design system components',
+      icon: Palette,
+      action: 'View Demo',
+      link: '/catalyst-demo'
     },
     {
       id: 'help',
@@ -73,9 +82,17 @@ export default function SidebarContainer() {
             )}
 
             {section.action && (
-              <button className="w-full btn btn-secondary btn-sm">
-                {section.action}
-              </button>
+              section.link ? (
+                <Link href={section.link} className="block">
+                  <button className="w-full btn btn-secondary btn-sm">
+                    {section.action}
+                  </button>
+                </Link>
+              ) : (
+                <button className="w-full btn btn-secondary btn-sm">
+                  {section.action}
+                </button>
+              )
             )}
           </div>
         )

@@ -11,7 +11,8 @@ import {
   Tag,
   Shield,
   Target,
-  Loader2
+  Loader2,
+  Plus
 } from 'lucide-react'
 import IntelligenceCard from './IntelligenceCard'
 import {
@@ -354,19 +355,30 @@ export default function IntelligenceCardList({
 
       {/* Cards Display */}
       {sortedCards.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-sm font-medium text-gray-900 mb-1">No intelligence cards found</h3>
-          <p className="text-sm text-gray-600">
-            {filters.searchQuery
-              ? 'Try adjusting your search or filters'
-              : 'Create your first intelligence card to get started'}
-          </p>
+        <div className="flex items-center justify-center h-64">
+          <button
+            onClick={() => onEditCard && onEditCard(null as any)}
+            className="max-w-md p-8 border-2 border-dashed border-gray-300 rounded-lg text-center space-y-3 hover:border-gray-400 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+              <Plus className="w-6 h-6 text-gray-400" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-gray-900">Add New Card</div>
+              <div className="text-xs text-gray-500">
+                {filters.searchQuery
+                  ? 'No cards match your search'
+                  : 'Create a new intelligence card'}
+              </div>
+            </div>
+          </button>
         </div>
       ) : (
-        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'space-y-4'}>
+        <div className={`grid gap-4 ${
+          viewMode === 'grid' 
+            ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+            : 'grid-cols-1'
+        }`}>
           {sortedCards.map((card) => (
             <IntelligenceCard
               key={card.id}

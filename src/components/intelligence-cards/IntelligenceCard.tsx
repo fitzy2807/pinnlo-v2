@@ -90,10 +90,10 @@ export default function IntelligenceCard({ card, onEdit, onRefresh, isSelected =
   }
 
   return (
-    <div className={`bg-white rounded-lg border ${isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'} shadow-sm hover:shadow-md transition-all relative`}>
-      {/* Selection Checkbox */}
+    <div className="relative">
+      {/* Selection Checkbox - Top Right like Template Bank */}
       {onToggleSelect && (
-        <div className="absolute top-4 left-4 z-10">
+        <div className="absolute top-2 right-2 z-10">
           <input
             type="checkbox"
             checked={isSelected}
@@ -102,16 +102,18 @@ export default function IntelligenceCard({ card, onEdit, onRefresh, isSelected =
               onToggleSelect()
             }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black bg-white shadow-sm"
           />
         </div>
       )}
       
-      {/* Card Header */}
-      <div
-        className={`p-4 cursor-pointer ${onToggleSelect ? 'pl-12' : ''}`}
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
+      <div className={`bg-white rounded-lg border ${isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'} shadow-sm hover:shadow-md transition-all`}>
+      
+        {/* Card Header */}
+        <div
+          className="p-4 cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
         <div className="flex items-start justify-between">
           <div className="flex-1">
             {/* Category Badge */}
@@ -157,10 +159,10 @@ export default function IntelligenceCard({ card, onEdit, onRefresh, isSelected =
             )}
           </div>
         </div>
-      </div>
+        </div>
 
-      {/* Expanded Content */}
-      {isExpanded && (
+        {/* Expanded Content */}
+        {isExpanded && (
         <div className="border-t border-gray-200">
           <div className="p-4 space-y-4">
             {/* Intelligence Content */}
@@ -308,7 +310,8 @@ export default function IntelligenceCard({ card, onEdit, onRefresh, isSelected =
             </div>
           </div>
         </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
