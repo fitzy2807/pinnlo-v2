@@ -5,7 +5,7 @@ import { useAuth } from '@/providers/AuthProvider'
 import { ChevronDown, Home, BarChart3, Building2, Database, Settings, Sparkles, Brain, Layout, Layers, Bot } from 'lucide-react'
 import DevelopmentBankModal from '@/components/development-bank-v2/DevelopmentBankModal'
 import StrategyBankModal from '@/components/strategy-bank/StrategyBankModal'
-import IntelligenceBank from '@/components/intelligence-bank/IntelligenceBank'
+import IntelligenceBankModal from '@/components/intelligence-bank/IntelligenceBankModal'
 import OrganisationBankModal from '@/components/organisation-bank/OrganisationBankModal'
 import AgentHubModal from '@/components/agent-hub/AgentHubModal'
 
@@ -154,16 +154,10 @@ export default function Header() {
       />
       
       {/* Intelligence Bank Modal */}
-      {intelligenceBankOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setIntelligenceBankOpen(false)} />
-          <div className="relative h-full">
-            <IntelligenceBank
-              onClose={() => setIntelligenceBankOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+      <IntelligenceBankModal
+        isOpen={intelligenceBankOpen}
+        onClose={() => setIntelligenceBankOpen(false)}
+      />
       
       {/* Organisation Bank Modal */}
       <OrganisationBankModal

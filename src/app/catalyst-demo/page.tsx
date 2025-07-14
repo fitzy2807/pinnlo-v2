@@ -335,31 +335,17 @@ export default function CatalystDemo() {
             </DescriptionList>
           </section>
 
-          {/* Dialog Section */}
+          {/* Dialog Section - Temporarily commented out due to compatibility issue */}
           <section>
             <Heading>Dialog</Heading>
             <Divider className="my-4" />
-            <Button onClick={() => setShowDialog(true)}>Open Dialog</Button>
-            
-            <Dialog open={showDialog} onClose={() => setShowDialog(false)}>
-              <DialogTitle>Payment successful</DialogTitle>
-              <DialogDescription>
-                Your payment has been successfully submitted. We've sent you an email with all of the details of your order.
-              </DialogDescription>
-              <DialogBody>
-                <Text>
-                  Your order number is <Strong>#12345</Strong>. You can track your order status from your account dashboard.
-                </Text>
-              </DialogBody>
-              <DialogActions>
-                <Button plain onClick={() => setShowDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setShowDialog(false)}>
-                  Got it, thanks!
-                </Button>
-              </DialogActions>
-            </Dialog>
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <Text className="text-amber-800">
+                Dialog component temporarily disabled due to a compatibility issue with @headlessui/react. 
+                All other components are working correctly.
+              </Text>
+            </div>
+            {/* <Button onClick={() => setShowDialog(true)}>Open Dialog</Button> */}
           </section>
 
         </div>

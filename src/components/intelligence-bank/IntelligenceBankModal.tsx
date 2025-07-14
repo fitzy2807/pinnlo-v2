@@ -1,0 +1,25 @@
+'use client';
+
+import React from 'react';
+import { X } from 'lucide-react';
+import IntelligenceBank from './IntelligenceBank';
+
+interface IntelligenceBankModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function IntelligenceBankModal({ isOpen, onClose }: IntelligenceBankModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="relative w-full h-full max-w-7xl max-h-[90vh] bg-white rounded-lg shadow-2xl flex flex-col mx-4 my-4">
+        {/* Modal container for Intelligence Bank */}
+        <div className="flex-1 overflow-hidden">
+          <IntelligenceBank onClose={onClose} />
+        </div>
+      </div>
+    </div>
+  );
+}
