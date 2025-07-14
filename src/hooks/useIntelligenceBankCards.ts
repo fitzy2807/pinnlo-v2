@@ -29,13 +29,16 @@ export function useIntelligenceBankCards() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      // Get Intelligence Hub strategy ID
+      const strategyId = await getOrCreateIntelligenceStrategy(user.id)
+
       // Get all intelligence blueprint card types
       const blueprintTypes = Object.values(INTELLIGENCE_BLUEPRINT_MAP)
       
       const { data, error } = await supabase
         .from('cards')
         .select('*')
-        .eq('created_by', user.id)
+        .eq('strategy_id', strategyId)
         .in('card_type', blueprintTypes)
         .order('created_at', { ascending: false })
 
