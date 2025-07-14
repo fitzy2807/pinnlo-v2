@@ -860,17 +860,6 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
                       </span>
                     )}
                   </button>
-                  
-                  {/* Close Button */}
-                  {onClose && (
-                    <button
-                      onClick={onClose}
-                      className="p-1 ml-2 text-black hover:bg-black hover:bg-opacity-10 rounded transition-colors"
-                      title="Close"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
                 </div>
               )}
               

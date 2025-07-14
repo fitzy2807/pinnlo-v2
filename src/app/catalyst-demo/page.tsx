@@ -12,7 +12,8 @@ import { Button } from '../../../catalyst-ui-kit 2/typescript/button'
 import { Checkbox, CheckboxField, CheckboxGroup } from '../../../catalyst-ui-kit 2/typescript/checkbox'
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxOptions } from '../../../catalyst-ui-kit 2/typescript/combobox'
 import { Description, DescriptionDetails, DescriptionList, DescriptionTerm } from '../../../catalyst-ui-kit 2/typescript/description-list'
-import { Dialog, DialogBody, DialogActions, DialogDescription, DialogTitle } from '../../../catalyst-ui-kit 2/typescript/dialog'
+// Dialog temporarily disabled due to compatibility issue
+// import { Dialog, DialogBody, DialogActions, DialogDescription, DialogTitle } from '../../../catalyst-ui-kit 2/typescript/dialog'
 import { Divider } from '../../../catalyst-ui-kit 2/typescript/divider'
 import { Dropdown, DropdownButton, DropdownItem, DropdownMenu } from '../../../catalyst-ui-kit 2/typescript/dropdown'
 import { ErrorMessage, Field, FieldGroup, Fieldset, Label, Legend } from '../../../catalyst-ui-kit 2/typescript/fieldset'
@@ -27,7 +28,7 @@ import { Text, TextLink, Strong, Code } from '../../../catalyst-ui-kit 2/typescr
 import { Textarea } from '../../../catalyst-ui-kit 2/typescript/textarea'
 
 export default function CatalystDemo() {
-  const [showDialog, setShowDialog] = useState(false)
+  // const [showDialog, setShowDialog] = useState(false) // Temporarily disabled
   const [selectedOption, setSelectedOption] = useState('option1')
   const [switchEnabled, setSwitchEnabled] = useState(false)
   const [checkboxChecked, setCheckboxChecked] = useState(false)

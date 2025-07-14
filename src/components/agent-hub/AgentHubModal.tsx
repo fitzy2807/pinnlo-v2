@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { X } from 'lucide-react'
 import AgentHub from './AgentHub'
 
 interface AgentHubModalProps {
@@ -12,17 +13,22 @@ export default function AgentHubModal({ isOpen, onClose }: AgentHubModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black bg-opacity-50" />
-      
-      {/* Modal */}
-      <div className="relative w-full h-full flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full h-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            <AgentHub onClose={onClose} />
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="relative w-full h-full max-w-7xl max-h-[90vh] bg-white rounded-lg shadow-2xl flex flex-col mx-4 my-4">
+        {/* Header with close button */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold">Agent Hub</h2>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        {/* Content */}
+        <div className="flex-1 overflow-hidden">
+          <AgentHub onClose={onClose} />
         </div>
       </div>
     </div>
