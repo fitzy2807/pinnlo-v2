@@ -341,7 +341,7 @@ export default function CatalystDemo() {
             <Divider className="my-4" />
             <Button onClick={() => setShowDialog(true)}>Open Dialog</Button>
             
-            <Dialog open={showDialog} onClose={setShowDialog}>
+            <Dialog open={showDialog} onClose={() => setShowDialog(false)}>
               <DialogTitle>Payment successful</DialogTitle>
               <DialogDescription>
                 Your payment has been successfully submitted. We've sent you an email with all of the details of your order.

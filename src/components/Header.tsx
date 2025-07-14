@@ -154,10 +154,16 @@ export default function Header() {
       />
       
       {/* Intelligence Bank Modal */}
-      <IntelligenceBank
-        isOpen={intelligenceBankOpen}
-        onClose={() => setIntelligenceBankOpen(false)}
-      />
+      {intelligenceBankOpen && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setIntelligenceBankOpen(false)} />
+          <div className="relative h-full">
+            <IntelligenceBank
+              onClose={() => setIntelligenceBankOpen(false)}
+            />
+          </div>
+        </div>
+      )}
       
       {/* Organisation Bank Modal */}
       <OrganisationBankModal
