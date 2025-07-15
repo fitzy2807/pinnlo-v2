@@ -1,12 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, Sparkles } from 'lucide-react'
 import { CardData } from '@/types/card'
 import { getBlueprintConfig } from '@/components/blueprints/registry'
 import { BlueprintField } from '@/components/blueprints/types'
 import { getCategoryTheme } from './utils/categoryThemes'
 import { toast } from 'react-hot-toast'
+import { useEditModeGenerator } from '@/hooks/useEditModeGenerator'
 import styles from './IntelligenceCardModal.module.css'
 
 interface IntelligenceCardModalProps {
@@ -15,6 +16,7 @@ interface IntelligenceCardModalProps {
   onClose: () => void
   onUpdate: (id: string, updates: Partial<CardData>) => Promise<void>
   onDelete: (id: string) => Promise<void>
+  currentStrategyId?: string  // Optional context for AI generation
 }
 
 // Field display component for read-only mode
@@ -222,12 +224,24 @@ export default function IntelligenceCardModal({
   isOpen,
   onClose,
   onUpdate,
-  onDelete
+  onDelete,
+  currentStrategyId
 }: IntelligenceCardModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState<Partial<CardData>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  
+  // Add AI generation hook
+  const { 
+    isGenerating: aiGenerating, 
+    progress: aiProgress, 
+    error: generationError, 
+    fields: generatedFields, 
+    generate, 
+    cancel 
+  } = useEditModeGenerator()
   
   // Reset state when card changes
   useEffect(() => {
@@ -236,6 +250,53 @@ export default function IntelligenceCardModal({
       setIsEditing(false)
     }
   }, [card?.id])
+  
+  // Add effect to apply generated fields
+  useEffect(() => {
+    if (generatedFields && !aiGenerating) {
+      setEditData(prev => ({
+        ...prev,
+        ...generatedFields
+      }))
+      toast.success('Content generated successfully!')
+    }
+  }, [generatedFields, aiGenerating])
+  
+  // Add generation handler
+  const handleAIGenerate = async () => {
+    console.log('🚀 handleAIGenerate called!');
+    
+    if (!card) {
+      console.log('❌ No card provided - returning early');
+      return;
+    }
+    
+    console.log('=== AI GENERATE DEBUG ===');
+    console.log('Card object:', card);
+    console.log('Card strategy_id:', card.strategy_id);
+    console.log('Card strategyId:', card.strategyId);
+    console.log('All card keys:', Object.keys(card));
+    console.log('Strategy-related fields:', {
+      strategy_id: card.strategy_id,
+      strategyId: card.strategyId,
+      strategy: card.strategy,
+      strategyName: card.strategyName
+    });
+    console.log('=== END DEBUG ===');
+    
+    try {
+      await generate({
+        cardId: card.id,
+        blueprintType: card.cardType,
+        cardTitle: editData.title || card.title || 'Untitled',
+        strategyId: card.strategy_id || card.strategyId,
+        existingFields: editData
+      })
+    } catch (error) {
+      console.error('Generation failed:', error)
+      toast.error('Failed to generate content')
+    }
+  }
   
   // Handle ESC key to close modal
   useEffect(() => {
@@ -465,16 +526,25 @@ export default function IntelligenceCardModal({
               ) : (
                 <>
                   <button
+                    onClick={handleAIGenerate}
+                    disabled={isSaving || aiGenerating}
+                    className={styles.btnAI}
+                    title={aiGenerating ? aiProgress : "Generate content with AI"}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {aiGenerating ? 'Generating...' : 'AI Generate'}
+                  </button>
+                  <button
                     onClick={handleCancel}
                     className={styles.btnCancel}
-                    disabled={isSaving}
+                    disabled={isSaving || aiGenerating}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSave}
                     className={styles.btnSave}
-                    disabled={isSaving}
+                    disabled={isSaving || aiGenerating}
                   >
                     {isSaving ? 'Saving...' : 'Save'}
                   </button>
@@ -488,6 +558,16 @@ export default function IntelligenceCardModal({
               </button>
             </div>
           </div>
+          
+          {/* Show progress */}
+          {aiGenerating && (
+            <div className={styles.generationProgress}>
+              <div className={styles.progressText}>{aiProgress}</div>
+              <button onClick={cancel} className={styles.cancelGeneration}>
+                Cancel
+              </button>
+            </div>
+          )}
           
           {/* Body */}
           <div className={styles.modalBody}>

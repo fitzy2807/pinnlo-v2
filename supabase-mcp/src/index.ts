@@ -30,6 +30,10 @@ import {
   handleGetSystemInfo, 
   handleMonitorFileChanges 
 } from './tools/terminal-tools.js';
+import { 
+  editModeGeneratorTools, 
+  handleGenerateEditModeContent 
+} from './tools/edit-mode-generator.js';
 
 interface SupabaseConfig {
   url: string;
@@ -125,7 +129,9 @@ class SupabaseMCPServer {
         // Add all tech stack tools
         ...techStackTools,
         // Add all terminal tools
-        ...terminalTools
+        ...terminalTools,
+        // Add edit mode generator tools
+        ...editModeGeneratorTools
       ];
 
       return { tools: allTools };
@@ -184,6 +190,10 @@ class SupabaseMCPServer {
             return await techStackTools.generate_tech_stack_component.handler(args);
           case 'analyze_tech_stack':
             return await techStackTools.analyze_tech_stack.handler(args);
+          
+          // Edit Mode Generator Tools
+          case 'generate_edit_mode_content':
+            return await handleGenerateEditModeContent(args);
           
           default:
             throw new Error(`Unknown tool: ${name}`);

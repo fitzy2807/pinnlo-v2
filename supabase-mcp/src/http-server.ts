@@ -30,6 +30,10 @@ import {
   handleGetSystemInfo, 
   handleMonitorFileChanges 
 } from './tools/terminal-tools.js';
+import { 
+  editModeGeneratorTools, 
+  handleGenerateEditModeContent 
+} from './tools/edit-mode-generator.js';
 
 interface SupabaseConfig {
   url: string;
@@ -308,6 +312,17 @@ ${cardDetails}
       }
     });
 
+    // Edit Mode Generator endpoint
+    this.app.post('/api/tools/generate_edit_mode_content', async (req, res) => {
+      try {
+        const result = await handleGenerateEditModeContent(req.body);
+        res.json(result);
+      } catch (error) {
+        console.error('Edit mode generation error:', error);
+        res.status(500).json({ error: 'Failed to generate edit mode content' });
+      }
+    });
+
     // Terminal tools endpoints
     this.app.post('/api/tools/execute_command', async (req, res) => {
       try {
@@ -345,7 +360,8 @@ ${cardDetails}
         ...strategyCreatorTools,
         ...intelligenceTools,
         ...developmentBankTools,
-        ...terminalTools
+        ...terminalTools,
+        ...editModeGeneratorTools
       ];
       res.json({
         tools: allTools.map(tool => ({
@@ -397,6 +413,8 @@ ${cardDetails}
         return await handleReadFileContent(args);
       case 'get_project_status':
         return await handleGetProjectStatus(args);
+      case 'generate_edit_mode_content':
+        return await handleGenerateEditModeContent(args);
       default:
         throw new Error(`Unknown tool: ${toolName}`);
     }

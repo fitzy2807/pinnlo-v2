@@ -9,7 +9,11 @@ import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextpro
 import { createClient } from '@supabase/supabase-js';
 import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards, handleGenerateUniversalExecutiveSummary } from './tools/strategy-creator-tools.js';
 import { intelligenceTools, handleAnalyzeUrl, handleProcessIntelligenceText, handleGenerateAutomationIntelligence } from './tools/ai-generation.js';
+import { developmentBankTools, handleGenerateTechnicalRequirement, handleCommitTrdToTaskList } from './tools/development-bank-tools.js';
+import { batchedDevelopmentBankTools, handleCommitTrdToTaskListBatched } from './tools/development-bank-tools-batched.js';
+import { techStackTools } from './tools/tech-stack-tools.js';
 import { terminalTools, handleExecuteCommand, handleReadFileContent, handleListDirectoryContents, handleGetProjectStatus, handleGetSystemInfo, handleMonitorFileChanges } from './tools/terminal-tools.js';
+import { editModeGeneratorTools, handleGenerateEditModeContent } from './tools/edit-mode-generator.js';
 class SupabaseMCPServer {
     server;
     supabase;
@@ -83,8 +87,16 @@ class SupabaseMCPServer {
                 ...strategyCreatorTools,
                 // Add all intelligence tools
                 ...intelligenceTools,
+                // Add all development bank tools
+                ...developmentBankTools,
+                // Add all batched development bank tools
+                ...batchedDevelopmentBankTools,
+                // Add all tech stack tools
+                ...techStackTools,
                 // Add all terminal tools
-                ...terminalTools
+                ...terminalTools,
+                // Add edit mode generator tools
+                ...editModeGeneratorTools
             ];
             return { tools: allTools };
         });
@@ -103,6 +115,13 @@ class SupabaseMCPServer {
                         return await handleGenerateStrategyCards(args);
                     case 'generate_universal_executive_summary':
                         return await handleGenerateUniversalExecutiveSummary(args);
+                    // Development Bank Tools
+                    case 'generate_technical_requirement':
+                        return await handleGenerateTechnicalRequirement(args);
+                    case 'commit_trd_to_task_list':
+                        return await handleCommitTrdToTaskList(args);
+                    case 'commit_trd_to_task_list_batched':
+                        return await handleCommitTrdToTaskListBatched(args);
                     // Intelligence Tools
                     case 'analyze_url':
                         return await handleAnalyzeUrl(args, this.supabase);
@@ -123,6 +142,14 @@ class SupabaseMCPServer {
                         return await handleGetSystemInfo(args);
                     case 'monitor_file_changes':
                         return await handleMonitorFileChanges(args);
+                    // Tech Stack Tools
+                    case 'generate_tech_stack_component':
+                        return await techStackTools.generate_tech_stack_component.handler(args);
+                    case 'analyze_tech_stack':
+                        return await techStackTools.analyze_tech_stack.handler(args);
+                    // Edit Mode Generator Tools
+                    case 'generate_edit_mode_content':
+                        return await handleGenerateEditModeContent(args);
                     default:
                         throw new Error(`Unknown tool: ${name}`);
                 }
