@@ -86,7 +86,7 @@ function AgentNotFound({ agentId }: { agentId: string }) {
           Agent not found
         </h3>
         <p className="text-sm text-gray-600">
-          The agent "{agentId}" could not be found. It may have been removed or renamed.
+          The agent &ldquo;{agentId}&rdquo; could not be found. It may have been removed or renamed.
         </p>
       </div>
     </div>

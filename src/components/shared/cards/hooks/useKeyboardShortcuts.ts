@@ -540,7 +540,36 @@ export function useKeyboardShortcuts(
   shortcuts: Record<string, () => void>,
   enabled: boolean = true
 ) {
-  Object.entries(shortcuts).forEach(([shortcut, handler]) => {
-    useKeyboardShortcut(shortcut, handler, enabled)
-  })
+  useEffect(() => {
+    if (!enabled) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      Object.entries(shortcuts).forEach(([shortcut, handler]) => {
+        const keys = shortcut.toLowerCase().split('+').map(k => k.trim())
+        
+        const hasCtrl = keys.includes('ctrl') || keys.includes('cmd')
+        const hasShift = keys.includes('shift')
+        const hasAlt = keys.includes('alt')
+        const mainKey = keys.find(k => !['ctrl', 'cmd', 'shift', 'alt'].includes(k))
+        
+        const ctrlPressed = event.ctrlKey || event.metaKey
+        const shiftPressed = event.shiftKey
+        const altPressed = event.altKey
+        const keyPressed = event.key.toLowerCase()
+        
+        if (
+          (hasCtrl === ctrlPressed) &&
+          (hasShift === shiftPressed) &&
+          (hasAlt === altPressed) &&
+          (mainKey === keyPressed || mainKey === event.code.toLowerCase())
+        ) {
+          event.preventDefault()
+          handler()
+        }
+      })
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [shortcuts, enabled])
 }

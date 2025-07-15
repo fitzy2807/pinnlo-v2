@@ -26,18 +26,13 @@ export interface ContentAreaRef {
 const ContentArea = forwardRef<ContentAreaRef, ContentAreaProps>(function ContentArea({ blueprint, strategyId }, ref) {
   const [availableCards, setAvailableCards] = useState<Array<{ id: string; title: string; cardType: string }>>([])
   
-  // Only use useCards hook if we have a strategyId
-  const cardsHook = strategyId ? useCards(Number(strategyId)) : null
+  // Always call useCards hook - conditional logic handled inside hook
+  const cardsHook = useCards(strategyId ? Number(strategyId) : 0)
   const { cards = [], loading = false, error = null, createCard, updateCard, deleteCard, duplicateCard } = cardsHook || {}
-
-  if (!blueprint) return null
-
-  // Filter cards by blueprint type
-  const blueprintCards = cards.filter(card => card.cardType === blueprint.id)
 
   // Prepare available cards for relationships
   useEffect(() => {
-    if (cards.length > 0) {
+    if (cards.length > 0 && strategyId) {
       const cardOptions = cards.map(card => ({
         id: card.id,
         title: card.title,
@@ -45,7 +40,12 @@ const ContentArea = forwardRef<ContentAreaRef, ContentAreaProps>(function Conten
       }))
       setAvailableCards(cardOptions)
     }
-  }, [cards])
+  }, [cards, strategyId])
+
+  if (!blueprint) return null
+
+  // Filter cards by blueprint type
+  const blueprintCards = cards.filter(card => card.cardType === blueprint.id)
 
   const handleCreateCard = async (title?: string, description?: string) => {
     console.log('🎯 handleCreateCard called with:', { title, description });
@@ -85,7 +85,7 @@ const ContentArea = forwardRef<ContentAreaRef, ContentAreaProps>(function Conten
   // Expose createCard method to parent via ref
   useImperativeHandle(ref, () => ({
     createCard: handleCreateCard
-  }), [handleCreateCard, blueprint, createCard])
+  }), [handleCreateCard])
 
   const handleUpdateCard = async (updatedCard: Partial<CardData>) => {
     if (!updateCard || !updatedCard.id) return
