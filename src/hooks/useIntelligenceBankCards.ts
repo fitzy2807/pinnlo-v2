@@ -276,6 +276,10 @@ export function useIntelligenceBankCards() {
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       console.log('Auth user:', user?.id)
       console.log('Auth error:', authError)
+      console.log('Environment check:')
+      console.log('- NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing')
+      console.log('- NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Missing')
+      console.log('- DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Missing')
       if (!user) {
         throw new Error('User not authenticated')
       }
