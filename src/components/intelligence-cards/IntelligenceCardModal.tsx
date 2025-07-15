@@ -283,20 +283,8 @@ export default function IntelligenceCardModal({
   }
   
   const handleFieldChange = (field: string, value: any) => {
-    // For TRD fields, store them in card_data
-    const isTRDField = trdFields.some(f => f.id === field)
-    
-    if (isTRDField) {
-      setEditData(prev => ({
-        ...prev,
-        card_data: {
-          ...prev.card_data,
-          [field]: value
-        }
-      }))
-    } else {
-      setEditData(prev => ({ ...prev, [field]: value }))
-    }
+    // Intelligence cards don't use card_data column - store all fields directly
+    setEditData(prev => ({ ...prev, [field]: value }))
   }
   
   // Define core fields to always show (reordered)
@@ -517,17 +505,7 @@ export default function IntelligenceCardModal({
                   />
                 ))}
                 
-                {/* TRD-specific fields */}
-                {trdFields.map((field: any) => (
-                  <EditField
-                    key={field.id}
-                    label={field.label}
-                    value={editData.card_data?.[field.id]}
-                    onChange={(value) => handleFieldChange(field.id, value)}
-                    type={field.type as any}
-                    options={field.options}
-                  />
-                ))}
+                {/* Note: Intelligence cards don't use TRD fields */}
                 
                 {/* Blueprint fields (only for non-TRD cards) */}
                 {!trdFields.length && blueprintFields.map((field: BlueprintField) => (
