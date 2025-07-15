@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react'
 import { Plus } from 'lucide-react'
 import MasterCard from '@/components/cards/MasterCard'
 import { useCards } from '@/hooks/useCards'
@@ -30,24 +30,7 @@ const ContentArea = forwardRef<ContentAreaRef, ContentAreaProps>(function Conten
   const cardsHook = useCards(strategyId ? Number(strategyId) : 0)
   const { cards = [], loading = false, error = null, createCard, updateCard, deleteCard, duplicateCard } = cardsHook || {}
 
-  // Prepare available cards for relationships
-  useEffect(() => {
-    if (cards.length > 0 && strategyId) {
-      const cardOptions = cards.map(card => ({
-        id: card.id,
-        title: card.title,
-        cardType: card.cardType
-      }))
-      setAvailableCards(cardOptions)
-    }
-  }, [cards, strategyId])
-
-  if (!blueprint) return null
-
-  // Filter cards by blueprint type
-  const blueprintCards = cards.filter(card => card.cardType === blueprint.id)
-
-  const handleCreateCard = async (title?: string, description?: string) => {
+  const handleCreateCard = useCallback(async (title?: string, description?: string) => {
     console.log('🎯 handleCreateCard called with:', { title, description });
     console.log('Blueprint:', blueprint);
     console.log('CreateCard function:', createCard);
@@ -80,12 +63,29 @@ const ContentArea = forwardRef<ContentAreaRef, ContentAreaProps>(function Conten
     } catch (error) {
       console.error('❌ Error creating card:', error);
     }
-  }
+  }, [blueprint, createCard])
 
   // Expose createCard method to parent via ref
   useImperativeHandle(ref, () => ({
     createCard: handleCreateCard
   }), [handleCreateCard])
+
+  // Prepare available cards for relationships
+  useEffect(() => {
+    if (cards.length > 0 && strategyId) {
+      const cardOptions = cards.map(card => ({
+        id: card.id,
+        title: card.title,
+        cardType: card.cardType
+      }))
+      setAvailableCards(cardOptions)
+    }
+  }, [cards, strategyId])
+
+  if (!blueprint) return null
+
+  // Filter cards by blueprint type
+  const blueprintCards = cards.filter(card => card.cardType === blueprint.id)
 
   const handleUpdateCard = async (updatedCard: Partial<CardData>) => {
     if (!updateCard || !updatedCard.id) return
