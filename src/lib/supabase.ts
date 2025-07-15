@@ -3,6 +3,10 @@ import { createBrowserClient } from '@supabase/ssr'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
+// Debug environment variables
+console.log('Supabase URL:', supabaseUrl ? 'Set' : 'Missing')
+console.log('Supabase Anon Key:', supabaseAnonKey ? 'Set' : 'Missing')
+
 // Create a singleton browser client
 let supabaseInstance: ReturnType<typeof createBrowserClient> | null = null
 

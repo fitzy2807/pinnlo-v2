@@ -272,6 +272,14 @@ export function useIntelligenceBankCards() {
       console.log('Card ID:', id)
       console.log('Updates:', updates)
       
+      // Check authentication status
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      console.log('Auth user:', user?.id)
+      console.log('Auth error:', authError)
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
+      
       // Transform CardData fields back to intelligence_cards schema
       const dbUpdates: any = {
         updated_at: new Date().toISOString()
