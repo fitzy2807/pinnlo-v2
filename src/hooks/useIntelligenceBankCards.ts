@@ -327,6 +327,16 @@ export function useIntelligenceBankCards() {
       
       console.log('Database updates:', dbUpdates)
       
+      // Let's also check what the actual table schema looks like
+      const { data: schemaTest, error: schemaError } = await supabase
+        .from('intelligence_cards')
+        .select('*')
+        .limit(1)
+        .single()
+      
+      console.log('Schema test result:', schemaTest)
+      console.log('Available columns:', schemaTest ? Object.keys(schemaTest) : 'No data')
+      
       const { error } = await supabase
         .from('intelligence_cards')
         .update(dbUpdates)
