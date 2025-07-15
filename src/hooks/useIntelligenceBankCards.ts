@@ -303,10 +303,13 @@ export function useIntelligenceBankCards() {
       if (updates.recommended_actions !== undefined) dbUpdates.recommended_actions = updates.recommended_actions
       if (updates.strategicAlignment !== undefined) dbUpdates.strategic_implications = updates.strategicAlignment
       
-      // Handle basic metadata fields that might exist in intelligence_cards
-      if (updates.priority !== undefined) dbUpdates.priority = updates.priority
-      if (updates.confidenceLevel !== undefined) dbUpdates.confidence_level = updates.confidenceLevel
-      if (updates.owner !== undefined) dbUpdates.owner = updates.owner
+      // Handle basic metadata fields - only include fields that exist in intelligence_cards
+      // Note: priority, confidence_level, owner may not exist in intelligence_cards table
+      console.log('Skipping fields that may not exist in intelligence_cards:', {
+        priority: updates.priority,
+        confidenceLevel: updates.confidenceLevel,
+        owner: updates.owner
+      })
       
       // Handle card_data fields (for TRD and other structured data)
       // Note: intelligence_cards table doesn't have card_data column
