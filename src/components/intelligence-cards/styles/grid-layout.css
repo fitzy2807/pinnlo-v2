@@ -1,0 +1,59 @@
+/* Grid Layout Fix for Independent Card Expansion */
+
+/* Ensure grid container doesn't stretch rows */
+.intelligence-card-grid {
+  display: grid;
+  grid-auto-rows: min-content;
+  align-items: start;
+}
+
+/* Each card maintains its own height */
+.intelligence-card-preview {
+  align-self: start;
+  position: relative;
+  transition: height 0.2s ease-out, transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  will-change: height;
+  contain: layout style;
+}
+
+/* Prevent layout shifts during expansion */
+.intelligence-card-preview.expanding {
+  z-index: 10;
+  position: relative;
+}
+
+/* Smooth height transition for expansion content */
+.expansion-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure cards don't affect each other */
+.intelligence-card-preview:not(.expanding) {
+  height: auto;
+  min-height: 160px;
+}
+
+/* Grid responsive adjustments */
+@media (min-width: 768px) {
+  .intelligence-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .intelligence-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Prevent content overflow during animations */
+.intelligence-card-preview .expansion-content {
+  overflow: hidden;
+}
+
+/* Ensure proper stacking context */
+.intelligence-card-preview.is-expanded {
+  z-index: 5;
+  position: relative;
+}

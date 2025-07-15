@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, Pin, Upload, Link2, Zap, ArrowUpDown, Sparkles, Edit2, FolderPlus, ChevronDown, User, EyeOff, Layers, MoreHorizontal, X, Users, Folder, FolderPlus as FolderPlusIcon } from 'lucide-react'
-import MasterCard from '../cards/MasterCard'
+import IntelligenceCardGrid from '@/components/intelligence-cards/IntelligenceCardGrid'
 import { useTemplateCards } from '@/hooks/useTemplateCards'
 import { useTemplateGroups, TemplateGroup } from '@/hooks/useTemplateGroups'
 import { toast } from 'react-hot-toast'
@@ -922,68 +922,47 @@ export default function TemplateBank({ onClose }: TemplateBankProps) {
                   </button>
                 </div>
               ) : (
-                <div className={`grid gap-4 ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                    : 'grid-cols-1'
-                }`}>
-                  {displayCards.map((card) => (
-                    <div key={card.id} className="relative">
-                      <div className="absolute top-2 right-2 z-10">
-                        <input
-                          type="checkbox"
-                          checked={selectedCards.has(card.id)}
-                          onChange={() => handleSelectCard(card.id)}
-                          className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black bg-white shadow-sm"
-                        />
-                      </div>
-                      {viewType === 'group' && (
-                        <div className="absolute top-8 right-2 z-10 flex items-center gap-1">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          <button
-                            onClick={() => handleRemoveFromGroup(card.id)}
-                            className="text-[10px] text-red-500 hover:text-red-600 transition-colors whitespace-nowrap"
-                            title="Remove from group"
-                          >
-                            remove from group
-                          </button>
-                        </div>
-                      )}
-                      <MasterCard
-                        cardData={{
-                          id: card.id,
-                          title: card.title,
-                          description: card.description || '',
-                          cardType: card.card_type,
-                          priority: card.priority.charAt(0).toUpperCase() + card.priority.slice(1) as 'High' | 'Medium' | 'Low',
-                          confidenceLevel: card.card_data?.confidenceLevel || 'Medium',
-                          priorityRationale: card.card_data?.priorityRationale || '',
-                          confidenceRationale: card.card_data?.confidenceRationale || '',
-                          tags: card.card_data?.tags || [],
-                          relationships: card.card_data?.relationships || [],
-                          strategicAlignment: card.card_data?.strategicAlignment || '',
-                          createdDate: card.created_at,
-                          lastModified: card.updated_at,
-                          creator: 'User',
-                          owner: 'User',
-                          ...card.card_data
-                        }}
-                        onUpdate={(updates) => updateCard(card.id, updates)}
-                        onDelete={() => deleteCard(card.id)}
-                        onDuplicate={() => {
-                          createCard({
-                            title: `${card.title} (Copy)`,
-                            description: card.description,
-                            card_type: card.card_type,
-                            priority: card.priority,
-                            card_data: { ...card.card_data, section: selectedSection }
-                          })
-                        }}
-                        onAIEnhance={() => toast('AI Enhancement coming soon!')}
-                      />
-                    </div>
-                  ))}
-                </div>
+                <IntelligenceCardGrid
+                  cards={displayCards.map(card => ({
+                    id: card.id,
+                    title: card.title,
+                    description: card.description || '',
+                    cardType: card.card_type,
+                    priority: card.priority.charAt(0).toUpperCase() + card.priority.slice(1) as 'High' | 'Medium' | 'Low',
+                    confidenceLevel: card.card_data?.confidenceLevel || 'Medium',
+                    priorityRationale: card.card_data?.priorityRationale || '',
+                    confidenceRationale: card.card_data?.confidenceRationale || '',
+                    tags: card.card_data?.tags || [],
+                    relationships: card.card_data?.relationships || [],
+                    strategicAlignment: card.card_data?.strategicAlignment || '',
+                    created_at: card.created_at,
+                    updated_at: card.updated_at,
+                    createdDate: card.created_at,
+                    lastModified: card.updated_at,
+                    creator: 'User',
+                    owner: 'User',
+                    intelligence_content: card.card_data?.intelligence_content || '',
+                    key_findings: card.card_data?.key_findings || [],
+                    relevance_score: card.card_data?.relevance_score,
+                    credibility_score: card.card_data?.credibility_score,
+                    card_data: card.card_data,
+                    ...card.card_data
+                  }))}
+                  onCreateCard={handleCreateCard}
+                  onUpdateCard={async (id: string, updates: any) => {
+                    await updateCard(id, updates)
+                    toast.success('Card updated!')
+                  }}
+                  onDeleteCard={async (id: string) => {
+                    await deleteCard(id)
+                    toast.success('Card deleted!')
+                  }}
+                  searchQuery={searchQuery}
+                  selectedCardIds={selectedCards}
+                  onSelectCard={handleSelectCard}
+                  viewMode={viewMode}
+                  loading={loading || groupsLoading}
+                />
               )}
             </div>
           </>

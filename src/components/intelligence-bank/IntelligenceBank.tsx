@@ -220,6 +220,7 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
     getCategoryCounts,
     getStatusCounts,
     getCardsByCategory,
+    getCardsByStatus,
     createCard,
     updateCard,
     deleteCard,
@@ -371,7 +372,6 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
         title: 'New Intelligence Card',
         description: 'Click to edit this card',
         card_type: categoryBlueprintMap[selectedCategory] || 'market-intelligence',
-        priority: 'medium',
         card_data: {
           intelligence_content: '',
           key_findings: [],
@@ -428,7 +428,6 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
       title: quickAddTitle,
       description: quickAddSummary || quickAddTitle,
       card_type: categoryBlueprintMap[selectedCategory] || 'market-intelligence',
-      priority: 'medium',
       card_data: {
         intelligence_content: '',
         key_findings: [],
@@ -449,13 +448,49 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
     }
   }
   
+  // Helper function to get currently visible and filtered cards
+  const getVisibleCards = () => {
+    // Get cards based on selected category
+    const categoryCards = 
+      selectedCategory === 'saved' ? getCardsByStatus('saved') :
+      selectedCategory === 'archive' ? getCardsByStatus('archived') :
+      getCardsByCategory(selectedCategory)
+    
+    // Apply same search filtering as IntelligenceCardGrid
+    if (!searchQuery) return categoryCards
+    
+    const query = searchQuery.toLowerCase()
+    return categoryCards.filter(card => 
+      card.title.toLowerCase().includes(query) ||
+      (card.description && card.description.toLowerCase().includes(query)) ||
+      (card.card_data?.intelligence_content && card.card_data.intelligence_content.toLowerCase().includes(query)) ||
+      (card.intelligence_content && card.intelligence_content.toLowerCase().includes(query))
+    )
+  }
+
   const handleSelectAll = () => {
-    // Select all functionality - would need access to current cards
-    if (selectedCardIds.size > 0) {
+    const filteredCards = getVisibleCards()
+    
+    if (filteredCards.length === 0) {
       setSelectedCardIds(new Set())
+      return
+    }
+    
+    // Get IDs of visible cards
+    const visibleCardIds = new Set(filteredCards.map(card => card.id))
+    
+    // Check if all visible cards are currently selected
+    const allVisibleSelected = filteredCards.every(card => selectedCardIds.has(card.id))
+    
+    if (allVisibleSelected) {
+      // All visible cards are selected, so deselect only the visible ones
+      const newSelection = new Set(Array.from(selectedCardIds).filter(id => !visibleCardIds.has(id)))
+      setSelectedCardIds(newSelection)
     } else {
-      // Would need to get all visible card IDs
-      alert('Select all functionality to be implemented')
+      // Not all visible cards are selected, so add all visible cards to selection
+      const newSelection = new Set(selectedCardIds)
+      filteredCards.forEach(card => newSelection.add(card.id))
+      setSelectedCardIds(newSelection)
     }
   }
   
@@ -466,14 +501,31 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
   
   const handleBulkDelete = async () => {
     if (selectedCardIds.size === 0) return
-    if (confirm(`Delete ${selectedCardIds.size} selected cards?`)) {
+    
+    const confirmMessage = `Are you sure you want to delete ${selectedCardIds.size} selected card${selectedCardIds.size > 1 ? 's' : ''}?`
+    if (confirm(confirmMessage)) {
       try {
         const cardIds = Array.from(selectedCardIds)
-        await Promise.all(cardIds.map(id => deleteCard(id)))
+        console.log('Deleting cards:', cardIds)
+        
+        // Delete cards one by one and track errors
+        const results = await Promise.allSettled(
+          cardIds.map(id => deleteCard(id))
+        )
+        
+        const failed = results.filter(r => r.status === 'rejected')
+        if (failed.length > 0) {
+          console.error('Failed to delete some cards:', failed)
+          toast.error(`Failed to delete ${failed.length} card${failed.length > 1 ? 's' : ''}`)
+        } else {
+          toast.success(`Deleted ${cardIds.length} card${cardIds.length > 1 ? 's' : ''}`)
+        }
+        
         setSelectedCardIds(new Set())
         globalRefresh()
       } catch (error) {
-        alert('Failed to delete cards')
+        console.error('Bulk delete error:', error)
+        toast.error('Failed to delete cards')
       }
     }
   }
@@ -786,8 +838,31 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
               <label className="flex items-center gap-1 text-gray-700 cursor-pointer hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors">
                 <input
                   type="checkbox"
-                  checked={selectedCardIds.size > 0}
-                  onChange={handleSelectAll}
+                  ref={(el) => {
+                    if (el) {
+                      const visibleCards = getVisibleCards()
+                      if (visibleCards.length === 0) {
+                        el.checked = false
+                        el.indeterminate = false
+                        return
+                      }
+                      
+                      const visibleCardIds = new Set(visibleCards.map(card => card.id))
+                      const selectedVisibleCount = Array.from(selectedCardIds).filter(id => visibleCardIds.has(id)).length
+                      
+                      if (selectedVisibleCount === 0) {
+                        el.checked = false
+                        el.indeterminate = false
+                      } else if (selectedVisibleCount === visibleCards.length) {
+                        el.checked = true
+                        el.indeterminate = false
+                      } else {
+                        el.checked = false
+                        el.indeterminate = true
+                      }
+                    }
+                  }}
+                  onChange={() => handleSelectAll()}
                   className="w-3 h-3 rounded border-gray-300 text-black focus:ring-black"
                 />
                 <span>Select All</span>

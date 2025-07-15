@@ -17,6 +17,18 @@ const INTELLIGENCE_BLUEPRINT_MAP: Record<string, string> = {
   'opportunities': 'opportunities-intelligence'
 }
 
+// Card types that the automation system might create (without -intelligence suffix)
+const AUTOMATION_CARD_TYPES: Record<string, string> = {
+  'market': 'market',
+  'competitor': 'competitor',
+  'trends': 'trends',
+  'technology': 'technology',
+  'stakeholder': 'stakeholder',
+  'consumer': 'consumer',
+  'risk': 'risk',
+  'opportunities': 'opportunities'
+}
+
 export function useIntelligenceBankCards() {
   const [cards, setCards] = useState<CardData[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,35 +41,59 @@ export function useIntelligenceBankCards() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Get Intelligence Hub strategy ID
-      const strategyId = await getOrCreateIntelligenceStrategy(user.id)
-
-      // Get all intelligence blueprint card types
-      const blueprintTypes = Object.values(INTELLIGENCE_BLUEPRINT_MAP)
+      // Get all intelligence blueprint card types (both formats)
+      const blueprintTypes = [
+        ...Object.values(INTELLIGENCE_BLUEPRINT_MAP),
+        ...Object.values(AUTOMATION_CARD_TYPES)
+      ]
+      console.log('Looking for card types:', blueprintTypes)
       
-      const { data, error } = await supabase
-        .from('cards')
+      // First, let's see ALL intelligence cards for this user to debug
+      const { data: allIntelligenceCards, error: allCardsError } = await supabase
+        .from('intelligence_cards')
         .select('*')
-        .eq('strategy_id', strategyId)
-        .in('card_type', blueprintTypes)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      console.log('ALL intelligence cards for user:', allIntelligenceCards?.map(c => ({ id: c.id, title: c.title, category: c.category, created_at: c.created_at })))
+      console.log('Unique categories in intelligence_cards:', [...new Set(allIntelligenceCards?.map(c => c.category) || [])])
+      
+      // Fetch intelligence cards from the correct table
+      const { data, error } = await supabase
+        .from('intelligence_cards')
+        .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
+      console.log('All intelligence cards:', data?.map(c => ({ id: c.id, title: c.title, category: c.category })))
+      
       if (error) throw error
       
-      // Transform database fields to match CardData interface
+      // Transform intelligence_cards fields to match CardData interface
       const transformedCards = (data || []).map(card => ({
         ...card,
-        cardType: card.card_type, // Map card_type to cardType
-        tags: card.card_data?.tags || [],
-        relationships: card.card_data?.relationships || [],
-        strategicAlignment: card.card_data?.strategicAlignment || '',
+        cardType: `${card.category}-intelligence`, // Map category to cardType format
+        card_type: `${card.category}-intelligence`, // Also set card_type for compatibility
+        description: card.summary, // Map summary to description
+        tags: card.tags || [],
+        relationships: [], // Intelligence cards don't have relationships
+        strategicAlignment: card.strategic_implications || '',
         createdDate: card.created_at,
         lastModified: card.updated_at,
-        creator: card.card_data?.creator || '',
-        owner: card.card_data?.owner || '',
-        confidenceLevel: card.card_data?.confidenceLevel || 'Medium',
-        priorityRationale: card.card_data?.priorityRationale || '',
-        confidenceRationale: card.card_data?.confidenceRationale || ''
+        creator: '',
+        owner: '',
+        priority: 'Medium', // Default priority for intelligence cards
+        confidenceLevel: 'Medium', // Default confidence
+        priorityRationale: '',
+        confidenceRationale: '',
+        // Intelligence-specific fields
+        intelligence_content: card.intelligence_content,
+        key_findings: card.key_findings || [],
+        credibility_score: card.credibility_score || 5,
+        relevance_score: card.relevance_score || 5,
+        source_reference: card.source_reference || '',
+        recommended_actions: card.recommended_actions || ''
       }))
       
       setCards(transformedCards)
@@ -73,8 +109,14 @@ export function useIntelligenceBankCards() {
   // Get cards by category (for backward compatibility)
   const getCardsByCategory = (category: string) => {
     const blueprintType = INTELLIGENCE_BLUEPRINT_MAP[category]
-    if (!blueprintType) return []
-    return cards.filter(card => card.card_type === blueprintType)
+    const automationType = AUTOMATION_CARD_TYPES[category]
+    if (!blueprintType && !automationType) return []
+    
+    return cards.filter(card => 
+      card.card_type === blueprintType || 
+      card.card_type === automationType ||
+      card.card_type === category // Direct match
+    )
   }
 
   // Get cards by status (saved/archived)
@@ -101,38 +143,50 @@ export function useIntelligenceBankCards() {
     }
   }
 
-  // Get or create Intelligence Hub strategy
-  const getOrCreateIntelligenceStrategy = async (userId: string) => {
-    // First, try to find existing Intelligence Hub strategy
-    const { data: existingStrategy } = await supabase
+  // Get or create global Intelligence strategy (placeholder for DB requirement)
+  const getOrCreateGlobalIntelligenceStrategy = async (userId: string) => {
+    console.log('=== getOrCreateGlobalIntelligenceStrategy START ===')
+    console.log('User ID:', userId)
+    
+    // First, try to find existing global Intelligence strategy
+    const { data: existingStrategies, error: fetchError } = await supabase
       .from('strategies')
       .select('id')
-      .eq('"userId"', userId)
-      .eq('title', 'Intelligence Hub')
-      .single()
+      .eq('userId', userId)
+      .eq('title', 'Global Intelligence')
+      .limit(1)
 
-    if (existingStrategy) {
-      return existingStrategy.id
+    console.log('Existing global strategy query result:', existingStrategies)
+    console.log('Existing global strategy query error:', fetchError)
+
+    if (existingStrategies && existingStrategies.length > 0) {
+      console.log('Found existing global Intelligence strategy:', existingStrategies[0].id)
+      return existingStrategies[0].id
     }
 
-    // Create new Intelligence Hub strategy
+    // Create new global Intelligence strategy
+    console.log('Creating new global Intelligence strategy...')
     const { data: newStrategy, error } = await supabase
       .from('strategies')
       .insert({
-        "userId": userId,
-        title: 'Intelligence Hub',
-        description: 'Central hub for all intelligence cards',
-        visibility: 'private',
-        status: 'active'
+        userId: userId,
+        title: 'Global Intelligence',
+        description: 'Global container for standalone intelligence cards (not user-facing)',
+        status: 'active',
+        created_by: userId
       })
       .select('id')
       .single()
 
+    console.log('New global strategy creation result:', newStrategy)
+    console.log('New global strategy creation error:', error)
+
     if (error) {
-      console.error('Error creating Intelligence Hub strategy:', error)
-      throw new Error('Failed to create Intelligence Hub strategy')
+      console.error('Error creating global Intelligence strategy:', error)
+      throw new Error(`Failed to create global Intelligence strategy: ${error.message}`)
     }
 
+    console.log('Created new global Intelligence strategy:', newStrategy.id)
     return newStrategy.id
   }
 
@@ -146,27 +200,36 @@ export function useIntelligenceBankCards() {
       console.log('User from auth:', user?.id)
       if (!user) throw new Error('Not authenticated')
 
-      // Get or create Intelligence Hub strategy
-      const strategyId = await getOrCreateIntelligenceStrategy(user.id)
-      console.log('Strategy ID for intelligence cards:', strategyId)
-
       // Extract intelligence-specific data
-      const { title, description, priority, cardType, card_type, card_data, ...otherFields } = cardData
+      const { title, description, cardType, card_type, card_data, ...otherFields } = cardData
+
+      // Determine category from cardType
+      let category = 'market' // default
+      if (cardType) {
+        category = cardType.replace('-intelligence', '')
+      } else if (card_type) {
+        category = card_type.replace('-intelligence', '')
+      }
 
       const dbInsertData = {
-        strategy_id: strategyId,
-        created_by: user.id,
+        user_id: user.id,
+        category: category,
         title: title || 'Untitled Intelligence',
-        description: description || '',
-        card_type: card_type || cardType || 'market-intelligence',
-        priority: priority?.toLowerCase() || 'medium',
-        card_data: card_data || otherFields || {}
+        summary: description || 'New intelligence card',
+        intelligence_content: card_data?.intelligence_content || '',
+        key_findings: card_data?.key_findings || [],
+        credibility_score: card_data?.credibility_score || 5,
+        relevance_score: card_data?.relevance_score || 5,
+        strategic_implications: card_data?.strategic_implications || '',
+        recommended_actions: card_data?.recommended_actions || '',
+        tags: card_data?.tags || [],
+        status: 'active'
       }
       
-      console.log('DB Insert Data:', dbInsertData)
+      console.log('Intelligence DB Insert Data:', dbInsertData)
 
       const { data, error } = await supabase
-        .from('cards')
+        .from('intelligence_cards')
         .insert(dbInsertData)
         .select()
         .single()
@@ -237,7 +300,7 @@ export function useIntelligenceBankCards() {
       }
       
       const { error } = await supabase
-        .from('cards')
+        .from('intelligence_cards')
         .update(dbUpdates)
         .eq('id', id)
 
@@ -260,7 +323,7 @@ export function useIntelligenceBankCards() {
   const deleteCard = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('cards')
+        .from('intelligence_cards')
         .delete()
         .eq('id', id)
 

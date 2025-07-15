@@ -1,46 +1,23 @@
 'use client'
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
-import { Copy, Trash2, Sparkles, Archive, Pin, Hash, AlertTriangle, TrendingUp, Calendar, User } from 'lucide-react'
-import { toast } from 'react-hot-toast'
-
-// Import all shared components
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { 
-  useAutoSave,
-  useUndo,
+  Copy, Trash2, Sparkles, Pin, Hash, Calendar, User, 
+  Tag, Shield, TrendingUp, ChevronDown, ChevronUp,
+  Edit2, Check, X as XIcon
+} from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import { CardData } from '@/types/card'
+import { getBlueprintConfig } from '@/components/blueprints/registry'
+import { BlueprintField } from '@/components/blueprints/types'
+import { 
   useValidation,
   useKeyboardShortcuts,
-  CardContainer,
-  CardHeader,
-  CollapsibleSection,
-  AIEnhancedField,
-  SaveIndicator,
   ErrorBoundary,
-  SectionPreview,
   validators
 } from '@/components/shared/cards'
-
-// Import blueprint library and types
-import { getBlueprintConfig, BLUEPRINT_REGISTRY } from '@/components/blueprints/registry'
-import { BlueprintField, BlueprintConfig } from '@/components/blueprints/types'
-import { CardData } from '@/types/card'
-
-// Import field components for blueprint fields
-import { BlueprintFieldAdapter, getDefaultValue } from './BlueprintFieldAdapter'
-
-// Import analytics hooks
 import { useCardAnalytics, usePerformanceTracking } from '@/hooks/useAnalytics'
-
-interface EnhancedMasterCardProps {
-  cardData: CardData
-  onUpdate: (updatedCard: Partial<CardData>) => Promise<void>
-  onDelete: () => void
-  onDuplicate: () => void
-  onAIEnhance: () => void
-  isSelected?: boolean
-  onSelect?: () => void
-  availableCards?: Array<{ id: string; title: string; cardType: string }>
-}
+import styles from './EnhancedMasterCard.module.css'
 
 // Blueprint ID prefix mapping
 const getBlueprintPrefix = (cardType: string): string => {
@@ -71,25 +48,163 @@ const getBlueprintPrefix = (cardType: string): string => {
 // Generate formatted card ID
 const getFormattedCardId = (cardData: CardData): string => {
   const prefix = getBlueprintPrefix(cardData.cardType)
-  const numericId = cardData.id.replace(/\D/g, '') || '1'
-  return `${prefix}-${numericId}`
+  const numericId = cardData.id ? cardData.id.replace(/\D/g, '') : '1'
+  return `${prefix}-${numericId || '1'}`
 }
 
-// Section color mapping
-const getSectionColor = (index: number): any => {
-  const colors = ['blue', 'green', 'purple', 'orange', 'yellow', 'cyan', 'indigo', 'pink']
-  return colors[index % colors.length] as any
+// Get category theme colors
+const getCategoryTheme = (cardType: string) => {
+  const themes: Record<string, any> = {
+    'strategic': { background: '#fef3c7', dot: 'bg-yellow-500' },
+    'vision': { background: '#ddd6fe', dot: 'bg-purple-500' },
+    'customer': { background: '#fce7f3', dot: 'bg-pink-500' },
+    'market': { background: '#dbeafe', dot: 'bg-blue-500' },
+    'risk': { background: '#fee2e2', dot: 'bg-red-500' },
+    'financial': { background: '#d1fae5', dot: 'bg-green-500' },
+    'operational': { background: '#e0e7ff', dot: 'bg-indigo-500' },
+    'technical': { background: '#f3e8ff', dot: 'bg-purple-500' }
+  }
+  
+  // Try to match category
+  for (const [key, theme] of Object.entries(themes)) {
+    if (cardType.toLowerCase().includes(key)) {
+      return theme
+    }
+  }
+  
+  // Default theme
+  return { background: '#f3f4f6', dot: 'bg-gray-500' }
 }
 
-// Group fields by section
-const groupFieldsBySection = (fields: BlueprintField[]): Record<string, BlueprintField[]> => {
-  const sections: Record<string, BlueprintField[]> = {}
-  
-  // For now, put all fields in a single section
-  // In the future, we can add section metadata to BlueprintField
-  sections['Blueprint Fields'] = fields
-  
-  return sections
+interface EnhancedMasterCardProps {
+  cardData: CardData
+  onUpdate: (updatedCard: Partial<CardData>) => Promise<void>
+  onDelete: () => void
+  onDuplicate: () => void
+  onAIEnhance: () => void
+  isSelected?: boolean
+  onSelect?: () => void
+  availableCards?: Array<{ id: string; title: string; cardType: string }>
+  forceEnhanced?: boolean
+}
+
+// Inline editable field component
+interface EditableFieldProps {
+  value: any
+  onSave: (newValue: any) => void
+  type?: 'text' | 'textarea' | 'select' | 'tags'
+  options?: string[]
+  placeholder?: string
+  className?: string
+  readOnly?: boolean
+}
+
+function EditableField({ 
+  value, 
+  onSave, 
+  type = 'text', 
+  options = [], 
+  placeholder = 'Click to edit', 
+  className = '',
+  readOnly = false
+}: EditableFieldProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(value)
+
+  React.useEffect(() => {
+    setEditValue(value)
+  }, [value])
+
+  const handleSave = () => {
+    onSave(editValue)
+    setIsEditing(false)
+  }
+
+  const handleCancel = () => {
+    setEditValue(value)
+    setIsEditing(false)
+  }
+
+  if (readOnly) {
+    return <span className={`${className} text-black`}>{value || placeholder}</span>
+  }
+
+  if (isEditing) {
+    if (type === 'select') {
+      return (
+        <select
+          value={editValue || ''}
+          onChange={(e) => {
+            setEditValue(e.target.value)
+            onSave(e.target.value)
+            setIsEditing(false)
+          }}
+          onBlur={() => setIsEditing(false)}
+          className={styles.editableSelect}
+          autoFocus
+        >
+          {options.map(opt => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      )
+    }
+
+    if (type === 'textarea') {
+      return (
+        <div className="relative">
+          <textarea
+            value={editValue || ''}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') handleCancel()
+              if (e.key === 'Enter' && e.metaKey) handleSave()
+            }}
+            className={styles.editableTextarea}
+            rows={4}
+            autoFocus
+          />
+          <div className="flex gap-1 mt-1">
+            <button onClick={handleSave} className="text-green-600 hover:text-green-700">
+              <Check className="w-3 h-3" />
+            </button>
+            <button onClick={handleCancel} className="text-gray-600 hover:text-gray-700">
+              <XIcon className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <input
+        type="text"
+        value={editValue || ''}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={handleSave}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleSave()
+          if (e.key === 'Escape') handleCancel()
+        }}
+        className={styles.editableField}
+        autoFocus
+      />
+    )
+  }
+
+  return (
+    <div 
+      className={`group cursor-pointer inline-flex items-center gap-1 ${className}`}
+      onClick={() => !readOnly && setIsEditing(true)}
+    >
+      <span className={value ? 'text-black' : 'text-gray-400 italic'}>
+        {value || placeholder}
+      </span>
+      {!readOnly && (
+        <Edit2 className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      )}
+    </div>
+  )
 }
 
 function EnhancedMasterCardInternal({
@@ -100,624 +215,599 @@ function EnhancedMasterCardInternal({
   onAIEnhance,
   isSelected,
   onSelect,
-  availableCards
+  availableCards,
+  forceEnhanced = false
 }: EnhancedMasterCardProps) {
-  // State
-  const [isCollapsed, setIsCollapsed] = useState(true)
+  // Get blueprint and theme first
+  const blueprint = getBlueprintConfig(cardData.cardType)
+  const theme = getCategoryTheme(cardData.cardType)
+  
+  // Initialize with all sections expanded
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview', 'Content', 'Details', 'Status', 'Timeline', 'Organization']))
   const [isEditMode, setIsEditMode] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const [isPinned, setIsPinned] = useState(false)
-
-  // Analytics tracking
+  const [editData, setEditData] = useState(cardData)
+  const [hasChanges, setHasChanges] = useState(false)
+  
+  // Analytics
   const { trackAction } = useCardAnalytics(cardData.cardType, cardData.id)
   const { trackSavePerformance } = usePerformanceTracking('EnhancedMasterCard')
-
-  // Map old card types to new blueprint IDs for backward compatibility
-  const cardTypeMapping: Record<string, string> = {
-    'customer-journey': 'customerExperience',
-    'strategic-context': 'strategicContext',
-    'value-proposition': 'valuePropositions',
-    'workstream': 'workstreams',
-    'epic': 'epics',
-    'feature': 'features',
-    'user-journey': 'userJourneys',
-    'experience-section': 'experienceSections',
-    'service-blueprint': 'serviceBlueprints',
-    'organisational-capability': 'organisationalCapabilities',
-    'gtm-play': 'gtmPlays',
-    'tech-stack': 'techStack',
-    'technical-requirement': 'techRequirements'
-  }
+  const displayCardType = (cardData.cardType || 'unknown')
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
   
-  // Use mapped card type if available, otherwise use original
-  const blueprintId = cardTypeMapping[cardData.cardType] || cardData.cardType
+  // Update edit data when card data changes (new card loaded)
+  useEffect(() => {
+    setEditData(cardData)
+    setHasChanges(false)
+  }, [cardData.id])
   
-  // Get blueprint configuration
-  const blueprint = getBlueprintConfig(blueprintId)
+  // Track if we're currently saving
+  const [isSaving, setIsSaving] = useState(false)
   
-  if (!blueprint) {
-    return (
-      <CardContainer>
-        <div className="p-4 text-red-600">
-          Unknown card type: {cardData.cardType}
-        </div>
-      </CardContainer>
-    )
-  }
-
-  // Initialize auto-save with all features
-  const {
-    data: localData,
-    updateField,
-    updateFields,
-    forceSave,
-    isDirty,
-    isSaving,
-    saveStatus,
-    lastSaved,
-    isOnline,
-    offlineQueueSize,
-    dirtyFields,
-    version
-  } = useAutoSave(cardData, async (updates) => {
-    const saveStartTime = Date.now()
-    
-    try {
-      // Transform data to match the expected format for specialized cards
-      const { title, description, ...cardDataFields } = updates
-      
-      // Prepare the update in the same format as TRD/TaskList/PRD cards
-      const updatePayload: any = {}
-      
-      // Only include changed fields
-      if (title !== undefined) updatePayload.title = title
-      if (description !== undefined) updatePayload.description = description
-      
-      // All other fields go into card_data
-      if (Object.keys(cardDataFields).length > 0) {
-        updatePayload.card_data = {
-          ...cardData.card_data, // preserve existing card_data
-          ...cardDataFields,
-          // Ensure priority is lowercase for database
-          priority: cardDataFields.priority?.toLowerCase() || cardData.priority?.toLowerCase()
-        }
-      }
-      
-      await onUpdate(updatePayload)
-      
-      // Track successful save
-      trackSavePerformance(saveStartTime, true)
-      trackAction('saved', { fieldsUpdated: Object.keys(updates).length })
-      
-      return { success: true, version: version + 1 }
-    } catch (error) {
-      // Track failed save
-      trackSavePerformance(saveStartTime, false)
-      trackAction('save_failed', { error: error.message })
-      throw error
-    }
-  }, {
-    debounceMs: 1000,
-    enableConflictDetection: true,
-    enableOfflineQueue: true,
-    fieldDebounceMap: {
-      title: 500,
-      description: 1000
-    }
-  })
-
-  // Initialize undo/redo
-  const {
-    addToHistory,
-    undo,
-    redo,
-    canUndo,
-    canRedo
-  } = useUndo(localData)
-
-  // Track changes for undo
-  const handleFieldChange = useCallback((field: string, value: any) => {
-    addToHistory(localData, `Changed ${field}`)
-    updateField(field, value)
-  }, [localData, addToHistory, updateField])
-
-  // Initialize validation with async support
+  // For now, we'll use editData as our local data
+  const localData = isEditMode ? editData : cardData
+  
+  // Validation
   const validationRules = useMemo(() => {
     const rules: any[] = []
     
-    // Add validation for required fields
-    blueprint.fields.forEach(field => {
-      if (field.required) {
-        rules.push({
-          field: field.id,
-          validate: validators.required(`${field.name} is required`)
-        })
-      }
-      
-      // Add field-specific validation
-      if (field.validation) {
-        if (field.validation.min !== undefined) {
+    // Add blueprint field validation
+    if (blueprint?.fields) {
+      blueprint.fields.forEach(field => {
+        if (field.required) {
           rules.push({
             field: field.id,
-            validate: validators.min(field.validation.min)
+            validate: validators.required(`${field.name} is required`)
           })
         }
-        if (field.validation.max !== undefined) {
-          rules.push({
-            field: field.id,
-            validate: validators.max(field.validation.max)
-          })
-        }
-        if (field.validation.pattern) {
-          rules.push({
-            field: field.id,
-            validate: validators.pattern(new RegExp(field.validation.pattern))
-          })
-        }
-        
-        // Add custom validation if provided
-        if (field.validation.custom && typeof field.validation.custom === 'function') {
-          rules.push({
-            field: field.id,
-            validate: (value: any) => {
-              const result = field.validation!.custom!(value)
-              return typeof result === 'string' ? result : (result ? null : 'Invalid value')
-            }
-          })
-        }
-      }
-    })
+      })
+    }
     
-    // Add common field validation
+    // Add common validation
     rules.push({
       field: 'title',
       validate: validators.required('Title is required')
     })
     
-    // Add async validation for title uniqueness (example)
-    if (cardData.cardType && cardData.id) {
-      rules.push({
-        field: 'title',
-        async: true,
-        debounceMs: 500,
-        validate: validators.unique(
-          async (value: string) => {
-            // This would typically check against your API
-            // For now, we'll simulate it
-            if (value === localData.title) return true // No change
-            
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 300))
-            
-            // For demo purposes, reject titles containing "duplicate"
-            return !value.toLowerCase().includes('duplicate')
-          },
-          'Title must be unique within this card type'
-        )
-      })
-    }
-    
     return rules
-  }, [blueprint, cardData.cardType, cardData.id, localData.title])
+  }, [blueprint])
 
-  const { errors, isValid, validateField, touchField, getFieldError, isValidating } = useValidation(localData, {
-    rules: validationRules
-  })
-
+  const { errors, isValid, validateField, touchField, getFieldError } = useValidation(
+    localData, 
+    { rules: validationRules }
+  )
+  
+  // Handle save
+  const handleSave = async () => {
+    try {
+      setIsSaving(true)
+      await onUpdate(editData)
+      // After successful save, editData becomes the new "truth"
+      // This ensures the UI reflects the saved changes
+      setIsEditMode(false)
+      setHasChanges(false)
+      toast.success('Changes saved!')
+      trackAction('saved_changes')
+    } catch (error) {
+      console.error('Failed to save:', error)
+      toast.error('Failed to save changes')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+  
+  // Handle cancel
+  const handleCancel = () => {
+    setEditData(cardData)
+    setHasChanges(false)
+    setIsEditMode(false)
+    trackAction('cancelled_edit')
+  }
+  
   // Keyboard shortcuts
   useKeyboardShortcuts({
     'cmd+s': () => {
-      forceSave()
-      toast.success('Saved!')
-    },
-    'cmd+z': () => {
-      const previousData = undo()
-      if (previousData) {
-        updateFields(previousData)
-        toast.success('Undone!')
+      if (isEditMode && hasChanges) {
+        handleSave()
       }
     },
-    'cmd+shift+z': () => {
-      const nextData = redo()
-      if (nextData) {
-        updateFields(nextData)
-        toast.success('Redone!')
-      }
-    },
-    'cmd+e': () => {
-      setIsEditMode(!isEditMode)
-    }
+    'cmd+e': () => setIsEditMode(!isEditMode)
   })
-
-  // Section color mapping - memoized for performance
-  const sectionColorMap = useMemo(() => ({
-    0: 'blue',
-    1: 'green',
-    2: 'purple',
-    3: 'orange',
-    4: 'yellow',
-    5: 'cyan',
-    6: 'indigo',
-    7: 'pink'
-  } as const), [])
-
-  const getSectionColorMemoized = useCallback((index: number): any => {
-    return sectionColorMap[index % 8 as keyof typeof sectionColorMap] || 'gray'
-  }, [sectionColorMap])
-
-  // Group fields by section
-  const fieldsBySection = useMemo(() => 
-    groupFieldsBySection(blueprint.fields),
-    [blueprint]
-  )
-
-  // Handle title update
-  const handleTitleUpdate = useCallback((newTitle: string) => {
-    handleFieldChange('title', newTitle)
-  }, [handleFieldChange])
-
+  
+  // Handle field updates
+  const handleFieldUpdate = useCallback((field: string, value: any) => {
+    console.log('[EnhancedMasterCard] Field update:', field, value)
+    setEditData(prev => ({ ...prev, [field]: value }))
+    setHasChanges(true)
+    validateField(field, value)
+    trackAction('field_updated', { field })
+  }, [validateField, trackAction])
+  
   // Toggle section
-  const toggleSection = useCallback((sectionName: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(sectionName)) {
-        newSet.delete(sectionName)
-      } else {
-        newSet.add(sectionName)
-      }
-      return newSet
-    })
-  }, [])
-
-  // Actions with tracking
-  const handleAIEnhance = () => {
-    trackAction('ai_enhance_clicked')
-    onAIEnhance()
+  const toggleSection = (section: string) => {
+    const newExpanded = new Set(expandedSections)
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section)
+    } else {
+      newExpanded.add(section)
+    }
+    setExpandedSections(newExpanded)
   }
-
-  const handlePin = () => {
-    const newPinState = !isPinned
-    setIsPinned(newPinState)
-    trackAction(newPinState ? 'pinned' : 'unpinned')
-  }
-
-  const handleDuplicate = () => {
-    trackAction('duplicated')
-    onDuplicate()
-  }
-
-  const handleDelete = () => {
-    trackAction('deleted')
-    onDelete()
-  }
-
-  const cardActions = (
-    <>
-      <button
-        onClick={handleAIEnhance}
-        className="p-1.5 text-gray-600 hover:text-purple-600 rounded transition-colors"
-        title="AI Enhance"
-      >
-        <Sparkles className="w-4 h-4" />
-      </button>
-      <button
-        onClick={handlePin}
-        className={`p-1.5 rounded transition-colors ${
-          isPinned ? 'text-yellow-500 hover:text-yellow-600' : 'text-gray-600 hover:text-gray-700'
-        }`}
-        title={isPinned ? 'Unpin' : 'Pin'}
-      >
-        <Pin className="w-4 h-4" />
-      </button>
-      <button
-        onClick={handleDuplicate}
-        className="p-1.5 text-gray-600 hover:text-green-600 rounded transition-colors"
-        title="Duplicate"
-      >
-        <Copy className="w-4 h-4" />
-      </button>
-      <button
-        onClick={handleDelete}
-        className="p-1.5 text-gray-600 hover:text-red-600 rounded transition-colors"
-        title="Delete"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
-    </>
-  )
-
-  // Format date helper
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
-
-  // Metadata display
-  const metadata = (
-    <div className="flex items-center gap-4 text-xs text-gray-500">
-      <div className="flex items-center gap-1">
-        <Hash className="w-3 h-3" />
-        <span className="font-mono">{getFormattedCardId(localData)}</span>
-      </div>
-      <span>{localData.cardType}</span>
-      {offlineQueueSize > 0 && (
-        <span className="text-yellow-600">{offlineQueueSize} changes pending</span>
-      )}
-    </div>
-  )
-
-  // Priority/Confidence badges
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High': return 'bg-red-100 text-red-800'
-      case 'Medium': return 'bg-yellow-100 text-yellow-800'
-      case 'Low': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
+  
+  // Format date
+  const formatDate = (date: string | Date | undefined) => {
+    if (!date) return 'Unknown'
+    try {
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    } catch (e) {
+      return 'Invalid date'
     }
   }
-
-  const getConfidenceColor = (confidence: string) => {
-    switch (confidence) {
-      case 'High': return 'bg-green-100 text-green-800'
-      case 'Medium': return 'bg-yellow-100 text-yellow-800'
-      case 'Low': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+  
+  // Group blueprint fields by type
+  const groupedFields = useMemo(() => {
+    if (!blueprint?.fields) return {}
+    
+    return blueprint.fields.reduce((acc, field) => {
+      const section = getFieldSection(field)
+      if (!acc[section]) acc[section] = []
+      acc[section].push(field)
+      return acc
+    }, {} as Record<string, BlueprintField[]>)
+  }, [blueprint])
+  
+  function getFieldSection(field: BlueprintField): string {
+    // Group fields logically based on type or name
+    if (field.type === 'textarea' || field.id.includes('description') || field.id.includes('summary')) {
+      return 'Content'
     }
+    if (field.type === 'enum' || field.id.includes('status') || field.id.includes('priority')) {
+      return 'Status'
+    }
+    if (field.type === 'date' || field.id.includes('date') || field.id.includes('deadline')) {
+      return 'Timeline'
+    }
+    if (field.type === 'array' || field.id.includes('tags') || field.id.includes('categories')) {
+      return 'Organization'
+    }
+    return 'Details'
   }
-
-  // Render blueprint field using adapter
-  const renderBlueprintField = (field: BlueprintField) => {
-    const value = localData[field.id] || getDefaultValue(field)
+  
+  // Render field value in magazine style
+  const renderFieldValue = (field: BlueprintField) => {
+    const value = localData[field.id]
     const error = getFieldError(field.id)
-
+    
+    if (field.type === 'enum' && field.options) {
+      return (
+        <EditableField
+          value={value}
+          onSave={(v) => handleFieldUpdate(field.id, v)}
+          type="select"
+          options={field.options}
+          placeholder={field.placeholder}
+          readOnly={!isEditMode}
+        />
+      )
+    }
+    
+    if (field.type === 'textarea') {
+      return (
+        <EditableField
+          value={value}
+          onSave={(v) => handleFieldUpdate(field.id, v)}
+          type="textarea"
+          placeholder={field.placeholder}
+          className="whitespace-pre-wrap"
+          readOnly={!isEditMode}
+        />
+      )
+    }
+    
+    if (field.type === 'array') {
+      return (
+        <div className={styles.tagContainer}>
+          {value?.map((item: string, idx: number) => (
+            <span key={idx} className={styles.tag}>
+              {item}
+              {isEditMode && (
+                <span
+                  onClick={() => {
+                    const newValue = value.filter((_: string, i: number) => i !== idx)
+                    handleFieldUpdate(field.id, newValue)
+                  }}
+                  className={styles.tagRemove}
+                >
+                  ×
+                </span>
+              )}
+            </span>
+          ))}
+          {isEditMode && (
+            <button
+              onClick={() => {
+                const newItem = prompt(`Add ${field.name}:`)
+                if (newItem) {
+                  handleFieldUpdate(field.id, [...(value || []), newItem])
+                }
+              }}
+              className={styles.addTagButton}
+            >
+              + Add
+            </button>
+          )}
+        </div>
+      )
+    }
+    
     return (
-      <BlueprintFieldAdapter
-        key={field.id}
-        field={field}
+      <EditableField
         value={value}
-        onChange={(newValue) => {
-          handleFieldChange(field.id, newValue)
-          validateField(field.id, newValue)
-        }}
-        onBlur={() => touchField(field.id)}
-        isEditMode={isEditMode}
-        error={error}
+        onSave={(v) => handleFieldUpdate(field.id, v)}
+        placeholder={field.placeholder}
+        readOnly={!isEditMode}
       />
     )
   }
-
+  
   return (
-    <ErrorBoundary>
-      <CardContainer 
-        isSelected={isSelected}
-        onClick={onSelect}
-        className={isPinned ? 'ring-2 ring-yellow-400' : ''}
+    <div className={styles.masterCard}>
+      {/* Header with gradient */}
+      <div 
+        className={styles.cardHeader}
+        style={{
+          background: `linear-gradient(135deg, #ffffff 0%, ${theme.background} 100%)`
+        }}
       >
-        <CardHeader
-          title={localData.title}
-          isCollapsed={isCollapsed}
-          onToggleCollapse={() => {
-            setIsCollapsed(!isCollapsed)
-            trackAction(isCollapsed ? 'expanded' : 'collapsed')
-          }}
-          isEditMode={isEditMode}
-          onToggleEditMode={() => {
-            setIsEditMode(!isEditMode)
-            trackAction(isEditMode ? 'exited_edit_mode' : 'entered_edit_mode')
-          }}
-          onTitleEdit={isEditMode ? handleTitleUpdate : undefined}
-          metadata={metadata}
-          saveStatus={saveStatus}
-          actions={cardActions}
-          onSelect={onSelect}
-          isSelected={isSelected}
-        />
-
-        {!isCollapsed && (
-          <>
-            {/* Priority and Confidence Badges */}
-            <div className="px-3 pb-3 flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-gray-400" />
-                <span className="text-xs text-gray-500">Priority:</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${getPriorityColor(localData.priority)}`}>
-                  {localData.priority}
+        <div className={styles.headerContent}>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`${styles.categoryDot} ${theme.dot}`}></div>
+                <span className="text-[12px] font-medium text-gray-600">
+                  {displayCardType}
                 </span>
+                {hasChanges && <span className="text-[11px] text-orange-500">• Unsaved changes</span>}
+                {isPinned && <Pin className="w-3 h-3 text-yellow-500" />}
               </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-gray-400" />
-                <span className="text-xs text-gray-500">Confidence:</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${getConfidenceColor(localData.confidenceLevel)}`}>
-                  {localData.confidenceLevel}
-                </span>
-              </div>
-            </div>
-
-            {/* Description field - always visible */}
-            <div className="p-3 border-b border-gray-100">
-              <AIEnhancedField
-                label="Description"
-                value={localData.description || ''}
-                onChange={(value) => handleFieldChange('description', value)}
-                placeholder="Describe this card..."
-                isEditMode={isEditMode}
-                aiContext={`${cardData.cardType}_description`}
-                error={errors.description}
-              />
-            </div>
-
-            {/* Strategic Alignment Section */}
-            <CollapsibleSection
-              title="Strategic Alignment"
-              colorScheme="green"
-              defaultExpanded={false}
-              preview={<SectionPreview 
-                data={localData} 
-                fields={['strategicAlignment']} 
-              />}
-            >
-              <AIEnhancedField
-                label="Strategic Alignment"
-                value={localData.strategicAlignment || ''}
-                onChange={(value) => handleFieldChange('strategicAlignment', value)}
-                placeholder="How does this align with your overall strategy?"
-                fieldType="textarea"
-                isEditMode={isEditMode}
-                aiContext={`${cardData.cardType}_strategic_alignment`}
-              />
-            </CollapsibleSection>
-
-            {/* Blueprint-specific fields by section */}
-            {Object.entries(fieldsBySection).map(([sectionName, fields], index) => (
-              <CollapsibleSection
-                key={sectionName}
-                title={sectionName}
-                colorScheme={getSectionColorMemoized(index)}
-                defaultExpanded={index === 0}
-                badge={
-                  fields.some(f => errors[f.id]) && (
-                    <span className="px-1.5 py-0.5 text-xs bg-red-100 text-red-700 rounded">
-                      {fields.filter(f => errors[f.id]).length} errors
-                    </span>
-                  )
-                }
-                preview={<SectionPreview 
-                  data={localData} 
-                  fields={fields.slice(0, 2).map(f => f.id)} 
-                />}
-              >
-                <div className="space-y-3">
-                  {fields.map(field => renderBlueprintField(field))}
-                </div>
-              </CollapsibleSection>
-            ))}
-
-            {/* Assessment Section (Priority & Confidence with Rationale) */}
-            <CollapsibleSection
-              title="Assessment"
-              colorScheme="yellow"
-              defaultExpanded={false}
-            >
-              <div className="space-y-4">
-                {/* Priority */}
-                <div>
-                  <AIEnhancedField
-                    label="Priority"
-                    value={localData.priority || ''}
-                    onChange={(value) => handleFieldChange('priority', value)}
-                    fieldType="select"
-                    selectOptions={[
-                      { value: 'High', label: 'High' },
-                      { value: 'Medium', label: 'Medium' },
-                      { value: 'Low', label: 'Low' }
-                    ]}
-                    isEditMode={isEditMode}
-                    aiContext={`${cardData.cardType}_priority`}
-                  />
-                  <AIEnhancedField
-                    label="Priority Rationale"
-                    value={localData.priorityRationale || ''}
-                    onChange={(value) => handleFieldChange('priorityRationale', value)}
-                    placeholder="Why is this priority level appropriate?"
-                    fieldType="textarea"
-                    isEditMode={isEditMode}
-                    aiContext={`${cardData.cardType}_priority_rationale`}
-                  />
-                </div>
-
-                {/* Confidence */}
-                <div>
-                  <AIEnhancedField
-                    label="Confidence Level"
-                    value={localData.confidenceLevel || ''}
-                    onChange={(value) => handleFieldChange('confidenceLevel', value)}
-                    fieldType="select"
-                    selectOptions={[
-                      { value: 'High', label: 'High' },
-                      { value: 'Medium', label: 'Medium' },
-                      { value: 'Low', label: 'Low' }
-                    ]}
-                    isEditMode={isEditMode}
-                    aiContext={`${cardData.cardType}_confidence`}
-                  />
-                  <AIEnhancedField
-                    label="Confidence Rationale"
-                    value={localData.confidenceRationale || ''}
-                    onChange={(value) => handleFieldChange('confidenceRationale', value)}
-                    placeholder="Why is this confidence level appropriate?"
-                    fieldType="textarea"
-                    isEditMode={isEditMode}
-                    aiContext={`${cardData.cardType}_confidence_rationale`}
-                  />
-                </div>
-              </div>
-            </CollapsibleSection>
-
-            {/* Metadata & Relationships section */}
-            <CollapsibleSection
-              title="Metadata & Relationships"
-              colorScheme="gray"
-              defaultExpanded={false}
-            >
-              <div className="space-y-3">
-                <AIEnhancedField
-                  label="Tags"
-                  value={localData.tags?.join(', ') || ''}
-                  onChange={(value) => 
-                    handleFieldChange('tags', value.split(',').map(t => t.trim()).filter(Boolean))
-                  }
-                  placeholder="tag1, tag2, tag3..."
-                  fieldType="text"
-                  isEditMode={isEditMode}
+              <h2 className={styles.cardTitle}>
+                <EditableField
+                  value={localData.title}
+                  onSave={(v) => handleFieldUpdate('title', v)}
+                  placeholder="Untitled"
+                  className="text-[20px] font-semibold text-black"
+                  readOnly={!isEditMode}
                 />
-                
-                {/* Relationships would go here - needs RelationshipEditor component */}
-                
-                {/* Metadata */}
-                <div className="pt-3 border-t border-gray-200">
-                  <div className="flex items-center justify-between text-xs text-gray-600">
+              </h2>
+              {/* Card ID */}
+              {localData.id && (
+                <div className="flex items-center gap-1 mt-2 text-[11px] text-gray-500">
+                  <Hash className="w-3 h-3" />
+                  <span className="font-mono">{getFormattedCardId(localData)}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Actions */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  setIsCollapsed(!isCollapsed)
+                  trackAction(isCollapsed ? 'expanded' : 'collapsed')
+                }}
+                className={styles.actionButton}
+                title={isCollapsed ? 'Expand' : 'Collapse'}
+              >
+                {isCollapsed ? <ChevronDown /> : <ChevronUp />}
+              </button>
+              {!isEditMode ? (
+                <button
+                  onClick={() => {
+                    setIsEditMode(true)
+                    trackAction('entered_edit_mode')
+                  }}
+                  className={styles.actionButton}
+                >
+                  <Edit2 /> Edit
+                </button>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handleCancel}
+                    className={styles.actionButton}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className={`${styles.actionButton} ${styles.editModeIndicator}`}
+                    disabled={isSaving || !hasChanges}
+                  >
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              )}
+              <button 
+                onClick={() => {
+                  onAIEnhance()
+                  trackAction('ai_enhanced')
+                }} 
+                className={styles.actionButton}
+              >
+                <Sparkles />
+              </button>
+              <button 
+                onClick={() => {
+                  setIsPinned(!isPinned)
+                  trackAction(isPinned ? 'unpinned' : 'pinned')
+                }} 
+                className={styles.actionButton}
+              >
+                <Pin className={isPinned ? 'text-yellow-500' : ''} />
+              </button>
+              <button 
+                onClick={() => {
+                  onDuplicate()
+                  trackAction('duplicated')
+                }} 
+                className={styles.actionButton}
+              >
+                <Copy />
+              </button>
+              <button 
+                onClick={() => {
+                  onDelete()
+                  trackAction('deleted')
+                }} 
+                className={`${styles.actionButton} hover:text-red-600`}
+              >
+                <Trash2 />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {!isCollapsed && (
+        <>
+          {/* Overview Section - Always visible */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <div className={`w-2 h-2 rounded-full ${theme.dot}`}></div>
+              Overview
+            </h3>
+            
+            {/* Description */}
+            <div className="mb-6">
+              <p className={styles.fieldLabel}>Description</p>
+              <div className={styles.fieldValue}>
+                <EditableField
+                  value={localData.description}
+                  onSave={(v) => handleFieldUpdate('description', v)}
+                  type="textarea"
+                  placeholder="Add a description..."
+                  readOnly={!isEditMode}
+                />
+              </div>
+            </div>
+            
+            {/* Intelligence Content - if available */}
+            {(localData.intelligence_content || localData.card_data?.intelligence_content) && (
+              <div className="mb-6">
+                <p className={styles.fieldLabel}>Intelligence Content</p>
+                <div className={styles.fieldValue}>
+                  <EditableField
+                    value={localData.intelligence_content || localData.card_data?.intelligence_content}
+                    onSave={(v) => handleFieldUpdate('intelligence_content', v)}
+                    type="textarea"
+                    placeholder="Add intelligence content..."
+                    readOnly={!isEditMode}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Key Findings - if available */}
+            {localData.key_findings && localData.key_findings.length > 0 && (
+              <div className="mb-6">
+                <p className={styles.fieldLabel}>Key Findings</p>
+                <ul className="space-y-2">
+                  {localData.key_findings.map((finding: any, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-gray-400 mt-0.5">•</span>
+                      <span className="text-black">{typeof finding === 'string' ? finding : finding.text || finding.description}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {/* Metadata Grid */}
+            <div className={styles.metadataGrid}>
+              <div className={styles.metadataItem}>
+                <p className={styles.fieldLabel}>Priority</p>
+                <EditableField
+                  value={localData.priority}
+                  onSave={(v) => handleFieldUpdate('priority', v)}
+                  type="select"
+                  options={['High', 'Medium', 'Low']}
+                  readOnly={!isEditMode}
+                />
+              </div>
+              
+              <div className={styles.metadataItem}>
+                <p className={styles.fieldLabel}>Confidence</p>
+                <EditableField
+                  value={localData.confidenceLevel}
+                  onSave={(v) => handleFieldUpdate('confidenceLevel', v)}
+                  type="select"
+                  options={['High', 'Medium', 'Low']}
+                  readOnly={!isEditMode}
+                />
+              </div>
+              
+              <div className={styles.metadataItem}>
+                <p className={styles.fieldLabel}>Owner</p>
+                <EditableField
+                  value={localData.owner || localData.creator}
+                  onSave={(v) => handleFieldUpdate('owner', v)}
+                  placeholder="Assign owner..."
+                  readOnly={!isEditMode}
+                />
+              </div>
+              
+              <div className={styles.metadataItem}>
+                <p className={styles.fieldLabel}>Strategic Alignment</p>
+                <EditableField
+                  value={localData.strategicAlignment}
+                  onSave={(v) => handleFieldUpdate('strategicAlignment', v)}
+                  placeholder="Add strategic context..."
+                  readOnly={!isEditMode}
+                />
+              </div>
+            </div>
+            
+            {/* Intelligence Metrics - if applicable */}
+            {(localData.relevance_score !== undefined || localData.credibility_score !== undefined) && (
+              <div className="mt-6 space-y-4">
+                {localData.relevance_score !== undefined && (
+                  <div>
+                    <p className={styles.fieldLabel}>Relevance Score</p>
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        <span>{localData.creator}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>{formatDate(localData.lastModified)}</span>
+                      <span className="text-black font-medium">{localData.relevance_score}/10</span>
+                      <div className={styles.progressBar} style={{ width: '200px' }}>
+                        <div 
+                          className={styles.progressFill}
+                          style={{ width: `${(localData.relevance_score || 0) * 10}%` }}
+                        />
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </CollapsibleSection>
-
-            {/* Debug info in development */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="p-2 bg-gray-50 text-xs text-gray-600">
-                <div>Save Status: {saveStatus} | Dirty: {isDirty ? 'Yes' : 'No'} | Online: {isOnline ? 'Yes' : 'No'}</div>
-                <div>Can Undo: {canUndo ? 'Yes' : 'No'} | Can Redo: {canRedo ? 'Yes' : 'No'}</div>
-                <div>Validation: {isValid ? 'Valid' : 'Invalid'} | Version: {version}</div>
-                <div>Dirty Fields: {Array.from(dirtyFields).join(', ') || 'None'}</div>
+                )}
+                
+                {localData.credibility_score !== undefined && (
+                  <div>
+                    <p className={styles.fieldLabel}>Credibility Score</p>
+                    <div className="flex items-center gap-3">
+                      <span className="text-black font-medium">{localData.credibility_score}/10</span>
+                      <div className={styles.progressBar} style={{ width: '200px' }}>
+                        <div 
+                          className={styles.progressFill}
+                          style={{ 
+                            width: `${(localData.credibility_score || 0) * 10}%`,
+                            background: 'linear-gradient(to right, #10b981, #059669)'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-          </>
-        )}
-      </CardContainer>
-    </ErrorBoundary>
+          </div>
+          
+          {/* Blueprint Fields Sections */}
+          {Object.entries(groupedFields).map(([section, fields]) => (
+            <div key={section} className={styles.section}>
+              <div 
+                className={styles.collapsibleHeader}
+                onClick={() => toggleSection(section)}
+              >
+                <h3 className={styles.sectionTitle}>
+                  {expandedSections.has(section) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  {section}
+                </h3>
+              </div>
+              
+              {expandedSections.has(section) && (
+                <div className={styles.collapsibleContent}>
+                  <div className={styles.sectionGrid}>
+                    {fields.map(field => (
+                      <div key={field.id} className={styles.fieldGroup}>
+                        <p className={styles.fieldLabel}>{field.name}</p>
+                        <div className={styles.fieldValue}>
+                          {renderFieldValue(field)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {/* Tags Section */}
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Tag className="w-4 h-4" />
+              Tags
+            </h3>
+            <div className={styles.tagContainer}>
+              {localData.tags?.map((tag: string, idx: number) => (
+                <span key={idx} className={styles.tag}>
+                  {tag}
+                  {isEditMode && (
+                    <span
+                      onClick={() => {
+                        const newTags = localData.tags.filter((_: string, i: number) => i !== idx)
+                        handleFieldUpdate('tags', newTags)
+                      }}
+                      className={styles.tagRemove}
+                    >
+                      ×
+                    </span>
+                  )}
+                </span>
+              ))}
+              {isEditMode && (
+                <button
+                  onClick={() => {
+                    const newTag = prompt('Add a tag:')
+                    if (newTag) {
+                      handleFieldUpdate('tags', [...(localData.tags || []), newTag])
+                    }
+                  }}
+                  className={styles.addTagButton}
+                >
+                  + Add tag
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {/* Footer */}
+          <div className={styles.section}>
+            <div className="flex items-center justify-between text-[11px] text-gray-500">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  Created {formatDate(localData.created_at || localData.createdDate)}
+                </span>
+                <span>
+                  Last updated {formatDate(localData.updated_at || localData.lastModified)}
+                </span>
+              </div>
+              {/* Removed offline queue indicator */}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
-// Import performance wrapper
-import { PerformanceWrapper } from './PerformanceWrapper'
-
-// Export with performance monitoring
 export function EnhancedMasterCard(props: EnhancedMasterCardProps) {
   return (
-    <PerformanceWrapper componentName="EnhancedMasterCard" warnThreshold={100}>
+    <ErrorBoundary>
       <EnhancedMasterCardInternal {...props} />
-    </PerformanceWrapper>
+    </ErrorBoundary>
   )
 }

@@ -1,0 +1,380 @@
+/* EnhancedMasterCard - Magazine Style Design System */
+
+.masterCard {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #000000;
+}
+
+.masterCard * {
+  color: inherit;
+}
+
+/* Header with gradient background */
+.cardHeader {
+  position: relative;
+  padding: 24px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.headerGradient {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.headerContent {
+  position: relative;
+  z-index: 1;
+}
+
+/* Typography - Magazine Style */
+.cardTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000000;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #000000;
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.fieldValue {
+  font-size: 13px;
+  color: #000000;
+  line-height: 1.6;
+}
+
+/* Clean input styling */
+.editableField {
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #000000;
+  width: 100%;
+  transition: all 0.15s ease;
+  border-radius: 6px;
+}
+
+.editableField:hover {
+  background: #f9fafb;
+}
+
+.editableField:focus {
+  background: white;
+  box-shadow: 0 0 0 2px #e5e7eb, 0 0 0 4px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Textarea styling */
+.editableTextarea {
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #000000;
+  width: 100%;
+  resize: none;
+  transition: all 0.15s ease;
+  border-radius: 6px;
+  line-height: 1.6;
+  min-height: 80px;
+}
+
+.editableTextarea:hover {
+  background: #f9fafb;
+}
+
+.editableTextarea:focus {
+  background: white;
+  box-shadow: 0 0 0 2px #e5e7eb, 0 0 0 4px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Select styling */
+.editableSelect {
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 6px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 32px;
+}
+
+.editableSelect:hover {
+  background-color: #f9fafb;
+}
+
+.editableSelect:focus {
+  background-color: white;
+  box-shadow: 0 0 0 2px #e5e7eb, 0 0 0 4px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Section styling */
+.section {
+  padding: 24px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Status badges */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.statusHigh {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.statusMedium {
+  background: #fed7aa;
+  color: #ea580c;
+}
+
+.statusLow {
+  background: #d1fae5;
+  color: #059669;
+}
+
+/* Tags */
+.tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.tag:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.tagRemove {
+  margin-left: 6px;
+  color: #9ca3af;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tagRemove:hover {
+  color: #ef4444;
+}
+
+.addTagButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px dashed #d1d5db;
+  color: #6b7280;
+  font-size: 12px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.addTagButton:hover {
+  border-color: #9ca3af;
+  color: #4b5563;
+  background: #f9fafb;
+}
+
+/* Action buttons */
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.actionButton:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #1f2937;
+}
+
+.actionButton svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Save indicator */
+.saveIndicator {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Collapsible sections */
+.collapsibleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.collapsibleContent {
+  margin-top: 16px;
+}
+
+/* Edit mode indicator */
+.editModeIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Remove all form-like borders and backgrounds in view mode */
+.viewMode .editableField,
+.viewMode .editableTextarea,
+.viewMode .editableSelect {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  cursor: text;
+}
+
+.viewMode .editableField:hover,
+.viewMode .editableTextarea:hover,
+.viewMode .editableSelect:hover {
+  background: #f9fafb;
+  padding: 8px 12px;
+  margin: -8px -12px;
+  cursor: pointer;
+}
+
+/* Metadata grid */
+.metadataGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.metadataItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Progress bars */
+.progressBar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Category dots */
+.categoryDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sectionGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .metadataGrid {
+    grid-template-columns: 1fr;
+  }
+}

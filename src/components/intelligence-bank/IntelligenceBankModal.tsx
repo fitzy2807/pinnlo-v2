@@ -17,7 +17,7 @@ export default function IntelligenceBankModal({ isOpen, onClose }: IntelligenceB
       <div className="relative w-full h-full max-w-7xl max-h-[90vh] bg-white rounded-lg shadow-2xl flex flex-col mx-4 my-4">
         {/* Header with close button */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold">Intelligence Hub</h2>
+          <h2 className="text-lg font-semibold text-black">Intelligence Hub</h2>
           <button
             onClick={onClose}
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"

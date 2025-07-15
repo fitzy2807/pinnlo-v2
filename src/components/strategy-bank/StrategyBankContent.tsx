@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, Filter, ArrowUpDown, Plus, Grid3X3, List, Edit2, Trash2, Copy, FolderPlus, X } from 'lucide-react';
 import { useCards } from '@/hooks/useCards';
-import MasterCard from '@/components/cards/MasterCard';
+import IntelligenceCardGrid from '@/components/intelligence-cards/IntelligenceCardGrid';
 
 interface StrategyBankContentProps {
   strategy: any;
@@ -66,7 +66,7 @@ export default function StrategyBankContent({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('created');
   const [filterBy, setFilterBy] = useState('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -153,22 +153,70 @@ export default function StrategyBankContent({
     }
   });
 
-  // 🔧 DEBUG: Log to validate data flow
-  console.log('🔍 StrategyBankContent Debug:');
-  console.log('- Strategy ID:', strategy.id);
-  console.log('- Active Section:', activeSection);
-  console.log('- All Cards Count:', allCards.length);
-  console.log('- Active Cards Count:', activeCards.length);
-  console.log('- Filtered Cards Count:', filteredCards.length);
-  console.log('- Loading:', loading);
-  console.log('- Error:', error);
-
-  const handleSelectAll = () => {
-    if (selectedCards.size === filteredCards.length) {
-      setSelectedCards(new Set());
-    } else {
-      setSelectedCards(new Set(filteredCards.map(card => card.id)));
+  // Create card handler
+  const handleCreateCard = async () => {
+    try {
+      // Get groups this card should belong to
+      const cardGroups = viewType === 'group' && activeGroup ? [activeGroup] : [];
+      
+      const newCard = {
+        title: 'New Card',
+        description: '',
+        cardType: activeSection,
+        priority: 'Medium',
+        confidenceLevel: 'Medium',
+        tags: [],
+        relationships: [],
+        strategicAlignment: '',
+        group_ids: cardGroups,
+      };
+      
+      await createCard(newCard);
+      console.log('✓ Card created successfully in', activeSection);
+      showSuccess('Card created successfully!');
+    } catch (error) {
+      console.error('❌ Failed to create card:', error);
+      alert('Failed to create card. Please try again.');
     }
+  };
+
+  // Quick add handlers
+  const handleQuickAddSubmit = async () => {
+    if (!quickAddTitle.trim()) return;
+    
+    try {
+      const cardGroups = viewType === 'group' && activeGroup ? [activeGroup] : [];
+      
+      const newCard = {
+        title: quickAddTitle.trim(),
+        description: quickAddDescription.trim(),
+        cardType: activeSection,
+        priority: 'Medium',
+        confidenceLevel: 'Medium',
+        tags: [],
+        relationships: [],
+        strategicAlignment: '',
+        group_ids: cardGroups,
+      };
+      
+      await createCard(newCard);
+      console.log('✓ Card created via quick add:', quickAddTitle);
+      
+      // Reset form
+      setQuickAddTitle('');
+      setQuickAddDescription('');
+      setShowQuickAdd(false);
+      showSuccess('Card created successfully!');
+    } catch (error) {
+      console.error('❌ Failed to create card:', error);
+      alert('Failed to create card. Please try again.');
+    }
+  };
+
+  const handleQuickAddCancel = () => {
+    setQuickAddTitle('');
+    setQuickAddDescription('');
+    setShowQuickAdd(false);
   };
 
   const handleSelectCard = (cardId: string) => {
@@ -181,80 +229,17 @@ export default function StrategyBankContent({
     setSelectedCards(newSelected);
   };
 
-  const handleSortChange = (sortValue: string) => {
-    setSortBy(sortValue);
-    setShowSortDropdown(false);
-    console.log('Cards sorted by:', sortOptions.find(opt => opt.value === sortValue)?.label);
-  };
-
-  const handleFilterChange = (filterValue: string) => {
-    setFilterBy(filterValue);
-    setShowFilterDropdown(false);
-    console.log('Cards filtered by:', filterOptions.find(opt => opt.value === filterValue)?.label);
-  };
-
-  const handleCreateCard = async () => {
-    try {
-      await createCard({
-        title: 'New Card',
-        description: 'Click to edit this card',
-        cardType: activeSection,
-        priority: 'Medium',
-        confidenceLevel: 'Medium'
-      });
-      console.log('✓ Card created successfully for section:', activeSection);
-      showSuccess('Card created successfully!');
-    } catch (error) {
-      console.error('❌ Failed to create card:', error);
-      alert('Failed to create card. Please try again.');
-    }
-  };
-
-  const handleQuickAddSubmit = async () => {
-    if (!quickAddTitle.trim()) {
-      alert('Please enter a card title');
-      return;
-    }
-    
-    try {
-      await createCard({
-        title: quickAddTitle.trim(),
-        description: quickAddDescription.trim() || 'Quick add card',
-        cardType: activeSection,
-        priority: 'Medium',
-        confidenceLevel: 'Medium'
-      });
-      
-      console.log('✓ Quick Add card created successfully');
-      showSuccess('Quick Add card created successfully!');
-      
-      // Reset form
-      setQuickAddTitle('');
-      setQuickAddDescription('');
-      setShowQuickAdd(false);
-    } catch (error) {
-      console.error('❌ Failed to create quick add card:', error);
-      alert('Failed to create card. Please try again.');
-    }
-  };
-
-  const handleQuickAddCancel = () => {
-    setQuickAddTitle('');
-    setQuickAddDescription('');
-    setShowQuickAdd(false);
-  };
-
   const handleBulkDelete = async () => {
     if (selectedCards.size === 0) return;
     
-    const confirmed = window.confirm(`Delete ${selectedCards.size} selected cards?`);
+    const confirmed = window.confirm(`Are you sure you want to delete ${selectedCards.size} cards?`);
     if (!confirmed) return;
-
+    
     try {
-      await Promise.all(Array.from(selectedCards).map(id => deleteCard(id)));
+      await Promise.all(Array.from(selectedCards).map(cardId => deleteCard(cardId)));
       setSelectedCards(new Set());
-      console.log(`✓ Deleted ${selectedCards.size} cards successfully`);
-      showSuccess(`Deleted ${selectedCards.size} cards successfully!`);
+      console.log(`✓ Deleted ${selectedCards.size} cards`);
+      showSuccess(`Successfully deleted ${selectedCards.size} cards!`);
     } catch (error) {
       console.error('❌ Failed to delete cards:', error);
       alert('Failed to delete some cards. Please try again.');
@@ -263,24 +248,19 @@ export default function StrategyBankContent({
 
   const handleBulkDuplicate = async () => {
     if (selectedCards.size === 0) return;
-
+    
     try {
-      await Promise.all(Array.from(selectedCards).map(id => duplicateCard(id)));
+      await Promise.all(Array.from(selectedCards).map(cardId => duplicateCard(cardId)));
       setSelectedCards(new Set());
-      console.log(`✓ Duplicated ${selectedCards.size} cards successfully`);
-      showSuccess(`Duplicated ${selectedCards.size} cards successfully!`);
+      console.log(`✓ Duplicated ${selectedCards.size} cards`);
+      showSuccess(`Successfully duplicated ${selectedCards.size} cards!`);
     } catch (error) {
       console.error('❌ Failed to duplicate cards:', error);
       alert('Failed to duplicate some cards. Please try again.');
     }
   };
 
-  const handleBulkEdit = () => {
-    if (selectedCards.size === 0) return;
-    console.log('Bulk edit:', Array.from(selectedCards));
-  };
-
-  const handleBulkGroup = () => {
+  const handleBulkGroupAssign = () => {
     if (selectedCards.size === 0) return;
     setShowGroupModal(true);
   };
@@ -288,10 +268,10 @@ export default function StrategyBankContent({
   const handleAssignToGroup = async (groupId: string, groupName: string) => {
     try {
       const cardIds = Array.from(selectedCards);
+      console.log('🏷️ Assigning cards to group:', groupId, groupName);
       
-      // Update each card's group_ids array
       await Promise.all(cardIds.map(async (cardId) => {
-        const card = allCards.find(c => c.id === cardId);
+        const card = filteredCards.find(c => c.id === cardId);
         if (!card) return;
         
         const currentGroupIds = card.group_ids || [];
@@ -361,6 +341,30 @@ export default function StrategyBankContent({
     }
   };
 
+  // Handle card updates
+  const handleUpdateCard = async (id: string, updates: any) => {
+    try {
+      await updateCard(id, updates);
+      console.log('✓ Card updated successfully:', id);
+      showSuccess('Card updated successfully!');
+    } catch (error) {
+      console.error('❌ Failed to update card:', error);
+      alert('Failed to update card. Please try again.');
+    }
+  };
+
+  // Handle card deletion
+  const handleDeleteCard = async (id: string) => {
+    try {
+      await deleteCard(id);
+      console.log('✓ Card deleted successfully:', id);
+      showSuccess('Card deleted successfully!');
+    } catch (error) {
+      console.error('❌ Failed to delete card:', error);
+      alert('Failed to delete card. Please try again.');
+    }
+  };
+
   return (
     <>
       {/* Success Message */}
@@ -397,27 +401,54 @@ export default function StrategyBankContent({
               />
             </div>
 
-            {/* Sort */}
+            {/* View Toggle */}
+            <div className="flex items-center gap-0.5 bg-gray-100 rounded p-0.5">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-0.5 rounded transition-all ${
+                  viewMode === 'grid' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Grid3X3 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-0.5 rounded transition-all ${
+                  viewMode === 'list' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Sort Dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
                   setShowSortDropdown(!showSortDropdown);
                   setShowFilterDropdown(false);
                 }}
-                className="flex items-center gap-1 text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
+                className="flex items-center gap-1 px-1.5 py-0.5 text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
               >
                 <ArrowUpDown className="w-3 h-3" />
-                {sortBy === 'created' ? 'Sort' : sortOptions.find(opt => opt.value === sortBy)?.label || 'Sort'}
+                <span>Sort</span>
               </button>
               
               {showSortDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                  {sortOptions.map((option) => (
+                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded shadow-sm z-10 min-w-[140px]">
+                  {sortOptions.map(option => (
                     <button
                       key={option.value}
-                      onClick={() => handleSortChange(option.value)}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 text-gray-900 ${
-                        sortBy === option.value ? 'bg-blue-50 text-blue-600' : ''
+                      onClick={() => {
+                        setSortBy(option.value);
+                        setShowSortDropdown(false);
+                      }}
+                      className={`block w-full text-left px-2.5 py-1 text-xs hover:bg-gray-50 ${
+                        sortBy === option.value ? 'bg-gray-50 font-medium' : ''
                       }`}
                     >
                       {option.label}
@@ -427,27 +458,30 @@ export default function StrategyBankContent({
               )}
             </div>
 
-            {/* Filter */}
+            {/* Filter Dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
                   setShowFilterDropdown(!showFilterDropdown);
                   setShowSortDropdown(false);
                 }}
-                className="flex items-center gap-1 text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
+                className="flex items-center gap-1 px-1.5 py-0.5 text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
               >
                 <Filter className="w-3 h-3" />
-                {filterBy === 'all' ? 'Filter' : filterOptions.find(opt => opt.value === filterBy)?.label || 'Filter'}
+                <span>Filter</span>
               </button>
               
               {showFilterDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                  {filterOptions.map((option) => (
+                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded shadow-sm z-10 min-w-[140px]">
+                  {filterOptions.map(option => (
                     <button
                       key={option.value}
-                      onClick={() => handleFilterChange(option.value)}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 text-gray-900 ${
-                        filterBy === option.value ? 'bg-blue-50 text-blue-600' : ''
+                      onClick={() => {
+                        setFilterBy(option.value);
+                        setShowFilterDropdown(false);
+                      }}
+                      className={`block w-full text-left px-2.5 py-1 text-xs hover:bg-gray-50 ${
+                        filterBy === option.value ? 'bg-gray-50 font-medium' : ''
                       }`}
                     >
                       {option.label}
@@ -457,123 +491,44 @@ export default function StrategyBankContent({
               )}
             </div>
 
-            {/* Add Controls */}
-            {viewType === 'section' && (
-              <>
-                <button 
-                  onClick={handleCreateCard}
-                  className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
-                >
-                  Add
-                </button>
-
-                <button 
-                  onClick={() => setShowQuickAdd(!showQuickAdd)}
-                  className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
-                >
-                  Quick Add
-                </button>
-
-                <button 
-                  onClick={() => console.log('AI Generate coming soon!')}
-                  className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
-                >
-                  AI Generate
-                </button>
-              </>
-            )}
-
             {/* Spacer */}
             <div className="flex-1" />
 
-            {/* Select All */}
-            <label className="flex items-center gap-1 text-gray-700 cursor-pointer hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors">
-              <input
-                type="checkbox"
-                checked={selectedCards.size === filteredCards.length && filteredCards.length > 0}
-                onChange={handleSelectAll}
-                className="w-3 h-3 rounded border-gray-300 text-black focus:ring-black"
-              />
-              <span>Select All</span>
-            </label>
+            {/* Quick Add Button */}
+            <button
+              onClick={() => setShowQuickAdd(!showQuickAdd)}
+              className="flex items-center gap-1 px-1.5 py-0.5 text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Quick Add</span>
+            </button>
 
-            {/* Icon Actions */}
-            <div className="flex items-center gap-0.5">
-              <button
-                onClick={handleBulkEdit}
-                className={`p-1 rounded transition-colors ${
-                  selectedCards.size > 0 
-                    ? 'text-gray-700 hover:bg-black hover:bg-opacity-10' 
-                    : 'text-gray-300 cursor-not-allowed'
-                }`}
-                disabled={selectedCards.size === 0}
-                title="Edit"
-              >
-                <Edit2 className="w-3 h-3" />
-              </button>
-              <button
-                onClick={handleBulkDelete}
-                className={`p-1 rounded transition-colors ${
-                  selectedCards.size > 0 
-                    ? 'text-gray-700 hover:bg-black hover:bg-opacity-10' 
-                    : 'text-gray-300 cursor-not-allowed'
-                }`}
-                disabled={selectedCards.size === 0}
-                title="Delete"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-              <button
-                onClick={handleBulkDuplicate}
-                className={`p-1 rounded transition-colors ${
-                  selectedCards.size > 0 
-                    ? 'text-gray-700 hover:bg-black hover:bg-opacity-10' 
-                    : 'text-gray-300 cursor-not-allowed'
-                }`}
-                disabled={selectedCards.size === 0}
-                title="Duplicate"
-              >
-                <Copy className="w-3 h-3" />
-              </button>
-              <button
-                onClick={handleBulkGroup}
-                className={`p-1 rounded transition-colors ${
-                  selectedCards.size > 0 
-                    ? 'text-gray-700 hover:bg-black hover:bg-opacity-10' 
-                    : 'text-gray-300 cursor-not-allowed'
-                }`}
-                disabled={selectedCards.size === 0}
-                title="Group"
-              >
-                <FolderPlus className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* View Toggle */}
-            <div className="flex items-center ml-2 bg-gray-100 rounded p-0.5">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1 rounded transition-colors ${
-                  viewMode === 'grid' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-                title="Grid view"
-              >
-                <Grid3X3 className="w-3 h-3" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1 rounded transition-colors ${
-                  viewMode === 'list' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-                title="List view"
-              >
-                <List className="w-3 h-3" />
-              </button>
-            </div>
+            {/* Actions */}
+            {selectedCards.size > 0 && (
+              <>
+                <button
+                  onClick={handleBulkGroupAssign}
+                  className="flex items-center gap-1 px-1.5 py-0.5 text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
+                >
+                  <FolderPlus className="w-3 h-3" />
+                  <span>Add to Group</span>
+                </button>
+                <button
+                  onClick={handleBulkDuplicate}
+                  className="flex items-center gap-1 px-1.5 py-0.5 text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>Duplicate</span>
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  className="flex items-center gap-1 px-1.5 py-0.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Delete</span>
+                </button>
+              </>
+            )}
 
             {/* Selected Count */}
             {selectedCards.size > 0 && (
@@ -646,272 +601,159 @@ export default function StrategyBankContent({
         </div>
       )}
 
-      {/* Cards Content */}
+      {/* Cards Content - Now using IntelligenceCardGrid */}
       <div className="flex-1 p-4">
         {loading ? (
           <div className="flex items-center justify-center h-32">
             <div className="text-sm text-gray-500">Loading...</div>
           </div>
-        ) : filteredCards.length === 0 ? (
-          <div className="flex items-center justify-center h-64">
-            {viewType === 'section' ? (
-              <button
-                onClick={handleCreateCard}
-                className="max-w-md p-8 border-2 border-dashed border-gray-300 rounded-lg text-center space-y-3 transition-colors hover:border-gray-400 hover:bg-gray-50 cursor-pointer"
-              >
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                  <Plus className="w-6 h-6 text-gray-400" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Add New Card</div>
-                  <div className="text-xs text-gray-500">
-                    Create a new {activeSection.replace('-', ' ')} card
-                  </div>
-                </div>
-              </button>
-            ) : (
-              <div className="max-w-md p-8 text-center space-y-3">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                  <FolderPlus className="w-6 h-6 text-gray-400" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900">No Cards in Group</div>
-                  <div className="text-xs text-gray-500">
-                    Add cards to this group from blueprint sections
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
         ) : (
-          <div className={`grid gap-4 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-              : 'grid-cols-1'
-          }`}>
-            {filteredCards.map((card) => (
-              <div key={card.id} className="relative">
-                <MasterCard
-                  cardData={{
-                    id: card.id,
-                    title: card.title,
-                    description: card.description || '',
-                    cardType: card.cardType,
-                    priority: card.priority || 'Medium',
-                    confidenceLevel: card.confidenceLevel || 'Medium',
-                    priorityRationale: card.priorityRationale || '',
-                    confidenceRationale: card.confidenceRationale || '',
-                    tags: card.tags || [],
-                    relationships: card.relationships || [],
-                    strategicAlignment: card.strategicAlignment || '',
-                    createdDate: card.createdDate || card.created_at,
-                    lastModified: card.lastModified || card.updated_at,
-                    creator: 'User',
-                    owner: 'User',
-                    ...card
-                  }}
-                  isSelected={selectedCards.has(card.id)}
-                  onSelect={() => handleSelectCard(card.id)}
-                  onUpdate={async (updates) => {
-                    try {
-                      await updateCard(card.id, updates);
-                      console.log('✓ Card updated successfully:', card.id);
-                      showSuccess('Card updated successfully!');
-                    } catch (error) {
-                      console.error('❌ Failed to update card:', error);
-                      alert('Failed to update card. Please try again.');
-                    }
-                  }}
-                  onDelete={async () => {
-                    const confirmed = window.confirm('Are you sure you want to delete this card?');
-                    if (!confirmed) return;
-                    
-                    try {
-                      await deleteCard(card.id);
-                      console.log('✓ Card deleted successfully:', card.id);
-                      showSuccess('Card deleted successfully!');
-                    } catch (error) {
-                      console.error('❌ Failed to delete card:', error);
-                      alert('Failed to delete card. Please try again.');
-                    }
-                  }}
-                  onDuplicate={async () => {
-                    try {
-                      await duplicateCard(card.id);
-                      console.log('✓ Card duplicated successfully:', card.id);
-                      showSuccess('Card duplicated successfully!');
-                    } catch (error) {
-                      console.error('❌ Failed to duplicate card:', error);
-                      alert('Failed to duplicate card. Please try again.');
-                    }
-                  }}
-                  onAIEnhance={() => console.log('AI enhance card:', card.id)}
-                />
-              </div>
-            ))}
-          </div>
+          <IntelligenceCardGrid
+            cards={filteredCards.map(card => ({
+              ...card,
+              // Ensure all required fields are present
+              priority: card.priority || 'Medium',
+              confidenceLevel: card.confidenceLevel || 'Medium',
+              tags: card.tags || [],
+              relationships: card.relationships || [],
+              strategicAlignment: card.strategicAlignment || '',
+              intelligence_content: card.intelligence_content || '',
+              key_findings: card.key_findings || [],
+              relevance_score: card.relevance_score,
+              credibility_score: card.credibility_score,
+              created_at: card.created_at || card.createdDate,
+              updated_at: card.updated_at || card.lastModified,
+              createdDate: card.created_at || card.createdDate,
+              lastModified: card.updated_at || card.lastModified,
+              card_data: card.card_data || {}
+            }))}
+            onCreateCard={handleCreateCard}
+            onUpdateCard={handleUpdateCard}
+            onDeleteCard={handleDeleteCard}
+            searchQuery={searchQuery}
+            selectedCardIds={selectedCards}
+            onSelectCard={handleSelectCard}
+            viewMode={viewMode}
+            loading={loading}
+          />
         )}
       </div>
 
-      {/* Group Selection Modal */}
+      {/* Group Assignment Modal */}
       {showGroupModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <GroupSelectionModal
-            selectedCount={selectedCards.size}
-            existingGroups={groups}
-            onAssignToGroup={handleAssignToGroup}
-            onCreateAndAssign={handleCreateAndAssignGroup}
-            onCancel={() => setShowGroupModal(false)}
-          />
-        </div>
+        <GroupAssignmentModal
+          groups={groups}
+          onAssign={handleAssignToGroup}
+          onCreate={handleCreateAndAssignGroup}
+          onClose={() => setShowGroupModal(false)}
+        />
       )}
-    </>    
-    );
+    </>
+  );
 }
 
-// Group Selection Modal Component
-interface GroupSelectionModalProps {
-  selectedCount: number;
-  existingGroups: any[];
-  onAssignToGroup: (groupId: string, groupName: string) => void;
-  onCreateAndAssign: (groupName: string, groupColor: string) => void;
-  onCancel: () => void;
-}
-
-function GroupSelectionModal({
-  selectedCount,
-  existingGroups,
-  onAssignToGroup,
-  onCreateAndAssign,
-  onCancel
-}: GroupSelectionModalProps) {
+// Group Assignment Modal Component
+function GroupAssignmentModal({ groups, onAssign, onCreate, onClose }: any) {
+  const [isCreating, setIsCreating] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
-  const [newGroupColor, setNewGroupColor] = useState('blue');
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newGroupColor, setNewGroupColor] = useState('#3B82F6');
 
-  const colorOptions = [
-    { value: 'blue', label: 'Blue', color: 'bg-blue-500' },
-    { value: 'green', label: 'Green', color: 'bg-green-500' },
-    { value: 'purple', label: 'Purple', color: 'bg-purple-500' },
-    { value: 'red', label: 'Red', color: 'bg-red-500' },
-    { value: 'yellow', label: 'Yellow', color: 'bg-yellow-500' },
-    { value: 'gray', label: 'Gray', color: 'bg-gray-500' },
+  const colors = [
+    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
+    '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6'
   ];
 
-  const handleCreateGroup = () => {
-    if (!newGroupName.trim()) {
-      alert('Please enter a group name');
-      return;
-    }
-    onCreateAndAssign(newGroupName.trim(), newGroupColor);
-  };
-
   return (
-    <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-96 flex flex-col">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-200">
-        <h2 className="text-sm font-semibold text-gray-900">
-          Add {selectedCount} cards to group
-        </h2>
-        <p className="text-xs text-gray-500 mt-0.5">
-          Select an existing group or create a new one
-        </p>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Existing Groups */}
-        {existingGroups.length > 0 && (
-          <div className="p-3">
-            <h3 className="text-xs font-medium text-gray-700 mb-2">Existing Groups</h3>
-            <div className="space-y-1">
-              {existingGroups.map((group) => {
-                const colorOption = colorOptions.find(c => c.value === group.color);
-                return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+        <div className="p-4 border-b">
+          <h3 className="text-lg font-medium">Add Cards to Group</h3>
+        </div>
+        
+        <div className="p-4">
+          {!isCreating ? (
+            <>
+              <div className="space-y-2 mb-4">
+                {groups.map((group: any) => (
                   <button
                     key={group.id}
-                    onClick={() => onAssignToGroup(group.id, group.name)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-md border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                    onClick={() => onAssign(group.id, group.name)}
+                    className="w-full text-left px-3 py-2 rounded hover:bg-gray-50 flex items-center gap-2"
                   >
-                    <div className={`w-3 h-3 rounded-full ${colorOption?.color || 'bg-gray-400'}`} />
-                    <span className="text-xs text-gray-900">{group.name}</span>
+                    <div 
+                      className="w-4 h-4 rounded"
+                      style={{ backgroundColor: group.color }}
+                    />
+                    <span className="text-sm">{group.name}</span>
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Create New Group */}
-        <div className="p-3 border-t border-gray-200">
-          {!showCreateForm ? (
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs text-gray-700 border-2 border-dashed border-gray-300 rounded-md hover:border-gray-400 hover:bg-gray-50 transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-              Create New Group
-            </button>
+                ))}
+              </div>
+              
+              <button
+                onClick={() => setIsCreating(true)}
+                className="w-full text-center px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
+              >
+                + Create New Group
+              </button>
+            </>
           ) : (
             <div className="space-y-3">
-              <h3 className="text-xs font-medium text-gray-700">Create New Group</h3>
-              
               <input
                 type="text"
                 placeholder="Group name"
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
-                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 autoFocus
-                onKeyPress={(e) => e.key === 'Enter' && handleCreateGroup()}
               />
               
-              <div>
-                <p className="text-xs text-gray-600 mb-1">Color</p>
-                <div className="flex gap-1">
-                  {colorOptions.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => setNewGroupColor(color.value)}
-                      className={`w-5 h-5 rounded-full ${color.color} ${
-                        newGroupColor === color.value ? 'ring-2 ring-gray-400' : ''
-                      }`}
-                    />
-                  ))}
-                </div>
+              <div className="flex gap-2">
+                {colors.map(color => (
+                  <button
+                    key={color}
+                    onClick={() => setNewGroupColor(color)}
+                    className={`w-8 h-8 rounded ${
+                      newGroupColor === color ? 'ring-2 ring-offset-2 ring-blue-500' : ''
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
               </div>
               
               <div className="flex gap-2">
                 <button
-                  onClick={handleCreateGroup}
-                  className="flex-1 px-3 py-1.5 text-xs bg-black text-white rounded hover:bg-gray-800 transition-colors"
+                  onClick={() => {
+                    setIsCreating(false);
+                    setNewGroupName('');
+                  }}
+                  className="flex-1 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded"
                 >
-                  Create & Add Cards
+                  Cancel
                 </button>
                 <button
                   onClick={() => {
-                    setShowCreateForm(false);
-                    setNewGroupName('');
-                    setNewGroupColor('blue');
+                    if (newGroupName.trim()) {
+                      onCreate(newGroupName, newGroupColor);
+                    }
                   }}
-                  className="px-3 py-1.5 text-xs text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                  disabled={!newGroupName.trim()}
+                  className="flex-1 px-3 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded disabled:opacity-50"
                 >
-                  Cancel
+                  Create & Assign
                 </button>
               </div>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-200 flex justify-end">
-        <button
-          onClick={onCancel}
-          className="px-3 py-1.5 text-xs text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-        >
-          Cancel
-        </button>
+        
+        <div className="p-4 border-t flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );

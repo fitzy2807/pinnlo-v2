@@ -5,6 +5,7 @@ import { Bot, Search, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, P
 import { useAgentCards } from '@/hooks/useAgentCards'
 import { useAgentGroups, AgentGroup } from '@/hooks/useAgentGroups'
 import AgentConfigurationPanel from './AgentConfigurationPanel'
+import AutomationDashboard from '../intelligence/AutomationDashboard'
 import { toast } from 'react-hot-toast'
 
 interface AgentHubProps {
@@ -143,6 +144,7 @@ export default function AgentHub({ onClose }: AgentHubProps) {
     { id: 'performance-metrics', label: 'Performance Metrics' },
     { id: 'version-control', label: 'Version Control' },
     { id: 'permissions', label: 'Permissions' },
+    { id: 'automation-rules', label: 'Automation Rules' },
   ]
 
   const handleSelectAll = () => {
@@ -609,8 +611,14 @@ export default function AgentHub({ onClose }: AgentHubProps) {
               </div>
             </div>
           </div>
-            <div className="flex-1 p-6 text-center text-gray-500">
-              {tools.find(t => t.id === selectedTool)?.label} functionality coming soon...
+            <div className="flex-1 overflow-y-auto">
+              {selectedTool === 'automation-rules' ? (
+                <AutomationDashboard />
+              ) : (
+                <div className="p-6 text-center text-gray-500">
+                  {tools.find(t => t.id === selectedTool)?.label} functionality coming soon...
+                </div>
+              )}
             </div>
           </div>
         ) : (

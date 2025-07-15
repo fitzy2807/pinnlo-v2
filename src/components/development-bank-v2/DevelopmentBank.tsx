@@ -2,12 +2,10 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, Pin, Upload, Link2, Zap, ArrowUpDown, Sparkles, Edit2, FolderPlus, ChevronDown, User, EyeOff, Layers, MoreHorizontal, X, Users, Folder, FolderPlus as FolderPlusIcon } from 'lucide-react'
-import MasterCard from '../cards/MasterCard'
 import { useDevelopmentCards } from '@/hooks/useDevelopmentCards'
 import { useDevelopmentGroups, DevelopmentGroup } from '@/hooks/useDevelopmentGroups'
-import PRDCard from './PRDCard'
-import TechnicalRequirementCard from './TechnicalRequirementCard'
-import TaskListCard from './TaskListCard'
+import IntelligenceCardGrid from '@/components/intelligence-cards/IntelligenceCardGrid'
+import { transformDevelopmentCardsToIntelligence, transformIntelligenceToDevelopmentCard } from './utils/dataTransformer'
 import { toast } from 'react-hot-toast'
 import AgentsSection from './AgentsSection'
 import { GeneratedCard } from '@/components/shared/card-creator/types'
@@ -40,6 +38,7 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
   const [newGroupDescription, setNewGroupDescription] = useState('')
   const [newGroupColor, setNewGroupColor] = useState('blue')
   const [groupCards, setGroupCards] = useState<any[]>([])
+  const [showAgents, setShowAgents] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const quickAddRef = useRef<HTMLDivElement>(null)
@@ -1268,167 +1267,23 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
                   </button>
                 </div>
               ) : (
-                <div className={`grid gap-4 ${
-                  // Force list view for TRD and Task List sections
-                  selectedSection === 'section3' || selectedSection === 'section4'
-                    ? 'grid-cols-1'
-                    : viewMode === 'grid' 
-                      ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                      : 'grid-cols-1'
-                }`}>
-                  {displayCards.map((card) => (
-                    <div key={card.id} className="relative">
-                      <div className="absolute top-2 right-2 z-10">
-                        <input
-                          type="checkbox"
-                          checked={selectedCards.has(card.id)}
-                          onChange={() => handleSelectCard(card.id)}
-                          className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black bg-white shadow-sm"
-                        />
-                      </div>
-                      {viewType === 'group' && (
-                        <div className="absolute top-8 right-2 z-10 flex items-center gap-1">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          <button
-                            onClick={() => handleRemoveFromGroup(card.id)}
-                            className="text-[10px] text-red-500 hover:text-red-600 transition-colors whitespace-nowrap"
-                            title="Remove from group"
-                          >
-                            remove from group
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* Use specialized cards for different types */}
-                      {card.card_type === 'prd' ? (
-                        <PRDCard
-                          prd={{
-                            id: card.id,
-                            title: card.title,
-                            description: card.description || '',
-                            card_data: card.card_data || {},
-                            created_at: card.created_at,
-                            updated_at: card.updated_at
-                          }}
-                          onUpdate={(id, updates) => updateCard(id, updates)}
-                          onDelete={(id) => deleteCard(id)}
-                          onDuplicate={(id) => {
-                            const originalCard = displayCards.find(c => c.id === id)
-                            if (originalCard) {
-                              createCard({
-                                title: `${originalCard.title} (Copy)`,
-                                description: originalCard.description,
-                                card_type: originalCard.card_type,
-                                priority: originalCard.priority,
-                                card_data: { ...originalCard.card_data }
-                              })
-                            }
-                          }}
-                          onConvertToTRD={() => toast('PRD to TRD conversion coming soon!')}
-                          onConvertToTasks={() => toast('PRD to Tasks conversion coming soon!')}
-                          isSelected={selectedCards.has(card.id)}
-                          onSelect={handleSelectCard}
-                        />
-                      ) : card.card_type === 'technical-requirement-structured' ? (
-                        <TechnicalRequirementCard
-                          requirement={{
-                            id: card.id,
-                            title: card.title,
-                            description: card.description || '',
-                            card_data: card.card_data || {},
-                            created_at: card.created_at,
-                            updated_at: card.updated_at
-                          }}
-                          onUpdate={(id, updates) => updateCard(id, updates)}
-                          onDelete={(id) => deleteCard(id)}
-                          onDuplicate={(id) => {
-                            const originalCard = displayCards.find(c => c.id === id)
-                            if (originalCard) {
-                              createCard({
-                                title: `${originalCard.title} (Copy)`,
-                                description: originalCard.description,
-                                card_type: originalCard.card_type,
-                                priority: originalCard.priority,
-                                card_data: { ...originalCard.card_data }
-                              })
-                            }
-                          }}
-                          onCommitToTasks={(requirement) => {
-                            // TODO: Implement task conversion functionality
-                            toast('Task conversion coming soon!')
-                          }}
-                          isSelected={selectedCards.has(card.id)}
-                          onSelect={handleSelectCard}
-                        />
-                      ) : card.card_type === 'task-list' ? (
-                        <TaskListCard
-                          taskList={{
-                            id: card.id,
-                            title: card.title,
-                            description: card.description || '',
-                            card_data: card.card_data || {},
-                            created_at: card.created_at,
-                            updated_at: card.updated_at
-                          }}
-                          onUpdate={(id, updates) => updateCard(id, updates)}
-                          onDelete={(id) => deleteCard(id)}
-                          onDuplicate={(id) => {
-                            const originalCard = displayCards.find(c => c.id === id)
-                            if (originalCard) {
-                              createCard({
-                                title: `${originalCard.title} (Copy)`,
-                                description: originalCard.description,
-                                card_type: originalCard.card_type,
-                                priority: originalCard.priority,
-                                card_data: { ...originalCard.card_data }
-                              })
-                            }
-                          }}
-                          onConvertToSprint={(taskList) => {
-                            // TODO: Implement sprint conversion functionality
-                            toast('Sprint conversion coming soon!')
-                          }}
-                          isSelected={selectedCards.has(card.id)}
-                          onSelect={handleSelectCard}
-                        />
-                      ) : (
-                        /* Use MasterCard for other card types */
-                        <MasterCard
-                          cardData={{
-                            id: card.id,
-                            title: card.title,
-                            description: card.description || '',
-                            cardType: card.card_type,
-                            priority: card.priority.charAt(0).toUpperCase() + card.priority.slice(1) as 'High' | 'Medium' | 'Low',
-                            confidenceLevel: card.card_data?.confidenceLevel || 'Medium',
-                            priorityRationale: card.card_data?.priorityRationale || '',
-                            confidenceRationale: card.card_data?.confidenceRationale || '',
-                            tags: card.card_data?.tags || [],
-                            relationships: card.card_data?.relationships || [],
-                            strategicAlignment: card.card_data?.strategicAlignment || '',
-                            createdDate: card.created_at,
-                            lastModified: card.updated_at,
-                            creator: 'User',
-                            owner: 'User',
-                            ...card.card_data
-                          }}
-                          onUpdate={(updates) => updateCard(card.id, updates)}
-                          onDelete={() => deleteCard(card.id)}
-                          onDuplicate={() => {
-                            createCard({
-                              title: `${card.title} (Copy)`,
-                              description: card.description,
-                              card_type: card.card_type,
-                              priority: card.priority,
-                              card_data: { ...card.card_data }
-                            })
-                          }}
-                          onAIEnhance={() => toast('AI Enhancement coming soon!')}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <IntelligenceCardGrid
+                  cards={transformDevelopmentCardsToIntelligence(displayCards)}
+                  onCreateCard={handleCreateCard}
+                  onUpdateCard={async (id, updates) => {
+                    // Transform Intelligence card format back to Development format
+                    const devUpdates = transformIntelligenceToDevelopmentCard(updates as any)
+                    await updateCard(id, devUpdates)
+                  }}
+                  onDeleteCard={async (id) => {
+                    await deleteCard(id)
+                  }}
+                  searchQuery={searchQuery}
+                  selectedCardIds={selectedCards}
+                  onSelectCard={handleSelectCard}
+                  viewMode={viewMode}
+                  loading={loading || groupsLoading}
+                />
               )}
             </div>
           </>

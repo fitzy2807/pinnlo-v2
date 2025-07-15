@@ -43,6 +43,16 @@ export function useAutoSave<T extends Record<string, any>>(
   const [offlineQueue, setOfflineQueue] = useState<Array<Partial<T>>>([])
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   
+  // Update data when initialData changes (e.g., when modal opens with new card)
+  // Use ID to detect when we're dealing with a different card
+  const initialDataId = (initialData as any).id
+  useEffect(() => {
+    setData(initialData)
+    setIsDirty(false)
+    setDirtyFields(new Set())
+    setVersion(initialData.__version || 0)
+  }, [initialDataId]) // Only reset when ID changes, not on every render
+  
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const retryCountRef = useRef(0)
   const pendingUpdatesRef = useRef<Partial<T>>({})

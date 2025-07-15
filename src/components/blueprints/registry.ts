@@ -141,7 +141,52 @@ export const MANDATORY_BLUEPRINTS = ['strategicContext']
 
 // Get blueprint configuration by ID
 export function getBlueprintConfig(blueprintId: string): BlueprintConfig | undefined {
-  return BLUEPRINT_REGISTRY[blueprintId]
+  // Safety check for undefined blueprintId
+  if (!blueprintId) {
+    console.warn('getBlueprintConfig called with undefined blueprintId')
+    return undefined
+  }
+  
+  // First try direct lookup
+  if (BLUEPRINT_REGISTRY[blueprintId]) {
+    return BLUEPRINT_REGISTRY[blueprintId]
+  }
+  
+  // Convert kebab-case to camelCase for legacy compatibility
+  const camelCaseId = blueprintId.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+  if (BLUEPRINT_REGISTRY[camelCaseId]) {
+    return BLUEPRINT_REGISTRY[camelCaseId]
+  }
+  
+  // Try some specific mappings for inconsistent naming
+  const mappings: Record<string, string> = {
+    'strategic-context': 'strategicContext',
+    'value-proposition': 'valuePropositions',
+    'customer-journey': 'customerExperience',
+    'personas': 'personas',
+    'okrs': 'okrs',
+    'kpis': 'kpis',
+    'workstream': 'workstreams',
+    'epic': 'epics',
+    'feature': 'features',
+    'user-journey': 'userJourneys',
+    'experience-section': 'experienceSections',
+    'service-blueprint': 'serviceBlueprints',
+    'organisational-capability': 'organisationalCapabilities',
+    'gtm-play': 'gtmPlays',
+    'tech-requirements': 'techRequirements',
+    // Development card type mappings
+    'prd': 'features',
+    'technical-requirement': 'techRequirements',
+    'technical-requirement-structured': 'techRequirements',
+    'task-list': 'features'
+  }
+  
+  if (mappings[blueprintId] && BLUEPRINT_REGISTRY[mappings[blueprintId]]) {
+    return BLUEPRINT_REGISTRY[mappings[blueprintId]]
+  }
+  
+  return undefined
 }
 
 // Get all blueprint configurations
