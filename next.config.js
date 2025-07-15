@@ -8,10 +8,8 @@ const nextConfig = {
     // Ignore TypeScript errors during build for development environment
     ignoreBuildErrors: true,
   },
-  experimental: {
-    // Skip building catalyst demo pages that cause build failures
-    skipTrailingSlashRedirect: true,
-  },
+  // Skip trailing slash redirects
+  skipTrailingSlashRedirect: true,
   async rewrites() {
     return {
       beforeFiles: [
