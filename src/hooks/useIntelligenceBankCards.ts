@@ -299,17 +299,17 @@ export function useIntelligenceBankCards() {
       if (updates.recommended_actions !== undefined) dbUpdates.recommended_actions = updates.recommended_actions
       if (updates.strategicAlignment !== undefined) dbUpdates.strategic_implications = updates.strategicAlignment
       
+      // Handle basic metadata fields that might exist in intelligence_cards
+      if (updates.priority !== undefined) dbUpdates.priority = updates.priority
+      if (updates.confidenceLevel !== undefined) dbUpdates.confidence_level = updates.confidenceLevel
+      if (updates.owner !== undefined) dbUpdates.owner = updates.owner
+      
       // Handle card_data fields (for TRD and other structured data)
+      // Note: intelligence_cards table doesn't have card_data column
+      // TRD data should be stored differently or in a separate table
       if (updates.card_data !== undefined) {
-        // Get existing card to preserve other card_data fields
-        const existingCard = cards.find(c => c.id === id)
-        const existingCardData = existingCard?.card_data || {}
-        
-        // Merge updates into existing card_data
-        dbUpdates.card_data = {
-          ...existingCardData,
-          ...updates.card_data
-        }
+        console.log('Warning: card_data updates ignored for intelligence_cards table')
+        // We could store this in a JSON field or separate table if needed
       }
       
       // Handle category update from cardType
