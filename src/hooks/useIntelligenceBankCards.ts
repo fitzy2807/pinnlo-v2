@@ -268,48 +268,65 @@ export function useIntelligenceBankCards() {
   // Update an intelligence card
   const updateCard = async (id: string, updates: Partial<CardData>) => {
     try {
-      // Transform CardData fields back to database fields
+      console.log('=== updateCard START ===')
+      console.log('Card ID:', id)
+      console.log('Updates:', updates)
+      
+      // Transform CardData fields back to intelligence_cards schema
       const dbUpdates: any = {
         updated_at: new Date().toISOString()
       }
       
-      // Map direct fields
+      // Map direct fields that exist in intelligence_cards table
       if (updates.title !== undefined) dbUpdates.title = updates.title
-      if (updates.description !== undefined) dbUpdates.description = updates.description
-      if (updates.priority !== undefined) dbUpdates.priority = updates.priority
-      if (updates.cardType !== undefined) dbUpdates.card_type = updates.cardType
+      if (updates.description !== undefined) dbUpdates.summary = updates.description // description maps to summary
+      if (updates.tags !== undefined) dbUpdates.tags = updates.tags
       
-      // Map fields that go into card_data
-      const cardDataUpdates: any = {}
-      if (updates.tags !== undefined) cardDataUpdates.tags = updates.tags
-      if (updates.relationships !== undefined) cardDataUpdates.relationships = updates.relationships
-      if (updates.strategicAlignment !== undefined) cardDataUpdates.strategicAlignment = updates.strategicAlignment
-      if (updates.confidenceLevel !== undefined) cardDataUpdates.confidenceLevel = updates.confidenceLevel
-      if (updates.priorityRationale !== undefined) cardDataUpdates.priorityRationale = updates.priorityRationale
-      if (updates.confidenceRationale !== undefined) cardDataUpdates.confidenceRationale = updates.confidenceRationale
-      if (updates.creator !== undefined) cardDataUpdates.creator = updates.creator
-      if (updates.owner !== undefined) cardDataUpdates.owner = updates.owner
+      // Map intelligence-specific fields
+      if (updates.intelligence_content !== undefined) dbUpdates.intelligence_content = updates.intelligence_content
+      if (updates.key_findings !== undefined) dbUpdates.key_findings = updates.key_findings
+      if (updates.credibility_score !== undefined) dbUpdates.credibility_score = updates.credibility_score
+      if (updates.relevance_score !== undefined) dbUpdates.relevance_score = updates.relevance_score
+      if (updates.source_reference !== undefined) dbUpdates.source_reference = updates.source_reference
+      if (updates.recommended_actions !== undefined) dbUpdates.recommended_actions = updates.recommended_actions
+      if (updates.strategicAlignment !== undefined) dbUpdates.strategic_implications = updates.strategicAlignment
       
-      // Merge with existing card_data
-      const existingCard = cards.find(c => c.id === id)
-      if (existingCard) {
+      // Handle card_data fields (for TRD and other structured data)
+      if (updates.card_data !== undefined) {
+        // Get existing card to preserve other card_data fields
+        const existingCard = cards.find(c => c.id === id)
+        const existingCardData = existingCard?.card_data || {}
+        
+        // Merge updates into existing card_data
         dbUpdates.card_data = {
-          ...existingCard.card_data,
-          ...cardDataUpdates
+          ...existingCardData,
+          ...updates.card_data
         }
       }
+      
+      // Handle category update from cardType
+      if (updates.cardType !== undefined) {
+        const category = updates.cardType.replace('-intelligence', '')
+        dbUpdates.category = category
+      }
+      
+      console.log('Database updates:', dbUpdates)
       
       const { error } = await supabase
         .from('intelligence_cards')
         .update(dbUpdates)
         .eq('id', id)
 
+      console.log('Update error:', error)
+      
       if (error) throw error
 
+      // Update local state
       setCards(cards.map(card => 
-        card.id === id ? { ...card, ...updates } : card
+        card.id === id ? { ...card, ...updates, updated_at: dbUpdates.updated_at } : card
       ))
       
+      console.log('=== updateCard SUCCESS ===')
       toast.success('Card updated successfully')
       return { success: true }
     } catch (error) {
