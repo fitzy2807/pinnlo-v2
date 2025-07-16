@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient();
 
-    // Get context configuration for the blueprint type
+    // Get context configuration for the blueprint type from system prompts
     const { data: contextConfig, error: contextError } = await supabase
-      .rpc('get_ai_context_config', { p_blueprint_type: blueprintType });
+      .rpc('get_ai_context_config_from_prompts', { p_blueprint_type: blueprintType });
 
     // Get available cards for context
     const contextData = [];

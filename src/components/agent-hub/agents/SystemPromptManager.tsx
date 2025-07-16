@@ -12,6 +12,16 @@ interface SystemPrompt {
   model_preference: string;
   is_active: boolean;
   updated_at: string;
+  context_config?: any;
+}
+
+interface ContextBlueprint {
+  blueprint: string;
+  maxCards: number;
+  inclusionStrategy: 'if_exists' | 'required' | 'optional';
+  summarizationRequired: boolean;
+  weight: number;
+  description: string;
 }
 
 export const SystemPromptManager: React.FC = () => {
@@ -37,7 +47,7 @@ export const SystemPromptManager: React.FC = () => {
       
       const { data, error } = await supabase
         .from('ai_system_prompts')
-        .select('*')
+        .select('*, context_config')
         .eq('is_active', true)
         .order('blueprint_type');
 

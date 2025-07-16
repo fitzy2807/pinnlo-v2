@@ -362,16 +362,27 @@ async function performGeneration(args: any) {
     console.log('Dynamic field definitions loaded for:', blueprintType);
     console.log('Field definitions:', fieldDefinitions);
 
-    // Step 2: Fetch context configuration
+    // Step 2: Fetch context configuration from system prompts
     const { data: contextConfig, error: contextError } = await getSupabaseClient()
-      .rpc('get_ai_context_config', { p_blueprint_type: blueprintType });
+      .rpc('get_ai_context_config_from_prompts', { p_blueprint_type: blueprintType });
 
     if (contextError) {
-      console.warn('Failed to fetch context config:', contextError);
+      console.warn('Failed to fetch context config from prompts:', contextError);
       // Continue without context - not fatal
     }
 
-    console.log('Context config found:', contextConfig?.length || 0, 'mappings');
+    console.log('=== CONTEXT CONFIGURATION ===');
+    console.log('Context config found:', contextConfig?.length || 0, 'mappings for', blueprintType);
+    if (contextConfig && contextConfig.length > 0) {
+      console.log('Context blueprints:', contextConfig.map((c: any) => ({
+        blueprint: c.context_blueprint,
+        maxCards: c.max_cards,
+        strategy: c.inclusion_strategy,
+        weight: c.weight,
+        description: c.description
+      })));
+    }
+    console.log('=== END CONTEXT CONFIGURATION ===');
 
     // Gather context if strategyId available (provided or detected)
     let contextSummary = '';
