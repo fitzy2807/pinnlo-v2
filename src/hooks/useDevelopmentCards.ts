@@ -6,6 +6,7 @@ const DEVELOPMENT_CARD_TYPES = [
   'prd', // Add PRD card type
   'technical-requirement-structured',
   'technical-requirement', 
+  'trd', // Add TRD card type
   'feature',
   'tech-stack',
   'task-list'
@@ -201,17 +202,17 @@ export function useDevelopmentCards(strategyId?: number) {
     const sectionTypeMap: Record<string, string[]> = {
       'prd': ['prd'], // PRD mapping
       'tech-stack': ['tech-stack'],
-      'technical-requirements': ['technical-requirement-structured', 'technical-requirement'],
+      'technical-requirements': ['technical-requirement-structured', 'technical-requirement', 'trd'],
       'task-lists': ['task-list'],
       // Template Bank compatibility mapping
       'section1': ['prd'], // Changed from 'feature' to 'prd'
       'section2': ['tech-stack'], 
-      'section3': ['technical-requirement-structured', 'technical-requirement'],
+      'section3': ['technical-requirement-structured', 'technical-requirement', 'trd'],
       'section4': ['task-list'],
-      'section5': ['technical-requirement-structured', 'technical-requirement'],
-      'section6': ['technical-requirement-structured', 'technical-requirement'],
-      'section7': ['technical-requirement-structured', 'technical-requirement'],
-      'section8': ['technical-requirement-structured', 'technical-requirement']
+      'section5': ['technical-requirement-structured', 'technical-requirement', 'trd'],
+      'section6': ['technical-requirement-structured', 'technical-requirement', 'trd'],
+      'section7': ['technical-requirement-structured', 'technical-requirement', 'trd'],
+      'section8': ['technical-requirement-structured', 'technical-requirement', 'trd']
     }
 
     const cardTypes = sectionTypeMap[section] || []
@@ -224,13 +225,15 @@ export function useDevelopmentCards(strategyId?: number) {
       prd: getCardsByType('prd').length, // Changed from 'feature' to 'prd'
       'tech-stack': getCardsByType('tech-stack').length,
       'technical-requirements': getCardsByType('technical-requirement-structured').length + 
-                               getCardsByType('technical-requirement').length,
+                               getCardsByType('technical-requirement').length + 
+                               getCardsByType('trd').length,
       'task-lists': getCardsByType('task-list').length,
       // Template Bank compatibility
       section1: getCardsByType('prd').length, // Changed from 'feature' to 'prd'
       section2: getCardsByType('tech-stack').length,
       section3: getCardsByType('technical-requirement-structured').length + 
-               getCardsByType('technical-requirement').length,
+               getCardsByType('technical-requirement').length + 
+               getCardsByType('trd').length,
       section4: getCardsByType('task-list').length,
       section5: 0,
       section6: 0,
@@ -264,7 +267,11 @@ export function useDevelopmentCards(strategyId?: number) {
     refetch: loadCards,
 
     // Development-specific helpers
-    technicalRequirements: getCardsByType('technical-requirement-structured'),
+    technicalRequirements: [
+      ...getCardsByType('technical-requirement-structured'),
+      ...getCardsByType('technical-requirement'),
+      ...getCardsByType('trd')
+    ],
     features: getCardsByType('feature'),
     techStackCards: getCardsByType('tech-stack'),
     taskLists: getCardsByType('task-list')
