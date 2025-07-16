@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/http-server.js",
+    "start": "node server-simple.js",
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/http-server.ts",
     "http": "node dist/http-server.js",

@@ -198,24 +198,67 @@ app.post('/api/tools/generate_edit_mode_content', authenticateRequest, async (re
     
     console.log('🎯 Processing request:', { blueprintType, cardTitle, strategyId, userId });
     
-    // Simple blueprint-specific prompts
-    const blueprintPrompts = {
-      vision: 'You are a strategic vision expert. Create an inspiring, actionable vision statement.',
-      swot: 'You are a strategic analyst. Create a balanced SWOT analysis.',
-      epic: 'You are an agile expert. Create user-centered epic descriptions with clear acceptance criteria.',
-      'technical-requirement': 'You are a technical architect. Create detailed technical requirements.',
-      'business-model': 'You are a business strategist. Create viable business model components.',
-      okr: 'You are an OKR expert. Create measurable objectives and key results.'
+    // Enhanced blueprint-specific prompts and field mappings
+    const blueprintConfig = {
+      strategicContext: {
+        prompt: 'You are a strategic context expert. Create comprehensive strategic context analysis.',
+        fields: ['description', 'strategicAlignment', 'keyObjectives', 'successMetrics', 'stakeholders', 'tags']
+      },
+      customerExperience: {
+        prompt: 'You are a customer experience expert. Create detailed customer journey analysis.',
+        fields: ['description', 'customerSegment', 'touchpoints', 'painPoints', 'opportunities', 'tags']
+      },
+      experienceSections: {
+        prompt: 'You are an experience design expert. Create detailed experience section analysis.',
+        fields: ['description', 'userActions', 'systemResponses', 'improvements', 'metrics', 'tags']
+      },
+      vision: {
+        prompt: 'You are a strategic vision expert. Create an inspiring, actionable vision statement.',
+        fields: ['description', 'visionStatement', 'strategicAlignment', 'keyPillars', 'tags']
+      },
+      swot: {
+        prompt: 'You are a strategic analyst. Create a balanced SWOT analysis.',
+        fields: ['description', 'strengths', 'weaknesses', 'opportunities', 'threats', 'tags']
+      },
+      epic: {
+        prompt: 'You are an agile expert. Create user-centered epic descriptions with clear acceptance criteria.',
+        fields: ['description', 'userStory', 'acceptanceCriteria', 'businessValue', 'tags']
+      },
+      'technical-requirement': {
+        prompt: 'You are a technical architect. Create detailed technical requirements.',
+        fields: ['description', 'technicalSpecs', 'dependencies', 'riskAssessment', 'tags']
+      },
+      'business-model': {
+        prompt: 'You are a business strategist. Create viable business model components.',
+        fields: ['description', 'valueProposition', 'revenueStreams', 'keyResources', 'tags']
+      },
+      okr: {
+        prompt: 'You are an OKR expert. Create measurable objectives and key results.',
+        fields: ['description', 'objective', 'keyResults', 'successMetrics', 'tags']
+      }
     };
     
-    const systemPrompt = blueprintPrompts[blueprintType] || 'You are a strategic planning expert.';
+    const config = blueprintConfig[blueprintType] || {
+      prompt: 'You are a strategic planning expert.',
+      fields: ['description', 'strategicAlignment', 'tags']
+    };
+    
+    const systemPrompt = config.prompt;
+    
+    const fieldList = config.fields.map(field => `- ${field}: Appropriate content for this field`).join('\n');
     
     const userPrompt = `Create comprehensive content for a ${blueprintType} card titled "${cardTitle}".
-    
-Generate relevant fields for this card type with professional, actionable content.
-Keep responses practical and specific to the card title.
-    
-Return response as JSON with field names as keys and content as values.`;
+
+Generate a JSON response with these specific fields:
+${fieldList}
+
+Requirements:
+- Make content specific to the card title "${cardTitle}"
+- Ensure professional, actionable content
+- Fill all required fields appropriately
+- Use the exact field names specified above
+
+Return ONLY a JSON object with the field names as keys and appropriate content as values.`;
     
     console.log('🤖 Calling OpenAI API...');
     
@@ -224,12 +267,19 @@ Return response as JSON with field names as keys and content as values.`;
     if (!openaiResult.success) {
       console.error('❌ OpenAI call failed:', openaiResult.error);
       
-      // Fallback response
-      const fallbackFields = {
-        description: `Generated content for ${cardTitle} ${blueprintType} card. Please review and customize as needed.`,
-        summary: `This ${blueprintType} focuses on ${cardTitle} and provides strategic guidance.`,
-        notes: 'Generated with fallback template - please customize for your specific needs.'
-      };
+      // Fallback response using proper field names
+      const fallbackFields = {};
+      config.fields.forEach(field => {
+        if (field === 'description') {
+          fallbackFields[field] = `Generated content for ${cardTitle} ${blueprintType} card. Please review and customize as needed.`;
+        } else if (field === 'strategicAlignment') {
+          fallbackFields[field] = `This ${blueprintType} aligns with strategic objectives and supports ${cardTitle}.`;
+        } else if (field === 'tags') {
+          fallbackFields[field] = [blueprintType, 'strategic', 'planning'];
+        } else {
+          fallbackFields[field] = `Please customize this ${field} content for your specific needs.`;
+        }
+      });
       
       return res.json({
         success: true,
@@ -246,16 +296,22 @@ Return response as JSON with field names as keys and content as values.`;
     
     console.log('✅ Generated edit mode content');
     
-    // Try to parse as JSON, fallback to simple structure
+    // Try to parse as JSON, fallback to proper field structure
     let fields;
     try {
       fields = JSON.parse(openaiResult.content);
     } catch {
-      fields = {
-        description: openaiResult.content,
-        summary: `AI-generated ${blueprintType} content for ${cardTitle}`,
-        generated: true
-      };
+      // If JSON parsing fails, create fields using proper field names
+      fields = {};
+      config.fields.forEach((field, index) => {
+        if (field === 'description') {
+          fields[field] = openaiResult.content;
+        } else if (field === 'tags') {
+          fields[field] = [blueprintType, 'AI-generated'];
+        } else {
+          fields[field] = `AI-generated ${field} content for ${cardTitle}`;
+        }
+      });
     }
     
     res.json({
