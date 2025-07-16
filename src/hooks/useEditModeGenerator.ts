@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { StrategyContextManager } from '@/utils/strategyContext';
 
 export interface GeneratorState {
   isGenerating: boolean;
@@ -24,6 +25,17 @@ export function useEditModeGenerator() {
     strategyId?: string;
     existingFields?: Record<string, any>;
   }) => {
+    // Get strategy context from Stage 0 Agent
+    const contextStrategyId = StrategyContextManager.getStrategyId();
+    const finalStrategyId = params.strategyId || contextStrategyId;
+    
+    console.log('🎯 AI Generation Context:', {
+      provided: params.strategyId,
+      fromContext: contextStrategyId,
+      final: finalStrategyId,
+      debugInfo: StrategyContextManager.getDebugInfo()
+    });
+    
     // Reset state
     setState({
       isGenerating: true,
@@ -36,10 +48,15 @@ export function useEditModeGenerator() {
     abortControllerRef.current = new AbortController();
     
     try {
+      const requestParams = {
+        ...params,
+        strategyId: finalStrategyId
+      };
+      
       const response = await fetch('/api/ai/edit-mode/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params),
+        body: JSON.stringify(requestParams),
         signal: abortControllerRef.current.signal
       });
       

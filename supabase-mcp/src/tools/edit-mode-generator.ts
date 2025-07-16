@@ -327,11 +327,16 @@ async function performGeneration(args: any) {
 
     // Step 0: Detect strategy context if not provided (Agent 0)
     const detectedStrategyId = strategyId || await detectCurrentStrategy(userId, cardId, blueprintType);
+    console.log('=== STRATEGY CONTEXT DETECTION ===');
     console.log('Strategy context for generation:', { 
       provided: strategyId, 
       detected: detectedStrategyId,
-      final: detectedStrategyId
+      final: detectedStrategyId,
+      userId: userId,
+      cardId: cardId,
+      blueprintType: blueprintType
     });
+    console.log('=== END STRATEGY CONTEXT DETECTION ===');
 
     // Step 1: Fetch system prompt from database
     const { data: promptConfig, error: promptError } = await getSupabaseClient()
@@ -389,9 +394,12 @@ async function performGeneration(args: any) {
       contextCards = context.cards;
     }
 
+    console.log('=== CONTEXT GATHERING RESULTS ===');
     console.log('Context gathered:', {
+      strategyId: detectedStrategyId,
       contextLength: contextSummary.length,
-      contextCardsCount: contextCards.length
+      contextCardsCount: contextCards.length,
+      contextConfigMappings: contextConfig?.length || 0
     });
     
     if (contextSummary.length > 0) {
@@ -528,17 +536,22 @@ async function gatherContext(
   for (const config of contextConfig) {
     const { context_blueprint, max_cards, inclusion_strategy, summarization_required, summarization_prompt } = config;
     
-    console.log(`Processing context config: ${context_blueprint}, max_cards: ${max_cards}, strategy: ${inclusion_strategy}`);
+    console.log(`🔍 Processing context config: ${context_blueprint}, max_cards: ${max_cards}, strategy: ${inclusion_strategy}`);
     
     // Skip if inclusion strategy is 'if_exists' and no strategyId
-    if (inclusion_strategy === 'if_exists' && !strategyId) continue;
+    if (inclusion_strategy === 'if_exists' && !strategyId) {
+      console.log(`⏭️  Skipping ${context_blueprint} - inclusion strategy requires strategyId`);
+      continue;
+    }
     
     // Fetch cards based on blueprint type
     let query = getSupabaseClient()
       .from('cards')
-      .select('id, title, description, card_type, card_data')
+      .select('id, title, description, card_type, card_data, strategy_id')
       .eq('user_id', userId)
       .eq('card_type', context_blueprint);
+    
+    console.log(`🔍 Query details: user_id=${userId}, card_type=${context_blueprint}, strategy_id=${strategyId || 'any'}`);
     
     if (strategyId) {
       query = query.eq('strategy_id', strategyId);
@@ -551,16 +564,21 @@ async function gatherContext(
     const { data: cards, error } = await query;
     
     if (error) {
-      console.log(`Error fetching ${context_blueprint} cards:`, error);
+      console.log(`❌ Error fetching ${context_blueprint} cards:`, error);
       continue;
     }
     
     if (!cards || cards.length === 0) {
-      console.log(`No ${context_blueprint} cards found`);
+      console.log(`❌ No ${context_blueprint} cards found for user ${userId} ${strategyId ? `in strategy ${strategyId}` : '(global)'}`);
       continue;
     }
     
-    console.log(`Found ${cards.length} ${context_blueprint} cards:`, cards.map((c: any) => c.title));
+    console.log(`✅ Found ${cards.length} ${context_blueprint} cards:`, cards.map((c: any) => ({
+      title: c.title,
+      id: c.id,
+      strategy_id: c.strategy_id,
+      hasDescription: !!c.description
+    })));
     contextCards.push(...cards);
     
     // Handle summarization if needed
@@ -574,6 +592,15 @@ async function gatherContext(
       });
     }
   }
+  
+  console.log('=== CONTEXT GATHERING COMPLETE ===');
+  console.log(`📋 Total context cards gathered: ${contextCards.length}`);
+  console.log(`📝 Context summary length: ${contextSummaries.join('\n\n').length} characters`);
+  console.log(`🎯 Context cards by type:`, contextCards.reduce((acc: any, card: any) => {
+    acc[card.card_type] = (acc[card.card_type] || 0) + 1;
+    return acc;
+  }, {}));
+  console.log('=== END CONTEXT GATHERING ===');
   
   return {
     summary: contextSummaries.join('\n\n'),
