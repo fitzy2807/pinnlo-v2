@@ -7,26 +7,14 @@ interface OutputConfigProps {
   config: CardCreatorConfig
   targetSection: string
   onTargetSectionChange: (section: string) => void
-  cardQuantity: number
-  onQuantityChange: (quantity: number) => void
-  quality: 'fast' | 'balanced' | 'high'
-  onQualityChange: (quality: 'fast' | 'balanced' | 'high') => void
   selectedCardsCount: number
-  onGenerate: () => void
-  isGenerating: boolean
 }
 
 export default function OutputConfig({
   config,
   targetSection,
   onTargetSectionChange,
-  cardQuantity,
-  onQuantityChange,
-  quality,
-  onQualityChange,
-  selectedCardsCount,
-  onGenerate,
-  isGenerating
+  selectedCardsCount
 }: OutputConfigProps) {
   // Filter sections to only show those relevant to the current bank
   const targetSections = config.sections.filter(s => s.category === config.bankType)
@@ -57,53 +45,14 @@ export default function OutputConfig({
           </select>
         </div>
         
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Number of Cards: {cardQuantity}
-          </label>
-          <input
-            type="range"
-            min="1"
-            max="10"
-            value={cardQuantity}
-            onChange={(e) => onQuantityChange(parseInt(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>1</span>
-            <span>10</span>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Generation Quality
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {(['fast', 'balanced', 'high'] as const).map((q) => (
-              <button
-                key={q}
-                onClick={() => onQualityChange(q)}
-                className={`px-3 py-2 text-sm rounded-md border transition-colors ${
-                  quality === q
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {q.charAt(0).toUpperCase() + q.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-        
         {targetSection && selectedCardsCount > 0 && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <p className="text-sm text-green-800">
-              🎯 Ready to generate {cardQuantity} cards for{' '}
+              🎯 Ready to preview context for{' '}
               {targetSections.find(s => s.id === targetSection)?.label}
             </p>
             <p className="text-xs text-green-600 mt-1">
-              Using {selectedCardsCount} context cards • Quality: {quality}
+              Using {selectedCardsCount} context cards
             </p>
           </div>
         )}

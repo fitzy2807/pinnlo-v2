@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { systemPrompt, userPrompt } = await request.json()
+    const { systemPrompt, userPrompt, isPreview } = await request.json()
 
     if (!systemPrompt || !userPrompt) {
       return NextResponse.json(
@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 4000,
-        response_format: { type: 'json_object' }
+        max_tokens: isPreview ? 500 : 4000,
+        ...(isPreview ? {} : { response_format: { type: 'json_object' } })
       })
     })
 
@@ -61,23 +61,79 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse the JSON response
-    const parsed = JSON.parse(content)
+    // For preview requests, return the text directly
+    if (isPreview) {
+      return NextResponse.json({
+        success: true,
+        preview: content,
+        text: content,
+        usage: openaiResult.usage
+      })
+    }
+
+    // Parse the JSON response for card generation
+    console.log('🤖 AI raw response:', content.substring(0, 500))
+    
+    let parsed;
+    try {
+      parsed = JSON.parse(content)
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', parseError)
+      return NextResponse.json(
+        { success: false, error: 'Invalid JSON response from AI' },
+        { status: 500 }
+      )
+    }
+    
+    console.log('📦 Parsed response structure:', Object.keys(parsed))
     
     // Return the cards
     let cards = []
     if (Array.isArray(parsed)) {
       cards = parsed
+      console.log('✅ Response is an array with', cards.length, 'cards')
     } else if (parsed.cards && Array.isArray(parsed.cards)) {
       cards = parsed.cards
+      console.log('✅ Response has cards array with', cards.length, 'cards')
     } else {
-      cards = [parsed]
+      // Check for other common response formats
+      const possibleArrayKeys = Object.keys(parsed).filter(key => 
+        key.toLowerCase().includes('card') || key.toLowerCase().includes('proposition')
+      )
+      
+      console.log('🔍 Checking possible keys:', possibleArrayKeys)
+      
+      // Look for arrays in these keys
+      for (const key of possibleArrayKeys) {
+        if (Array.isArray(parsed[key])) {
+          cards = parsed[key]
+          console.log('✅ Found cards array in key:', key, 'with', cards.length, 'cards')
+          break
+        }
+      }
+      
+      // If still no cards found, check if it's a single card
+      if (cards.length === 0) {
+        cards = [parsed]
+        console.log('⚠️ Response is a single object, wrapping in array')
+      }
+    }
+
+    console.log('📊 Final card count:', cards.length)
+    
+    // Log first card structure for debugging
+    if (cards.length > 0) {
+      console.log('🔍 First card structure:', JSON.stringify(cards[0], null, 2).substring(0, 300))
     }
 
     return NextResponse.json({ 
       success: true, 
       cards,
-      usage: openaiResult.usage
+      usage: openaiResult.usage,
+      debug: {
+        requestedCount: userPrompt.match(/exactly (\d+)/)?.[1],
+        actualCount: cards.length
+      }
     })
   } catch (error) {
     console.error('Card generation error:', error)

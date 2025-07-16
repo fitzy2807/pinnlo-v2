@@ -11,6 +11,7 @@ import AgentsSection from './AgentsSection';
 import { GeneratedCard } from '@/components/shared/card-creator/types';
 import { getAgentsForHub } from '@/lib/agentRegistry';
 import { toast } from 'react-hot-toast';
+import { BLUEPRINT_REGISTRY } from '@/components/blueprints/registry';
 
 interface StrategyBankProps {
   strategy: any;
@@ -254,33 +255,69 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
     setDraggedBlueprint(null);
   };
 
-  const handleCardsCreated = async (generatedCards: GeneratedCard[]) => {
+  const handleCardsCreated = async (generatedCards: GeneratedCard[], metadata?: { targetSection: string; targetCardType: string }) => {
     try {
       // Get the createCard function from useCards hook
       const { createCard } = await import('@/hooks/useCards');
       
       // Convert GeneratedCard to createCard format
       for (const generatedCard of generatedCards) {
-        // Create the card
-        await supabase.from('cards').insert({
+        // Prepare card data
+        const cardData = {
           strategy_id: strategy.id,
           title: generatedCard.title,
-          description: generatedCard.description,
-          card_type: generatedCard.cardType,
-          priority: generatedCard.metadata?.priority || 'medium',
-          confidence_level: generatedCard.metadata?.confidence || 'medium',
-          card_data: generatedCard.data || {},
-          tags: generatedCard.metadata?.tags || [],
-          created_by: user?.email || 'AI Generated'
-        });
+          description: generatedCard.description || '',
+          card_type: generatedCard.card_type,
+          priority: generatedCard.priority || 'Medium',
+          confidence_level: generatedCard.confidence ? 
+            (generatedCard.confidence > 0.8 ? 'High' : generatedCard.confidence > 0.6 ? 'Medium' : 'Low') : 
+            'Medium',
+          card_data: generatedCard.card_data || {},
+          tags: Array.isArray(generatedCard.card_data?.tags) ? generatedCard.card_data.tags : [],
+          created_by: user?.id || null
+        };
+        
+        console.log('Inserting card with data:', cardData);
+        
+        // Create the card
+        const { data, error } = await supabase.from('cards').insert(cardData).select();
+        
+        if (error) {
+          console.error('Error inserting card:', error);
+          console.error('Card data that failed:', cardData);
+          throw error;
+        }
+        
+        console.log('Successfully inserted card:', data);
       }
       
       toast.success(`Created ${generatedCards.length} cards`);
       setActiveTool(null);
-      setShowAgents(false);
       
-      // Reload the page to show new cards
-      window.location.reload();
+      // Navigate to the section where cards were created
+      if (metadata?.targetSection) {
+        // For card types that are blueprints themselves (like customer-journey)
+        // the targetSection might be the blueprint ID
+        if (BLUEPRINT_REGISTRY[metadata.targetSection]) {
+          setActiveSection(metadata.targetSection);
+          setActiveGroup(null);
+        } else {
+          // Find the blueprint that contains this section
+          const blueprintEntry = Object.entries(BLUEPRINT_REGISTRY).find(([_, config]) => 
+            config.sections?.some(section => section.id === metadata.targetSection)
+          );
+          
+          if (blueprintEntry) {
+            const [blueprintId, blueprintConfig] = blueprintEntry;
+            setActiveSection(blueprintId);
+            // Find and set the active group
+            const targetSectionConfig = blueprintConfig.sections?.find(s => s.id === metadata.targetSection);
+            if (targetSectionConfig) {
+              setActiveGroup(targetSectionConfig.id);
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error('Error creating cards:', error);
       toast.error('Failed to create some cards');

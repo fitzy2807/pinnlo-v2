@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { BLUEPRINT_REGISTRY } from '@/components/blueprints/registry'
 
 export function useBlueprintCards(strategyId?: string) {
   const [cards, setCards] = useState<any[]>([])
@@ -37,30 +38,92 @@ export function useBlueprintCards(strategyId?: string) {
         console.log('📋 Raw cards from database:', data?.length || 0)
         console.log('📋 Card types found:', [...new Set(data?.map(c => c.card_type) || [])])
 
-        // Filter for blueprint-type cards based on exact blueprint IDs
-        const blueprintTypes = [
-          'strategic-context',
-          'vision',
-          'value-proposition',
-          'personas',
-          'customer-journey',
-          'swot-analysis',
-          'competitive-analysis',
-          'okrs',
-          'business-model',
-          'go-to-market',
-          'risk-assessment',
-          'roadmap',
-          'kpis',
-          'financial-projections',
-          'workstream'
-        ]
+        // Get all blueprint types from the registry
+        const blueprintTypes = Object.keys(BLUEPRINT_REGISTRY)
         
-        const blueprintCards = data?.filter(card => 
-          card.card_type && blueprintTypes.includes(card.card_type)
-        ) || []
+        // Create a mapping for legacy/alternative card type names
+        const cardTypeMapping: Record<string, string> = {
+          // Development section mappings
+          'feature': 'features',
+          'epic': 'epics',
+          'task-list': 'features',
+          'task': 'features',
+          'technical-requirement-structured': 'trd',
+          'technical-requirement': 'trd',
+          'tech-requirements': 'trd',
+          'trd': 'trd',
+          'prd': 'prd',
+          'product-requirements': 'prd',
+          'test-scenario': 'features',
+          
+          // User experience mappings
+          'user-journey': 'userJourneys',
+          'customer-journey': 'customer-journey',
+          'experience-section': 'experienceSections',
+          'service-blueprint': 'serviceBlueprints',
+          
+          // Strategy mappings
+          'value-proposition': 'valuePropositions',
+          'strategic-context': 'strategicContext',
+          'strategic-bet': 'strategic-bet',
+          'problem-statement': 'problem-statement',
+          
+          // Analysis mappings
+          'swot': 'swot-analysis',
+          'competitive-analysis': 'competitive-analysis',
+          'market-insight': 'market-insight',
+          
+          // Planning mappings
+          'okr': 'okrs',
+          'business-model': 'business-model',
+          'go-to-market': 'go-to-market',
+          'gtm-play': 'gtmPlays',
+          'risk-assessment': 'risk-assessment',
+          'roadmap': 'roadmap',
+          'workstream': 'workstreams',
+          
+          // Measurement mappings
+          'kpi': 'kpis',
+          'financial-projections': 'financial-projections',
+          'cost-driver': 'cost-driver',
+          'revenue-driver': 'revenue-driver',
+          
+          // Technical mappings
+          'tech-stack': 'techStack',
+          'organisational-capability': 'organisationalCapabilities',
+          
+          // Intelligence mappings
+          'market-intelligence': 'market-intelligence',
+          'competitor-intelligence': 'competitor-intelligence',
+          'trends-intelligence': 'trends-intelligence',
+          'technology-intelligence': 'technology-intelligence',
+          'stakeholder-intelligence': 'stakeholder-intelligence',
+          'consumer-intelligence': 'consumer-intelligence',
+          'risk-intelligence': 'risk-intelligence',
+          'opportunities-intelligence': 'opportunities-intelligence'
+        }
+        
+        console.log('📋 Registry blueprint types:', blueprintTypes.length, blueprintTypes)
+        
+        // Filter cards - include both registry types and mapped types
+        const blueprintCards = data?.filter(card => {
+          if (!card.card_type) return false
+          
+          // Check if it's a direct blueprint type
+          if (blueprintTypes.includes(card.card_type)) return true
+          
+          // Check if it maps to a blueprint type
+          const mappedType = cardTypeMapping[card.card_type]
+          if (mappedType && blueprintTypes.includes(mappedType)) return true
+          
+          // Also check if the card type exists as a key in the mapping (legacy support)
+          if (cardTypeMapping.hasOwnProperty(card.card_type)) return true
+          
+          return false
+        }) || []
 
         console.log('✅ Filtered blueprint cards:', blueprintCards.length)
+        console.log('📊 Card types in filtered results:', [...new Set(blueprintCards.map(c => c.card_type))])
         setCards(blueprintCards)
       } catch (err) {
         console.error('❌ Error in useBlueprintCards:', err)

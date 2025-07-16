@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, Filter, ArrowUpDown, Plus, Grid3X3, List, Edit2, Trash2, Copy, FolderPlus, X } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Plus, Grid3X3, List, Edit2, Trash2, Copy, FolderPlus, X, Check } from 'lucide-react';
 import { useCards } from '@/hooks/useCards';
 import IntelligenceCardGrid from '@/components/intelligence-cards/IntelligenceCardGrid';
 
@@ -490,6 +490,18 @@ export default function StrategyBankContent({
                 </div>
               )}
             </div>
+
+            {/* Select All Button */}
+            <button
+              onClick={() => {
+                const allCardIds = new Set(filteredCards.map(card => card.id));
+                setSelectedCards(allCardIds);
+              }}
+              className="flex items-center gap-1 px-1.5 py-0.5 text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
+            >
+              <Check className="w-3 h-3" />
+              <span>Select All ({filteredCards.length})</span>
+            </button>
 
             {/* Spacer */}
             <div className="flex-1" />

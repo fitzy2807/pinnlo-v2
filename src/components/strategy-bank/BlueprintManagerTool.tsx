@@ -202,6 +202,12 @@ export default function BlueprintManagerTool({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleSelectAll}
+            className="px-2 py-1 text-xs bg-black text-white rounded hover:bg-gray-800 transition-colors"
+          >
+            Select All
+          </button>
           <span className="text-xs text-gray-600">{selectedBlueprints.length} selected</span>
           <button
             onClick={onClose}

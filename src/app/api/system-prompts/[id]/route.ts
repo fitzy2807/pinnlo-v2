@@ -12,18 +12,47 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { system_prompt } = await request.json();
+    const requestBody = await request.json();
+    const { 
+      system_prompt, 
+      context_config, 
+      card_creator_preview_prompt, 
+      card_creator_generation_prompt, 
+      card_creator_config 
+    } = requestBody;
     
-    if (!system_prompt) {
-      return NextResponse.json({ error: 'system_prompt is required' }, { status: 400 });
+    if (!system_prompt && !context_config && !card_creator_preview_prompt && !card_creator_generation_prompt && !card_creator_config) {
+      return NextResponse.json({ error: 'At least one field is required' }, { status: 400 });
+    }
+
+    // Build update object based on what's provided
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
+    
+    if (system_prompt) {
+      updateData.system_prompt = system_prompt;
+    }
+    
+    if (context_config !== undefined) {
+      updateData.context_config = context_config;
+    }
+    
+    if (card_creator_preview_prompt !== undefined) {
+      updateData.card_creator_preview_prompt = card_creator_preview_prompt;
+    }
+    
+    if (card_creator_generation_prompt !== undefined) {
+      updateData.card_creator_generation_prompt = card_creator_generation_prompt;
+    }
+    
+    if (card_creator_config !== undefined) {
+      updateData.card_creator_config = card_creator_config;
     }
 
     const { data, error } = await supabase
       .from('ai_system_prompts')
-      .update({
-        system_prompt,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', params.id)
       .select();
 

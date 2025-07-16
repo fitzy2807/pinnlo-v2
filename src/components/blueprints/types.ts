@@ -19,7 +19,7 @@ export interface BlueprintConfig {
   id: string
   name: string
   description: string
-  category: 'Core Strategy' | 'Research & Analysis' | 'Planning & Execution' | 'Management' | 'Measurement'
+  category: 'Core Strategy' | 'Research & Analysis' | 'Planning & Execution' | 'Management' | 'Measurement' | 'User Experience' | 'Organizational & Technical' | 'Template' | 'Organisation'
   icon: string
   fields: BlueprintField[]
   defaultValues: Record<string, any>

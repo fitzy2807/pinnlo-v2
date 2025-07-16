@@ -7,6 +7,7 @@ import { useAgentGroups, AgentGroup } from '@/hooks/useAgentGroups'
 import AgentConfigurationPanel from './AgentConfigurationPanel'
 import AutomationDashboard from '../intelligence/AutomationDashboard'
 import SystemPromptManager from './agents/SystemPromptManager'
+import CardCreatorSystemPrompts from './agents/CardCreatorSystemPrompts'
 import { toast } from 'react-hot-toast'
 
 interface AgentHubProps {
@@ -148,6 +149,7 @@ export default function AgentHub({ onClose }: AgentHubProps) {
     { id: 'permissions', label: 'Permissions' },
     { id: 'automation-rules', label: 'Automation Rules' },
     { id: 'system-prompt-manager', label: 'System Prompt Manager' },
+    { id: 'card-creator-prompts', label: 'Card Creator System Prompts' },
   ]
 
   const handleSelectAll = () => {
@@ -619,6 +621,8 @@ export default function AgentHub({ onClose }: AgentHubProps) {
                 <AutomationDashboard />
               ) : selectedTool === 'system-prompt-manager' ? (
                 <SystemPromptManager />
+              ) : selectedTool === 'card-creator-prompts' ? (
+                <CardCreatorSystemPrompts />
               ) : (
                 <div className="p-6 text-center text-gray-500">
                   {tools.find(t => t.id === selectedTool)?.label} functionality coming soon...

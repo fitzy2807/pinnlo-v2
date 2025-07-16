@@ -7,10 +7,26 @@ export function createCardCreatorConfig(bankType: CardCreatorConfig['bankType'])
     sections: [
       // ✅ Development Bank - Known Working Sections
       {
+        id: 'prd',
+        label: 'Product Requirements (PRD)',
+        cardTypes: ['prd', 'product-requirements'],
+        description: 'Product requirement documents with business context',
+        category: 'development',
+        required: false
+      },
+      {
+        id: 'trd',
+        label: 'Technical Requirements (TRD)',
+        cardTypes: ['trd', 'technical-requirement', 'technical-requirement-structured'],
+        description: 'Technical requirement documents with implementation details',
+        category: 'development',
+        required: false
+      },
+      {
         id: 'section1',
-        label: 'PRD / Features', 
+        label: 'Features', 
         cardTypes: ['feature'],
-        description: 'Product requirements and feature specifications',
+        description: 'Feature specifications and user stories',
         category: 'development',
         required: true
       },
@@ -19,13 +35,6 @@ export function createCardCreatorConfig(bankType: CardCreatorConfig['bankType'])
         label: 'Tech Stack',
         cardTypes: ['tech-stack'],
         description: 'Technology stack and architecture decisions', 
-        category: 'development'
-      },
-      {
-        id: 'section3',
-        label: 'Technical Requirements',
-        cardTypes: ['technical-requirement-structured'],
-        description: 'Detailed technical requirements and specifications',
         category: 'development'
       },
       {

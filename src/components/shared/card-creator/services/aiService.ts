@@ -52,6 +52,35 @@ export class AIService {
     }
 
     const { system, user } = mcpResult.prompts
+    
+    // If this is a preview request, generate the preview text instead
+    if (mcpResult.preview) {
+      const response = await fetch('/api/card-creator/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          systemPrompt: system,
+          userPrompt: user,
+          isPreview: true
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || `API error: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Preview generation failed')
+      }
+
+      return result.preview || result.text || 'Preview generation completed'
+    }
+    
     return this.generateCards(system, user)
   }
 }

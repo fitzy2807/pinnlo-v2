@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
 
+// Blueprint name mapping function - converts camelCase to kebab-case for database queries
+function camelCaseToKebabCase(camelCaseType: string): string {
+  const reverseMappings: Record<string, string> = {
+    'strategicContext': 'strategic-context',
+    'valuePropositions': 'value-propositions',
+    'customerExperience': 'customer-journey',
+    'personas': 'personas',
+    'okrs': 'okrs',
+    'kpis': 'kpis',
+    'workstreams': 'workstream',
+    'epics': 'epic',
+    'features': 'feature',
+    'userJourneys': 'user-journey',
+    'experienceSections': 'experience-section',
+    'serviceBlueprints': 'service-blueprint',
+    'organisationalCapabilities': 'organisational-capability',
+    'gtmPlays': 'gtm-play',
+    'techRequirements': 'tech-requirements'
+  };
+  
+  return reverseMappings[camelCaseType] || camelCaseType;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -25,11 +48,14 @@ export async function GET(request: NextRequest) {
       for (const config of contextConfig) {
         const { context_blueprint, max_cards, inclusion_strategy } = config;
         
+        // Convert camelCase context_blueprint to kebab-case for database query
+        const dbBlueprintType = camelCaseToKebabCase(context_blueprint);
+        
         let query = supabase
           .from('cards')
           .select('id, title, description, card_type, card_data, strategy_id, created_at')
-          .eq('user_id', userId)
-          .eq('card_type', context_blueprint);
+          .eq('created_by', userId)
+          .eq('card_type', dbBlueprintType);
 
         if (strategyId) {
           query = query.eq('strategy_id', strategyId);
@@ -47,8 +73,9 @@ export async function GET(request: NextRequest) {
           cards: cards || [],
           error: error?.message || null,
           query: {
-            user_id: userId,
-            card_type: context_blueprint,
+            created_by: userId,
+            card_type: dbBlueprintType,
+            original_blueprint: context_blueprint,
             strategy_id: strategyId || 'any',
             max_cards: max_cards || 'unlimited'
           }
@@ -67,7 +94,7 @@ export async function GET(request: NextRequest) {
     const { data: allCards } = await supabase
       .from('cards')
       .select('id, title, card_type, strategy_id, created_at')
-      .eq('user_id', userId)
+      .eq('created_by', userId)
       .order('created_at', { ascending: false })
       .limit(50);
 

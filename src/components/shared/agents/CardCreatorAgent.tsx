@@ -10,7 +10,7 @@ interface CardCreatorAgentProps {
   configuration?: {
     hubContext?: 'intelligence' | 'strategy' | 'development' | 'organisation'
     strategy?: any
-    onCardsCreated?: (cards: any[]) => void
+    onCardsCreated?: (cards: any[], metadata?: { targetSection: string; targetCardType: string }) => void
   }
 }
 
@@ -49,11 +49,11 @@ export default function CardCreatorAgent({ onClose, configuration }: CardCreator
           config={config}
           strategy={strategy}
           onClose={onClose}
-          onCardsCreated={(cards) => {
-            console.log('Cards created:', cards)
+          onCardsCreated={(cards, metadata) => {
+            console.log('Cards created:', cards, 'Metadata:', metadata)
             // Call the configured onCardsCreated handler if provided
             if (configuration?.onCardsCreated) {
-              configuration.onCardsCreated(cards)
+              configuration.onCardsCreated(cards, metadata)
             }
           }}
         />

@@ -4,12 +4,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, Pin, Upload, Link2, Zap, ArrowUpDown, Sparkles, Edit2, FolderPlus, ChevronDown, User, EyeOff, Layers, MoreHorizontal, X, Users, Folder, FolderPlus as FolderPlusIcon } from 'lucide-react'
 import { useDevelopmentCards } from '@/hooks/useDevelopmentCards'
 import { useDevelopmentGroups, DevelopmentGroup } from '@/hooks/useDevelopmentGroups'
-import IntelligenceCardGrid from '@/components/intelligence-cards/IntelligenceCardGrid'
-import { transformDevelopmentCardsToIntelligence, transformIntelligenceToDevelopmentCard } from './utils/dataTransformer'
+import DevelopmentCardGrid from '@/components/development-cards/DevelopmentCardGrid'
 import { toast } from 'react-hot-toast'
 import AgentsSection from './AgentsSection'
 import { GeneratedCard } from '@/components/shared/card-creator/types'
 import { getAgentsForHub } from '@/lib/agentRegistry'
+import AgentLoader from '@/components/shared/agents/AgentLoader'
 
 interface DevelopmentBankProps {
   strategy: any
@@ -271,15 +271,6 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
     { id: 'section8', label: 'Code Review', count: sectionCounts.section8 || 0 },
   ]
 
-  // Demo tools with development-specific labels
-  const tools = [
-    { id: 'card-creator', label: 'Card Creator', icon: Sparkles },
-    { id: 'tool1', label: 'PRD Writer' },
-    { id: 'tool2', label: 'Tech Stack Diagnostic' },
-    { id: 'tool3', label: 'TRD Writer' },
-    { id: 'tool4', label: 'Tool 4' },
-    { id: 'tool5', label: 'Tool 5' },
-  ]
 
   const handleSelectAll = () => {
     const currentCards = viewType === 'group' ? groupCards : filteredCards
@@ -560,7 +551,10 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
 
   const handleToolClick = (toolId: string) => {
     setSelectedTool(toolId === selectedTool ? null : toolId)
-    toast(`${toolId === selectedTool ? 'Deselected' : 'Selected'} ${tools.find(t => t.id === toolId)?.label}`)
+    // Get agent name for agents
+    const agent = developmentAgents.find(a => `agent-${a.id}` === toolId)
+    const toolName = agent ? agent.name : 'Tool'
+    toast(`${toolId === selectedTool ? 'Deselected' : 'Selected'} ${toolName}`)
   }
 
   const handleCardsCreated = async (generatedCards: GeneratedCard[]) => {
@@ -734,23 +728,6 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
                 <span className="text-xs">{agent.name}</span>
               </button>
             ))}
-            
-            {/* Other Tools */}
-            {tools.map((tool) => (
-              <button
-                key={tool.id}
-                onClick={() => handleToolClick(tool.id)}
-                className={`
-                  w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors
-                  ${selectedTool === tool.id
-                    ? 'bg-black bg-opacity-50 text-white'
-                    : 'text-black hover:bg-gray-100'
-                  }
-                `}
-              >
-                <span className="text-xs">{tool.label}</span>
-              </button>
-            ))}
           </div>
         </div>
 
@@ -887,21 +864,36 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
             <div className="bg-white border-b border-gray-200">
               <div className="px-4 py-1.5">
                 <h1 className="text-sm font-medium text-gray-900">
-                  {tools.find(t => t.id === selectedTool)?.label}
+                  {developmentAgents.find(a => `agent-${a.id}` === selectedTool)?.name || 'Agent Tool'}
                 </h1>
                 <p className="text-[10px] text-gray-500">
-                  {selectedTool === 'card-creator' 
-                    ? 'Generate cards using AI based on existing development context'
-                    : `Tool functionality and settings for ${tools.find(t => t.id === selectedTool)?.label?.toLowerCase()}`
-                  }
+                  {developmentAgents.find(a => `agent-${a.id}` === selectedTool)?.description || 'Agent tool functionality'}
                 </p>
               </div>
             </div>
             
             <div className="flex-1">
-              <div className="flex-1 p-6 text-center text-gray-500">
-                Tool content for {tools.find(t => t.id === selectedTool)?.label} coming soon...
-              </div>
+              {(() => {
+                const agent = developmentAgents.find(a => `agent-${a.id}` === selectedTool)
+                if (agent) {
+                  return (
+                    <AgentLoader
+                      agentId={agent.component}
+                      onClose={() => setSelectedTool(null)}
+                      configuration={{
+                        hubContext: 'development',
+                        strategy,
+                        onCardsCreated: handleCardsCreated
+                      }}
+                    />
+                  )
+                }
+                return (
+                  <div className="flex-1 p-6 text-center text-gray-500">
+                    Agent functionality coming soon...
+                  </div>
+                )
+              })()}
             </div>
           </div>
         ) : (
@@ -1267,22 +1259,17 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
                   </button>
                 </div>
               ) : (
-                <IntelligenceCardGrid
-                  cards={transformDevelopmentCardsToIntelligence(displayCards)}
+                <DevelopmentCardGrid
+                  cards={displayCards}
                   onCreateCard={handleCreateCard}
-                  onUpdateCard={async (id, updates) => {
-                    // Transform Intelligence card format back to Development format
-                    const devUpdates = transformIntelligenceToDevelopmentCard(updates as any)
-                    await updateCard(id, devUpdates)
-                  }}
-                  onDeleteCard={async (id) => {
-                    await deleteCard(id)
-                  }}
+                  onUpdateCard={updateCard}
+                  onDeleteCard={deleteCard}
                   searchQuery={searchQuery}
                   selectedCardIds={selectedCards}
                   onSelectCard={handleSelectCard}
                   viewMode={viewMode}
                   loading={loading || groupsLoading}
+                  currentStrategyId={strategy?.id}
                 />
               )}
             </div>

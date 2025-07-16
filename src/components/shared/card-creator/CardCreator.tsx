@@ -5,18 +5,19 @@ import { CardCreatorConfig, GenerationContext, GeneratedCard, Card } from './typ
 import SourceSelection from './sections/SourceSelection'
 import CardDisplay from './sections/CardDisplay'
 import OutputConfig from './sections/OutputConfig'
-import Preview from './sections/Preview'
+import ContextPreview from './sections/ContextPreview'
 import { buildContextSummary, buildStructuredContext } from './utils/contextBuilder'
 import { useDevelopmentCards } from '@/hooks/useDevelopmentCards'
 import { useBlueprintCards } from '@/hooks/useBlueprintCards'
 import { useIntelligenceCards } from '@/hooks/useIntelligenceCards'
 import { AIService } from './services/aiService'
+import { toast } from 'react-hot-toast'
 
 interface CardCreatorProps {
   config: CardCreatorConfig
   strategy?: any
   onClose: () => void
-  onCardsCreated?: (cards: GeneratedCard[]) => void
+  onCardsCreated?: (cards: GeneratedCard[], metadata?: { targetSection: string; targetCardType: string }) => void
 }
 
 export default function CardCreator({ 
@@ -25,44 +26,46 @@ export default function CardCreator({
   onClose,
   onCardsCreated 
 }: CardCreatorProps) {
-  // Step state management
+  // Step state management - 3 steps + preview
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedSections, setSelectedSections] = useState<string[]>([])
   const [selectedCards, setSelectedCards] = useState<string[]>([])
   const [targetSection, setTargetSection] = useState<string>('')
-  const [cardQuantity, setCardQuantity] = useState(3)
-  const [quality, setQuality] = useState<'fast' | 'balanced' | 'high'>('balanced')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedCards, setGeneratedCards] = useState<GeneratedCard[]>([])
-  const [selectedGeneratedCards, setSelectedGeneratedCards] = useState<string[]>([])
+  
+  // Context preview state - now includes quantity determination
+  const [contextPreview, setContextPreview] = useState<string | null>(null)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
+  const [plannedQuantity, setPlannedQuantity] = useState<number>(0)
 
   // Hooks for loading cards - must be at top level
   const { cards: developmentCards } = useDevelopmentCards(strategy?.id)
   const { cards: blueprintCards } = useBlueprintCards(strategy?.id)
   const { cards: intelligenceCards } = useIntelligenceCards()
 
-  // Progress calculation
+  // Progress calculation - for 3 steps + preview
   const progress = useMemo(() => {
-    if (generatedCards.length > 0) return 100
-    if (targetSection && selectedCards.length > 0) return 75
-    if (selectedCards.length > 0) return 50
-    if (selectedSections.length > 0) return 25
+    if (isGenerating) return 90
+    if (contextPreview) return 75
+    if (targetSection) return 60
+    if (selectedCards.length > 0) return 40
+    if (selectedSections.length > 0) return 20
     return 0
-  }, [selectedSections, selectedCards, targetSection, generatedCards])
+  }, [selectedSections, selectedCards, targetSection, contextPreview, isGenerating])
 
 
   const canProceedToNext = useMemo(() => {
     switch (currentStep) {
       case 1: return selectedSections.length > 0
       case 2: return selectedCards.length > 0
-      case 3: return targetSection && cardQuantity > 0
-      case 4: return generatedCards.length > 0
+      case 3: return targetSection !== ''
       default: return false
     }
-  }, [currentStep, selectedSections, selectedCards, targetSection, cardQuantity, generatedCards])
+  }, [currentStep, selectedSections, selectedCards, targetSection])
 
   const handleNext = () => {
-    if (canProceedToNext && currentStep < 4) {
+    if (canProceedToNext && currentStep < 3) {
       setCurrentStep(currentStep + 1)
     }
   }
@@ -73,21 +76,25 @@ export default function CardCreator({
     }
   }
 
-  const handleGenerate = async () => {
-    setIsGenerating(true)
+  const handleGeneratePreview = async () => {
+    console.log('handleGeneratePreview called, currentStep:', currentStep)
+    setIsGeneratingPreview(true)
+    setPreviewError(null)
     
     try {
       // Combine all available cards
       const allCards = [...(developmentCards || []), ...(blueprintCards || []), ...(intelligenceCards || [])]
+      
+      // Use selected cards
       const contextCards = selectedCards
         .map(id => allCards.find(card => card.id === id))
         .filter(Boolean) as Card[]
 
-      // Build context for MCP
+      // Build context for preview
       const structuredContext = buildStructuredContext(contextCards, targetSection)
       const targetCardType = config.sections.find(s => s.id === targetSection)?.cardTypes[0] || 'feature'
 
-      // Call existing MCP endpoint
+      // Call MCP endpoint with preview_only flag
       const response = await fetch('/api/mcp/invoke', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,85 +105,182 @@ export default function CardCreator({
             targetBlueprint: targetCardType,
             existingCards: contextCards.map(card => ({
               cardType: card.card_type,
-              title: card.title,
-              description: card.description
+              title: card.title
             })),
-            generationOptions: {
-              count: cardQuantity,
-              style: quality,
-              targetSection: targetSection
-            },
-            strategyId: strategy?.id
+            preview_only: true
           }
         })
       })
 
       if (!response.ok) {
-        throw new Error(`MCP request failed: ${response.statusText}`)
+        throw new Error(`Preview generation failed: ${response.statusText}`)
       }
 
       const result = await response.json()
-      console.log('MCP Response:', result)
       
       if (result.error) {
         throw new Error(result.error)
       }
 
-      // Check if we got prompts back (which means we need to call AI)
-      let rawCards = []
+      // Extract preview from MCP response
+      console.log('MCP result:', result)
       
       if (result.content && result.content[0]?.text) {
-        // Parse the content from MCP
         const mcpContent = JSON.parse(result.content[0].text)
+        console.log('MCP content:', mcpContent)
         
-        if (mcpContent.prompts) {
-          // We received prompts, need to call AI service
-          console.log('Received prompts from MCP, calling AI service...')
+        if (mcpContent.preview && mcpContent.prompts) {
+          // We need to call AI service to generate the actual preview text
           const aiService = new AIService()
+          const previewText = await aiService.generateFromMCPPrompts(mcpContent)
+          console.log('Preview text received:', previewText)
+          setContextPreview(previewText)
           
-          try {
-            rawCards = await aiService.generateFromMCPPrompts(mcpContent)
-            console.log('AI generated cards:', rawCards)
-          } catch (aiError) {
-            console.error('AI service failed:', aiError)
-            throw aiError
+          // Extract the planned quantity from the preview - handle different formats including bold markdown
+          const quantityMatch = previewText.match(/(?:I will create|create|creating)\s+(?:\*\*)?(\d+|one|two|three|four|five|six|seven|eight|nine|ten)(?:\*\*)?\s+[\w\s-]*?cards/i)
+          if (quantityMatch) {
+            const numberMap: { [key: string]: number } = {
+              'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+              'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10
+            }
+            const quantity = numberMap[quantityMatch[1].toLowerCase()] || parseInt(quantityMatch[1])
+            setPlannedQuantity(quantity)
+            console.log('Planned quantity:', quantity)
+          } else {
+            console.warn('Could not extract quantity from preview:', previewText.substring(0, 200))
+            // Default to 3 cards if preview doesn't specify
+            const defaultQuantity = 3
+            setPlannedQuantity(defaultQuantity)
+            console.log('Using default quantity:', defaultQuantity)
           }
-        } else if (mcpContent.cards) {
-          // Direct cards response
-          rawCards = mcpContent.cards
+        } else {
+          throw new Error('Invalid preview response format')
         }
       } else {
-        // Check for cards in the result directly
-        rawCards = result.cards || result.result || result.data || []
+        throw new Error('No content in MCP response')
       }
+    } catch (error) {
+      console.error('Preview generation failed:', error)
+      setPreviewError((error as Error).message)
+      // Stay on step 3 to show the error in ContextPreview
+      // The error will be displayed in the ContextPreview component
+    } finally {
+      setIsGeneratingPreview(false)
+    }
+  }
+
+  const handleGenerate = async () => {
+    console.log('handleGenerate called')
+    setIsGenerating(true)
+    const generatedCards: GeneratedCard[] = []
+    
+    try {
+      // Combine all available cards
+      const allCards = [...(developmentCards || []), ...(blueprintCards || []), ...(intelligenceCards || [])]
       
-      console.log('Raw cards to process:', rawCards)
-      
-      // Handle nested card structures
-      let cardsToProcess = rawCards
-      
-      // Check if cards are nested in a property based on card type
-      if (!Array.isArray(rawCards) && typeof rawCards === 'object') {
-        // Look for arrays in the object (like valuePropositionCards, strategyCards, etc.)
-        const cardArrays = Object.values(rawCards).filter(val => Array.isArray(val))
-        if (cardArrays.length > 0) {
-          // Flatten all card arrays
-          cardsToProcess = cardArrays.flat()
-          console.log('Found nested cards, flattened to:', cardsToProcess)
+      // Use selected cards (same as preview)
+      const contextCards = selectedCards
+        .map(id => allCards.find(card => card.id === id))
+        .filter(Boolean) as Card[]
+
+      // Build context for MCP
+      const structuredContext = buildStructuredContext(contextCards, targetSection)
+      const targetCardType = config.sections.find(s => s.id === targetSection)?.cardTypes[0] || 'feature'
+
+      // Generate cards one at a time
+      for (let i = 0; i < plannedQuantity; i++) {
+        toast.loading(`Generating card ${i + 1} of ${plannedQuantity}...`, { id: `card-gen-${i}` })
+        
+        // Call MCP endpoint for single card
+        const response = await fetch('/api/mcp/invoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tool: 'generate_strategy_cards',
+            arguments: {
+              contextSummary: structuredContext.summary,
+              targetBlueprint: targetCardType,
+              existingCards: [...contextCards, ...generatedCards].map(card => ({
+                cardType: card.card_type || targetCardType,
+                title: card.title,
+                description: card.description
+              })),
+              cardIndex: i + 1,
+              generationOptions: {
+                count: 1, // Always 1 for single card generation
+                style: 'balanced',
+                targetSection: targetSection
+              },
+              strategyId: strategy?.id
+            }
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error(`MCP request failed for card ${i + 1}: ${response.statusText}`)
         }
-      }
-      
-      if (!Array.isArray(cardsToProcess) || cardsToProcess.length === 0) {
-        console.log('Full MCP result structure:', JSON.stringify(result, null, 2))
-        throw new Error('No cards generated. The AI service may need configuration.')
-      }
-      
-      const generatedCards: GeneratedCard[] = cardsToProcess.map((card: any, index: number) => {
-        // Map the AI-generated blueprint fields to card_data
-        const cardData: any = {
-          generated_by: 'mcp_card_creator',
-          source_context: `${contextCards.length} cards`,
-          generation_config: { quality, quantity: cardQuantity }
+
+        const result = await response.json()
+        console.log(`MCP Response for card ${i + 1}:`, result)
+        
+        if (result.error) {
+          throw new Error(result.error)
+        }
+
+        // Process single card response
+        let rawCard = null
+        
+        if (result.content && result.content[0]?.text) {
+          // Parse the content from MCP
+          const mcpContent = JSON.parse(result.content[0].text)
+          
+          if (mcpContent.prompts && mcpContent.isSingleCard) {
+            // We received prompts, need to call AI service
+            console.log(`Received prompts from MCP for card ${i + 1}, calling AI service...`)
+            const aiService = new AIService()
+            
+            try {
+              const aiResponse = await aiService.generateFromMCPPrompts(mcpContent)
+              console.log(`AI generated card ${i + 1}:`, aiResponse)
+              
+              // For single card, response should be an object, not an array
+              // If aiResponse is an array with one card, extract it
+              if (Array.isArray(aiResponse) && aiResponse.length > 0) {
+                rawCard = aiResponse[0]
+              } else if (typeof aiResponse === 'string') {
+                rawCard = JSON.parse(aiResponse)
+              } else {
+                rawCard = aiResponse
+              }
+            } catch (aiError) {
+              console.error(`AI service failed for card ${i + 1}:`, aiError)
+              toast.error(`Failed to generate card ${i + 1}`, { id: `card-gen-${i}` })
+              continue // Skip this card and try next
+            }
+          } else if (mcpContent.card) {
+            // Direct card response
+            rawCard = mcpContent.card
+          }
+        }
+        
+        if (!rawCard) {
+          console.error(`No card generated for index ${i + 1}`)
+          toast.error(`Failed to generate card ${i + 1}`, { id: `card-gen-${i}` })
+          continue
+        }
+        
+        console.log(`Processing card ${i + 1}:`, rawCard)
+        
+        // Map the single card
+        const generatedCard: GeneratedCard = (() => {
+          const card = rawCard
+          
+          // Map the AI-generated blueprint fields to card_data
+          const cardData: any = {
+            generated_by: 'mcp_card_creator',
+            source_context: `${contextCards.length} cards`,
+            generation_config: { quality: 'balanced', quantity: plannedQuantity },
+            card_index: i + 1
         }
         
         // Add blueprint-specific fields
@@ -256,24 +360,43 @@ export default function CardCreator({
           Object.assign(cardData, card.card_data)
         }
         
-        return {
-          id: `generated-${Date.now()}-${index}`,
-          title: card.title || `Generated Card ${index + 1}`,
-          description: card.description || card.content || '',
-          card_type: targetCardType, // Use the target card type from the section config
-          priority: priority as 'High' | 'Medium' | 'Low',
-          card_data: cardData,
-          confidence,
-          source: 'ai_generated' as const
-        }
-      })
-
-      if (generatedCards.length === 0) {
-        throw new Error('No cards were generated')
+          return {
+            id: `generated-${Date.now()}-${i}`,
+            title: card.title || `Generated Card ${i + 1}`,
+            description: card.description || card.content || '',
+            card_type: targetCardType,
+            priority: priority as 'High' | 'Medium' | 'Low',
+            card_data: cardData,
+            confidence,
+            source: 'ai_generated' as const
+          }
+        })()
+        
+        generatedCards.push(generatedCard)
+        toast.success(`Generated card ${i + 1}`, { id: `card-gen-${i}` })
       }
 
-      setGeneratedCards(generatedCards)
-      setCurrentStep(4)
+      if (generatedCards.length === 0) {
+        throw new Error('No cards were successfully generated')
+      }
+
+      // Auto-add all generated cards
+      console.log(`Auto-adding ${generatedCards.length} generated cards`)
+      if (onCardsCreated) {
+        await onCardsCreated(generatedCards, {
+          targetSection: targetSection,
+          targetCardType: targetCardType
+        })
+      }
+      
+      // Check if any cards were generated
+      if (generatedCards.length === 0) {
+        throw new Error('No cards were generated. Please try again.')
+      }
+      
+      // Close the modal after successful generation
+      toast.success(`Successfully created ${generatedCards.length} cards!`)
+      onClose()
     } catch (error) {
       console.error('MCP generation failed:', error)
       
@@ -286,7 +409,7 @@ export default function CardCreator({
       if (shouldUseFallback) {
         try {
           const targetCardType = config.sections.find(s => s.id === targetSection)?.cardTypes[0] || 'feature'
-          const mockCards: GeneratedCard[] = Array.from({ length: cardQuantity }, (_, i) => ({
+          const mockCards: GeneratedCard[] = Array.from({ length: plannedQuantity || 2 }, (_, i) => ({
             id: `generated-${Date.now()}-${i}`,
             title: `Mock ${targetCardType} Card ${i + 1}`,
             description: `Generated using fallback mock generation (MCP unavailable)`,
@@ -295,15 +418,19 @@ export default function CardCreator({
             card_data: {
               generated_by: 'mock_fallback',
               source_context: `${selectedCards.length} cards`,
-              generation_config: { quality, quantity: cardQuantity },
+              generation_config: { quality: 'balanced', quantity: plannedQuantity || 2 },
               error_reason: (error as Error).message
             },
             confidence: 0.5,
             source: 'ai_generated' as const
           }))
           
-          setGeneratedCards(mockCards)
-          setCurrentStep(4)
+          // Auto-add mock cards
+          if (onCardsCreated) {
+            await onCardsCreated(mockCards)
+          }
+          toast.success(`Created ${mockCards.length} mock cards`)
+          onClose()
         } catch (fallbackError) {
           console.error('Fallback generation also failed:', fallbackError)
           alert('Both AI and fallback generation failed')
@@ -314,23 +441,6 @@ export default function CardCreator({
     }
   }
 
-  const handleAddCards = () => {
-    const cardsToAdd = generatedCards.filter(card => 
-      selectedGeneratedCards.includes(card.id)
-    )
-    
-    if (onCardsCreated) {
-      onCardsCreated(cardsToAdd)
-    }
-    
-    // Reset state for next generation
-    setGeneratedCards([])
-    setSelectedGeneratedCards([])
-    setCurrentStep(1)
-    setSelectedSections([])
-    setSelectedCards([])
-    setTargetSection('')
-  }
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-3">
@@ -361,29 +471,14 @@ export default function CardCreator({
           
           {currentStep === 3 ? (
             <button
-              onClick={handleGenerate}
-              disabled={!canProceedToNext || isGenerating}
+              onClick={handleGeneratePreview}
+              disabled={!canProceedToNext || isGeneratingPreview}
               className="flex items-center gap-1 text-black font-medium disabled:opacity-30 disabled:cursor-not-allowed transition-all hover:text-gray-600"
               style={{ fontSize: '12px', fontWeight: 500 }}
             >
-              {isGenerating ? 'Generating...' : `Generate ${cardQuantity} Cards`}
+              {isGeneratingPreview ? 'Analyzing...' : 'Generate Preview'}
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          ) : currentStep === 4 ? (
-            <button
-              onClick={() => {
-                setCurrentStep(3)
-                setGeneratedCards([])
-                setSelectedGeneratedCards([])
-              }}
-              className="flex items-center gap-1 text-black font-medium transition-all hover:text-gray-600"
-              style={{ fontSize: '12px', fontWeight: 500 }}
-            >
-              Regenerate
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
           ) : (
@@ -424,39 +519,32 @@ export default function CardCreator({
       )}
 
       {currentStep === 3 && (
-        isGenerating ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-              <p className="text-sm text-gray-600">Generating {cardQuantity} cards...</p>
-              <p className="text-xs text-gray-500 mt-2">This may take a few moments</p>
-            </div>
-          </div>
+        contextPreview ? (
+          <ContextPreview
+            contextSummary={buildContextSummary(selectedCards.map(id => {
+              const allCards = [...(developmentCards || []), ...(blueprintCards || []), ...(intelligenceCards || [])]
+              return allCards.find(card => card.id === id)
+            }).filter(Boolean) as Card[])}
+            targetSection={config.sections.find(s => s.id === targetSection)?.name || targetSection}
+            selectedCardsCount={selectedCards.length}
+            onApprove={async () => {
+              console.log('Preview approved, generating cards')
+              await handleGenerate()
+            }}
+            onRegenerate={handleGeneratePreview}
+            isGenerating={isGeneratingPreview || isGenerating}
+            preview={contextPreview}
+            error={previewError}
+            plannedQuantity={plannedQuantity}
+          />
         ) : (
           <OutputConfig
             config={config}
             targetSection={targetSection}
             onTargetSectionChange={setTargetSection}
-            cardQuantity={cardQuantity}
-            onQuantityChange={setCardQuantity}
-            quality={quality}
-            onQualityChange={setQuality}
             selectedCardsCount={selectedCards.length}
-            onGenerate={handleGenerate}
-            isGenerating={isGenerating}
           />
         )
-      )}
-
-      {currentStep === 4 && (
-        <Preview
-          config={config}
-          generatedCards={generatedCards}
-          selectedGeneratedCards={selectedGeneratedCards}
-          onSelectionChange={setSelectedGeneratedCards}
-          onAddCards={handleAddCards}
-          targetSection={targetSection}
-        />
       )}
       </div>
 

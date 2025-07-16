@@ -50,6 +50,10 @@ import { consumerIntelligenceConfig } from './configs/consumerIntelligenceConfig
 import { riskIntelligenceConfig } from './configs/riskIntelligenceConfig'
 import { opportunitiesIntelligenceConfig } from './configs/opportunitiesIntelligenceConfig'
 
+// Import PRD and TRD configs
+import { prdConfig } from './configs/prdConfig'
+import { trdConfig } from './configs/trdConfig'
+
 // Blueprint Registry - Central configuration for all blueprint types
 export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
   // Core Strategy (Mandatory: strategicContext)
@@ -112,6 +116,12 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
   'risk-intelligence': riskIntelligenceConfig,
   'opportunities-intelligence': opportunitiesIntelligenceConfig,
   
+  // Development blueprints
+  'prd': prdConfig,
+  'product-requirements': prdConfig,
+  'trd': trdConfig,
+  'technical-requirements': trdConfig,
+  
   // TODO: Add remaining blueprint configs when needed
   // 'stakeholder-map': stakeholderMapConfig,
   // 'strategy-analytics': strategyAnalyticsConfig,
@@ -128,7 +138,7 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
 export const BLUEPRINT_CATEGORIES: Record<string, string[]> = {
   'Core Strategy': ['strategicContext', 'vision', 'valuePropositions', 'strategic-bet'],
   'Research & Analysis': ['personas', 'customer-journey', 'swot-analysis', 'competitive-analysis', 'market-insight', 'experiment', 'market-intelligence', 'competitor-intelligence', 'trends-intelligence', 'technology-intelligence', 'stakeholder-intelligence', 'consumer-intelligence', 'risk-intelligence', 'opportunities-intelligence'],
-  'Planning & Execution': ['okrs', 'problem-statement', 'workstreams', 'epics', 'features', 'business-model', 'go-to-market', 'gtmPlays', 'risk-assessment', 'roadmap'],
+  'Planning & Execution': ['okrs', 'problem-statement', 'workstreams', 'epics', 'features', 'prd', 'trd', 'business-model', 'go-to-market', 'gtmPlays', 'risk-assessment', 'roadmap'],
   'User Experience': ['userJourneys', 'experienceSections', 'serviceBlueprints'],
   'Organizational & Technical': ['organisationalCapabilities', 'techStack', 'techRequirements'],
   'Measurement': ['cost-driver', 'revenue-driver', 'kpis', 'financial-projections'],
@@ -175,9 +185,10 @@ export function getBlueprintConfig(blueprintId: string): BlueprintConfig | undef
     'gtm-play': 'gtmPlays',
     'tech-requirements': 'techRequirements',
     // Development card type mappings
-    'prd': 'features',
-    'technical-requirement': 'techRequirements',
-    'technical-requirement-structured': 'techRequirements',
+    'product-requirements': 'prd',
+    'technical-requirements': 'trd',
+    'technical-requirement': 'trd',
+    'technical-requirement-structured': 'trd',
     'task-list': 'features'
   }
   

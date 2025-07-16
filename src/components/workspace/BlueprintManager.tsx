@@ -193,7 +193,44 @@ export default function BlueprintManager({ strategyId, onBlueprintsChange }: Blu
                   Choose which strategy components to include in your workspace. Each blueprint provides structured templates and guidance for different aspects of your strategy.
                 </p>
               </div>
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 flex items-center space-x-2">
+                <button
+                  onClick={async () => {
+                    const allBlueprintIds = allBlueprints.map(bp => bp.id);
+                    setSelectedBlueprints(allBlueprintIds);
+                    // Auto-save after selecting all
+                    setIsLoading(true);
+                    try {
+                      const { error } = await supabase
+                        .from('strategies')
+                        .update({
+                          blueprint_config: {
+                            enabledBlueprints: allBlueprintIds,
+                            mandatoryBlueprints: MANDATORY_BLUEPRINTS,
+                            lastUpdated: new Date().toISOString()
+                          }
+                        })
+                        .eq('id', strategyId);
+
+                      if (!error) {
+                        onBlueprintsChange?.(allBlueprintIds);
+                        console.log('✅ All blueprints selected and saved');
+                      }
+                    } catch (error) {
+                      console.error('Failed to save blueprints:', error);
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  disabled={isLoading}
+                  className="flex items-center space-x-2 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Check size={14} />
+                  <span>{isLoading ? 'Saving...' : 'Select All'}</span>
+                  <span className="text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded text-xs">
+                    {allBlueprints.length}
+                  </span>
+                </button>
                 <button
                   onClick={toggleModal}
                   className="flex items-center space-x-2 px-3 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors shadow-sm"

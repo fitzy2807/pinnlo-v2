@@ -102,6 +102,15 @@ class AgentRegistry {
    */
   private loadFromStorage() {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        // Server-side: just load defaults
+        defaultAgents.forEach(agent => {
+          this.agents.set(agent.id, agent)
+        })
+        return
+      }
+
       const stored = localStorage.getItem(AGENT_REGISTRY_KEY)
       if (stored) {
         const parsed = JSON.parse(stored)
@@ -129,6 +138,12 @@ class AgentRegistry {
    */
   private saveToStorage() {
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        // Server-side: skip saving
+        return
+      }
+
       const data: Record<string, AgentMetadata> = {}
       this.agents.forEach((metadata, id) => {
         data[id] = metadata

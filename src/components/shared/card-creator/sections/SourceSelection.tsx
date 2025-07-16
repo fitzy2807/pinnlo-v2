@@ -6,7 +6,7 @@ import { useDevelopmentCards } from '@/hooks/useDevelopmentCards'
 import { useBlueprintCards } from '@/hooks/useBlueprintCards'
 import { useIntelligenceCards } from '@/hooks/useIntelligenceCards'
 
-// Card count component
+// Card count component with count calculation
 function CardCount({ 
   sectionId, 
   strategy, 
@@ -28,10 +28,12 @@ function CardCount({
   
   if (category === 'development') {
     const sectionMapping: Record<string, string> = {
+      'prd': 'section1',
       'epic': 'section1',
       'feature': 'section1',
       'user-journey': 'section1',
       'tech-stack': 'section2',
+      'trd': 'section3',
       'technical-requirements': 'section3',
       'task-lists': 'section4'
     }
@@ -61,6 +63,48 @@ function CardCount({
   )
 }
 
+// Helper function to get card count for a section
+function getSectionCardCount(
+  sectionId: string,
+  category: string,
+  cardTypes: string[],
+  strategy: any,
+  getSectionCounts: any,
+  blueprintCards: any[],
+  intelligenceCards: any[]
+): number {
+  let count = 0
+  
+  if (category === 'development') {
+    const sectionMapping: Record<string, string> = {
+      'prd': 'section1',
+      'epic': 'section1',
+      'feature': 'section1',
+      'user-journey': 'section1',
+      'tech-stack': 'section2',
+      'trd': 'section3',
+      'technical-requirements': 'section3',
+      'task-lists': 'section4'
+    }
+    const mappedSectionId = sectionMapping[sectionId] || sectionId
+    count = getSectionCounts ? getSectionCounts()[mappedSectionId] || 0 : 0
+  } else if (category === 'strategy' && blueprintCards) {
+    const cards = blueprintCards.filter(card => {
+      const cardType = card.card_type || ''
+      return cardTypes.includes(cardType)
+    })
+    count = cards.length
+  } else if (category === 'intelligence' && intelligenceCards) {
+    const cards = intelligenceCards.filter(card => {
+      const cardCategory = card.category || card.card_type || ''
+      return cardTypes.includes(cardCategory)
+    })
+    count = cards.length
+  }
+  
+  return count
+}
+
 interface SourceSelectionProps {
   config: CardCreatorConfig
   strategy?: any
@@ -74,6 +118,10 @@ export default function SourceSelection({
   selectedSections,
   onSectionChange
 }: SourceSelectionProps) {
+  const { getSectionCounts } = useDevelopmentCards(strategy?.id)
+  const { cards: blueprintCards } = useBlueprintCards(strategy?.id)
+  const { cards: intelligenceCards } = useIntelligenceCards()
+
   const handleSectionToggle = (sectionId: string) => {
     if (selectedSections.includes(sectionId)) {
       onSectionChange(selectedSections.filter(id => id !== sectionId))
@@ -82,10 +130,51 @@ export default function SourceSelection({
     }
   }
 
-  // Group sections by category
-  const strategySections = config.sections.filter(s => s.category === 'strategy')
-  const intelligenceSections = config.sections.filter(s => s.category === 'intelligence')
-  const developmentSections = config.sections.filter(s => s.category === 'development')
+  // Group sections by category and filter out sections with 0 cards
+  const strategySections = config.sections
+    .filter(s => s.category === 'strategy')
+    .filter(section => {
+      const count = getSectionCardCount(
+        section.id,
+        section.category,
+        section.cardTypes,
+        strategy,
+        getSectionCounts,
+        blueprintCards || [],
+        intelligenceCards || []
+      )
+      return count > 0
+    })
+  
+  const intelligenceSections = config.sections
+    .filter(s => s.category === 'intelligence')
+    .filter(section => {
+      const count = getSectionCardCount(
+        section.id,
+        section.category,
+        section.cardTypes,
+        strategy,
+        getSectionCounts,
+        blueprintCards || [],
+        intelligenceCards || []
+      )
+      return count > 0
+    })
+  
+  const developmentSections = config.sections
+    .filter(s => s.category === 'development')
+    .filter(section => {
+      const count = getSectionCardCount(
+        section.id,
+        section.category,
+        section.cardTypes,
+        strategy,
+        getSectionCounts,
+        blueprintCards || [],
+        intelligenceCards || []
+      )
+      return count > 0
+    })
 
   const SectionCard = ({ section }: { section: any }) => {
     const isSelected = selectedSections.includes(section.id)

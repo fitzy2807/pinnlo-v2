@@ -22,7 +22,7 @@ interface UseValidationOptions<T> {
 
 export function useValidation<T extends Record<string, any>>(
   data: T,
-  options: UseValidationOptions<T>
+  options: UseValidationOptions<T> = { rules: [] }
 ) {
   const { rules, validateOnChange = true, validateOnBlur = false } = options
   const [errors, setErrors] = useState<ValidationErrors<T>>({})

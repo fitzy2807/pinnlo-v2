@@ -27,11 +27,36 @@ export function useEditModeGenerator() {
   }) => {
     // Get strategy context from Stage 0 Agent
     const contextStrategyId = StrategyContextManager.getStrategyId();
-    const finalStrategyId = params.strategyId || contextStrategyId;
+    
+    // If no strategy context is set, try to detect it from the card or set a default
+    if (!contextStrategyId) {
+      if (params.existingFields?.strategy_id) {
+        console.log('🎯 Setting strategy context from card data:', params.existingFields.strategy_id);
+        StrategyContextManager.setStrategyContext(
+          params.existingFields.strategy_id,
+          `Strategy ${params.existingFields.strategy_id}`,
+          'detection'
+        );
+      } else {
+        // For now, default to Pinnlo strategy (ID 6) if no strategy context is set
+        console.log('🎯 No strategy context found, defaulting to Pinnlo strategy (ID 6)');
+        StrategyContextManager.setStrategyContext(
+          '6',
+          'Pinnlo Strategy',
+          'detection'
+        );
+      }
+    }
+    
+    // Get the updated strategy context after potential setting above
+    const updatedContextStrategyId = StrategyContextManager.getStrategyId();
+    const finalStrategyId = params.strategyId || updatedContextStrategyId || params.existingFields?.strategy_id;
     
     console.log('🎯 AI Generation Context:', {
       provided: params.strategyId,
       fromContext: contextStrategyId,
+      updatedContext: updatedContextStrategyId,
+      fromCard: params.existingFields?.strategy_id,
       final: finalStrategyId,
       debugInfo: StrategyContextManager.getDebugInfo()
     });

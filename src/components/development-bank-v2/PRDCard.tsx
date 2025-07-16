@@ -1,13 +1,12 @@
 'use client'
 
-import React, { useState, useMemo, useCallback } from 'react'
-import { Trash2, Copy, FileText, ListTodo } from 'lucide-react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import { Trash2, Copy, FileText, ListTodo, Check } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { PRDCardData, PRDCardProps } from '@/types/prd'
 
 // Import shared components
 import { 
-  useAutoSave,
   useKeyboardShortcuts,
   useValidation,
   validators,
@@ -41,6 +40,8 @@ export default function PRDCard({
 }: PRDCardProps) {
   const [isCollapsed, setIsCollapsed] = useState(true)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [localData, setLocalData] = useState<any>(null)
 
   // Initialize PRD data with defaults
   const initialData = useMemo(() => {
@@ -104,34 +105,22 @@ export default function PRDCard({
     }
   }, [prd])
 
-  // Initialize auto-save
-  const {
-    data: prdData,
-    updateField,
-    forceSave,
-    isDirty,
-    saveStatus,
-    lastSaved,
-    saveError
-  } = useAutoSave(
-    initialData,
-    async (updates) => {
-      if (onUpdate) {
-        // Extract title and description for main card update
-        const { title, description, ...cardData } = updates
-        await onUpdate(prd.id, {
-          title,
-          description,
-          card_data: cardData
-        })
-      }
-    },
-    {
-      debounceMs: 1000,
-      enableConflictDetection: true,
-      enableOfflineQueue: true
+  // Initialize local data when entering edit mode
+  useEffect(() => {
+    if (isEditMode && !localData) {
+      setLocalData(initialData)
     }
-  )
+  }, [isEditMode, initialData, localData])
+
+  // Use either local data (in edit mode) or initial data (in view mode)
+  const prdData = isEditMode && localData ? localData : initialData
+
+  // Update field locally (no auto-save)
+  const updateField = useCallback((field: string, value: any) => {
+    if (isEditMode && localData) {
+      setLocalData((prev: any) => ({ ...prev, [field]: value }))
+    }
+  }, [isEditMode, localData])
 
   // Validation rules
   const validationRules = useMemo(() => [
@@ -153,22 +142,53 @@ export default function PRDCard({
     rules: validationRules
   })
 
+  // Manual save handler
+  const handleSave = useCallback(async () => {
+    if (!localData || !onUpdate) return
+    
+    setIsSaving(true)
+    try {
+      const { title, description, ...cardData } = localData
+      await onUpdate(prd.id, {
+        title,
+        description,
+        card_data: cardData
+      })
+      toast.success('PRD saved!')
+      setIsEditMode(false)
+      setLocalData(null) // Clear local data after save
+    } catch (error) {
+      toast.error('Failed to save PRD')
+      console.error('Save error:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }, [localData, onUpdate, prd.id])
+
+  // Cancel edit handler
+  const handleCancel = useCallback(() => {
+    setIsEditMode(false)
+    setLocalData(null) // Discard changes
+  }, [])
+
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    'cmd+s': () => {
-      forceSave()
-      toast.success('PRD saved!')
+    'cmd+s': isEditMode ? handleSave : undefined,
+    'cmd+e': () => {
+      if (!isEditMode) {
+        setIsEditMode(true)
+      }
     },
-    'cmd+e': () => setIsEditMode(!isEditMode)
+    'esc': isEditMode ? handleCancel : undefined
   })
 
   // Update field with validation
   const updatePrdField = useCallback((field: string, value: string) => {
     updateField(field, value)
-    if (field === 'prd_id' || field === 'version') {
+    if (isEditMode && (field === 'prd_id' || field === 'version')) {
       validateField(field, value)
     }
-  }, [updateField, validateField])
+  }, [updateField, validateField, isEditMode])
 
   // Status colors
   const statusColors = {
@@ -197,7 +217,50 @@ export default function PRDCard({
   // Card actions
   const actions = (
     <>
-      {onConvertToTRD && (
+      {/* Edit/Save/Cancel buttons */}
+      {!isEditMode ? (
+        <button
+          onClick={() => setIsEditMode(true)}
+          className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          title="Edit (Cmd+E)"
+        >
+          Edit
+        </button>
+      ) : (
+        <>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+              isSaving
+                ? 'bg-gray-400 text-white cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
+            title="Save changes (Cmd+S)"
+          >
+            {isSaving ? (
+              <>
+                <span className="inline-block animate-spin mr-1">⟳</span>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Check className="w-3 h-3 inline mr-1" />
+                Save
+              </>
+            )}
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={isSaving}
+            className="px-3 py-1.5 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+            title="Cancel (Esc)"
+          >
+            Cancel
+          </button>
+        </>
+      )}
+      {onConvertToTRD && !isEditMode && (
         <button
           onClick={() => onConvertToTRD(prd)}
           className="px-3 py-1.5 text-xs bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
@@ -207,7 +270,7 @@ export default function PRDCard({
           To TRD
         </button>
       )}
-      {onConvertToTasks && (
+      {onConvertToTasks && !isEditMode && (
         <button
           onClick={() => onConvertToTasks(prd)}
           className="px-3 py-1.5 text-xs bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
@@ -217,7 +280,7 @@ export default function PRDCard({
           To Tasks
         </button>
       )}
-      {onDuplicate && (
+      {onDuplicate && !isEditMode && (
         <button
           onClick={() => onDuplicate(prd.id)}
           className="p-1.5 text-gray-600 hover:text-green-600 rounded transition-colors"
@@ -226,7 +289,7 @@ export default function PRDCard({
           <Copy className="w-4 h-4" />
         </button>
       )}
-      {onDelete && (
+      {onDelete && !isEditMode && (
         <button
           onClick={() => onDelete(prd.id)}
           className="p-1.5 text-gray-600 hover:text-red-600 rounded transition-colors"
@@ -249,10 +312,9 @@ export default function PRDCard({
           isCollapsed={isCollapsed}
           onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
           isEditMode={isEditMode}
-          onToggleEditMode={() => setIsEditMode(!isEditMode)}
-          onTitleEdit={isEditMode ? (newTitle) => updatePrdField('title', newTitle) : undefined}
+          onToggleEditMode={undefined} // Disable header edit toggle
+          onTitleEdit={isEditMode ? (newTitle) => updateField('title', newTitle) : undefined}
           metadata={metadata}
-          saveStatus={saveStatus}
           actions={actions}
           onSelect={onSelect ? () => onSelect(prd.id) : undefined}
           isSelected={isSelected}
@@ -667,12 +729,6 @@ export default function PRDCard({
               />
             </CollapsibleSection>
 
-            {/* Save Error Display */}
-            {saveError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">Error saving: {saveError.message}</p>
-              </div>
-            )}
           </>
         )}
       </CardContainer>
