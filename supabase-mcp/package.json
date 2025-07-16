@@ -11,7 +11,9 @@
     "dev:http": "tsx src/http-server.ts",
     "http": "node dist/http-server.js",
     "server": "node server.js",
-    "railway": "node dist/http-server.js"
+    "railway": "node dist/http-server.js",
+    "unified": "node unified-server.js",
+    "unified:dev": "tsx src/unified-server.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",

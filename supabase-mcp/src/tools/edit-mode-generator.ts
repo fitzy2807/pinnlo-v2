@@ -288,6 +288,29 @@ function mapBlueprintType(blueprintType: string): string {
   return mappings[blueprintType] || blueprintType;
 }
 
+// Reverse mapping function - converts camelCase to kebab-case for database queries
+function camelCaseToKebabCase(camelCaseType: string): string {
+  const reverseMappings: Record<string, string> = {
+    'strategicContext': 'strategic-context',
+    'valuePropositions': 'value-propositions',
+    'customerExperience': 'customer-journey',
+    'personas': 'personas',
+    'okrs': 'okrs',
+    'kpis': 'kpis',
+    'workstreams': 'workstream',
+    'epics': 'epic',
+    'features': 'feature',
+    'userJourneys': 'user-journey',
+    'experienceSections': 'experience-section',
+    'serviceBlueprints': 'service-blueprint',
+    'organisationalCapabilities': 'organisational-capability',
+    'gtmPlays': 'gtm-play',
+    'techRequirements': 'tech-requirements'
+  };
+  
+  return reverseMappings[camelCaseType] || camelCaseType;
+}
+
 // Handler function following existing pattern
 export async function handleGenerateEditModeContent(args: any) {
   const { cardId, blueprintType, cardTitle, strategyId, userId, existingFields = {} } = args;
@@ -555,14 +578,18 @@ async function gatherContext(
       continue;
     }
     
+    // Convert camelCase context_blueprint to kebab-case for database query
+    const dbBlueprintType = camelCaseToKebabCase(context_blueprint);
+    console.log(`🔄 Blueprint mapping: ${context_blueprint} → ${dbBlueprintType}`);
+    
     // Fetch cards based on blueprint type
     let query = getSupabaseClient()
       .from('cards')
       .select('id, title, description, card_type, card_data, strategy_id')
-      .eq('user_id', userId)
-      .eq('card_type', context_blueprint);
+      .eq('created_by', userId)
+      .eq('card_type', dbBlueprintType);
     
-    console.log(`🔍 Query details: user_id=${userId}, card_type=${context_blueprint}, strategy_id=${strategyId || 'any'}`);
+    console.log(`🔍 Query details: created_by=${userId}, card_type=${dbBlueprintType}, strategy_id=${strategyId || 'any'}`);
     
     if (strategyId) {
       query = query.eq('strategy_id', strategyId);
@@ -575,16 +602,16 @@ async function gatherContext(
     const { data: cards, error } = await query;
     
     if (error) {
-      console.log(`❌ Error fetching ${context_blueprint} cards:`, error);
+      console.log(`❌ Error fetching ${context_blueprint} (${dbBlueprintType}) cards:`, error);
       continue;
     }
     
     if (!cards || cards.length === 0) {
-      console.log(`❌ No ${context_blueprint} cards found for user ${userId} ${strategyId ? `in strategy ${strategyId}` : '(global)'}`);
+      console.log(`❌ No ${context_blueprint} (${dbBlueprintType}) cards found for user ${userId} ${strategyId ? `in strategy ${strategyId}` : '(global)'}`);
       continue;
     }
     
-    console.log(`✅ Found ${cards.length} ${context_blueprint} cards:`, cards.map((c: any) => ({
+    console.log(`✅ Found ${cards.length} ${context_blueprint} (${dbBlueprintType}) cards:`, cards.map((c: any) => ({
       title: c.title,
       id: c.id,
       strategy_id: c.strategy_id,

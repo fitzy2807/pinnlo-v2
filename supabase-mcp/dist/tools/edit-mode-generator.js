@@ -83,95 +83,44 @@ async function getBlueprintFields(blueprintType) {
         console.log('Blueprint file exists:', fs.existsSync(blueprintPath));
         if (fs.existsSync(blueprintPath)) {
             const fileContent = fs.readFileSync(blueprintPath, 'utf8');
-            // Extract field definitions from the file
-            const fieldsMatch = fileContent.match(/fields:\s*\[([\s\S]*?)\]/);
+            // Extract field definitions from the file - use greedy match to capture all fields
+            const fieldsMatch = fileContent.match(/fields:\s*\[([\s\S]*)\],?\s*defaultValues/);
             console.log('Fields match found:', !!fieldsMatch);
             if (fieldsMatch) {
                 // Parse the fields and format them for the prompt
                 const fieldsText = fieldsMatch[1];
                 console.log('Fields text length:', fieldsText.length);
-                // Extract individual field objects - improved regex to handle nested structures
-                const fieldMatches = fieldsText.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g) || [];
-                console.log('Found field objects:', fieldMatches.length);
-                // If that doesn't work, try a different approach - split by field boundaries
-                if (fieldMatches.length === 0) {
-                    // Split by lines that start with whitespace and contain 'id:'
-                    const lines = fieldsText.split('\n');
-                    const fieldObjects = [];
-                    let currentField = '';
-                    for (const line of lines) {
-                        if (line.trim().startsWith('id:') && currentField) {
-                            fieldObjects.push(currentField);
-                            currentField = line;
-                        }
-                        else if (line.trim().startsWith('id:')) {
-                            currentField = line;
-                        }
-                        else if (currentField) {
-                            currentField += '\n' + line;
-                        }
-                    }
-                    if (currentField) {
-                        fieldObjects.push(currentField);
-                    }
-                    console.log('Alternative parsing found field objects:', fieldObjects.length);
-                    // Parse these field objects
-                    const altFieldDescriptions = fieldObjects.map(field => {
-                        const idMatch = field.match(/id:\s*['"`]([^'"`]+)['"`]/);
-                        const nameMatch = field.match(/name:\s*['"`]([^'"`]+)['"`]/);
-                        const typeMatch = field.match(/type:\s*['"`]([^'"`]+)['"`]/);
-                        const requiredMatch = field.match(/required:\s*(true|false)/);
-                        const descriptionMatch = field.match(/description:\s*['"`]([^'"`]+)['"`]/);
-                        if (idMatch && nameMatch && typeMatch) {
-                            const fieldType = typeMatch[1];
-                            const isRequired = requiredMatch ? requiredMatch[1] === 'true' : false;
-                            const description = descriptionMatch ? descriptionMatch[1] : '';
-                            // Map field types to expected JSON formats
-                            let jsonType = 'string';
-                            let example = '""';
-                            switch (fieldType) {
-                                case 'array':
-                                    jsonType = 'array of strings';
-                                    example = '["item1", "item2"]';
-                                    break;
-                                case 'enum':
-                                    jsonType = 'string (enum)';
-                                    example = '"option1"';
-                                    break;
-                                case 'textarea':
-                                    jsonType = 'string (multiline)';
-                                    example = '"Multi-line text content"';
-                                    break;
-                                case 'number':
-                                    jsonType = 'number';
-                                    example = '0';
-                                    break;
-                                case 'boolean':
-                                    jsonType = 'boolean';
-                                    example = 'true';
-                                    break;
-                                default:
-                                    jsonType = 'string';
-                                    example = '""';
-                            }
-                            return `- ${idMatch[1]}: ${nameMatch[1]} (${jsonType}) ${isRequired ? '[REQUIRED]' : '[OPTIONAL]'} - ${description || 'No description'} - Example: ${example}`;
-                        }
-                        return null;
-                    }).filter(Boolean);
-                    if (altFieldDescriptions.length > 0) {
-                        return altFieldDescriptions.join('\n');
-                    }
+                // Use a more robust approach to parse the field definitions
+                // Find all field boundaries by looking for 'id:' patterns
+                const fieldSeparatorRegex = /\s*\{\s*id:\s*['"`]([^'"`]+)['"`]/g;
+                const fieldBoundaries = [];
+                let match;
+                while ((match = fieldSeparatorRegex.exec(fieldsText)) !== null) {
+                    fieldBoundaries.push({
+                        id: match[1],
+                        startIndex: match.index,
+                        matchLength: match[0].length
+                    });
                 }
-                const fieldDescriptions = fieldMatches.map(field => {
-                    const idMatch = field.match(/id:\s*['"`]([^'"`]+)['"`]/);
-                    const nameMatch = field.match(/name:\s*['"`]([^'"`]+)['"`]/);
-                    const typeMatch = field.match(/type:\s*['"`]([^'"`]+)['"`]/);
-                    const requiredMatch = field.match(/required:\s*(true|false)/);
-                    const descriptionMatch = field.match(/description:\s*['"`]([^'"`]+)['"`]/);
-                    if (idMatch && nameMatch && typeMatch) {
+                console.log('Found field boundaries:', fieldBoundaries.length);
+                const fieldDescriptions = [];
+                for (let i = 0; i < fieldBoundaries.length; i++) {
+                    const currentField = fieldBoundaries[i];
+                    const nextField = fieldBoundaries[i + 1];
+                    const fieldStartIndex = currentField.startIndex;
+                    const fieldEndIndex = nextField ? nextField.startIndex : fieldsText.length;
+                    const fieldText = fieldsText.substring(fieldStartIndex, fieldEndIndex);
+                    // Extract field properties
+                    const nameMatch = fieldText.match(/name:\s*['"`]([^'"`]+)['"`]/);
+                    const typeMatch = fieldText.match(/type:\s*['"`]([^'"`]+)['"`]/);
+                    const requiredMatch = fieldText.match(/required:\s*(true|false)/);
+                    const descriptionMatch = fieldText.match(/description:\s*['"`]([^'"`]+)['"`]/);
+                    const placeholderMatch = fieldText.match(/placeholder:\s*['"`]([^'"`]+)['"`]/);
+                    if (nameMatch && typeMatch) {
                         const fieldType = typeMatch[1];
                         const isRequired = requiredMatch ? requiredMatch[1] === 'true' : false;
                         const description = descriptionMatch ? descriptionMatch[1] : '';
+                        const placeholder = placeholderMatch ? placeholderMatch[1] : '';
                         // Map field types to expected JSON formats
                         let jsonType = 'string';
                         let example = '""';
@@ -200,11 +149,14 @@ async function getBlueprintFields(blueprintType) {
                                 jsonType = 'string';
                                 example = '""';
                         }
-                        return `- ${idMatch[1]}: ${nameMatch[1]} (${jsonType}) ${isRequired ? '[REQUIRED]' : '[OPTIONAL]'} - ${description || 'No description'} - Example: ${example}`;
+                        const fieldDesc = `- ${currentField.id}: ${nameMatch[1]} (${jsonType}) ${isRequired ? '[REQUIRED]' : '[OPTIONAL]'} - ${description || placeholder || 'No description'} - Example: ${example}`;
+                        fieldDescriptions.push(fieldDesc);
                     }
-                    return null;
-                }).filter(Boolean);
-                return fieldDescriptions.join('\n');
+                }
+                console.log('Parsed field descriptions:', fieldDescriptions.length);
+                if (fieldDescriptions.length > 0) {
+                    return fieldDescriptions.join('\n');
+                }
             }
         }
         // Fallback: Return basic field structure
@@ -297,6 +249,27 @@ function mapBlueprintType(blueprintType) {
     };
     return mappings[blueprintType] || blueprintType;
 }
+// Reverse mapping function - converts camelCase to kebab-case for database queries
+function camelCaseToKebabCase(camelCaseType) {
+    const reverseMappings = {
+        'strategicContext': 'strategic-context',
+        'valuePropositions': 'value-propositions',
+        'customerExperience': 'customer-journey',
+        'personas': 'personas',
+        'okrs': 'okrs',
+        'kpis': 'kpis',
+        'workstreams': 'workstream',
+        'epics': 'epic',
+        'features': 'feature',
+        'userJourneys': 'user-journey',
+        'experienceSections': 'experience-section',
+        'serviceBlueprints': 'service-blueprint',
+        'organisationalCapabilities': 'organisational-capability',
+        'gtmPlays': 'gtm-play',
+        'techRequirements': 'tech-requirements'
+    };
+    return reverseMappings[camelCaseType] || camelCaseType;
+}
 // Handler function following existing pattern
 export async function handleGenerateEditModeContent(args) {
     const { cardId, blueprintType, cardTitle, strategyId, userId, existingFields = {} } = args;
@@ -329,11 +302,16 @@ async function performGeneration(args) {
         const startTime = Date.now();
         // Step 0: Detect strategy context if not provided (Agent 0)
         const detectedStrategyId = strategyId || await detectCurrentStrategy(userId, cardId, blueprintType);
+        console.log('=== STRATEGY CONTEXT DETECTION ===');
         console.log('Strategy context for generation:', {
             provided: strategyId,
             detected: detectedStrategyId,
-            final: detectedStrategyId
+            final: detectedStrategyId,
+            userId: userId,
+            cardId: cardId,
+            blueprintType: blueprintType
         });
+        console.log('=== END STRATEGY CONTEXT DETECTION ===');
         // Step 1: Fetch system prompt from database
         const { data: promptConfig, error: promptError } = await getSupabaseClient()
             .from('ai_system_prompts')
@@ -354,14 +332,25 @@ async function performGeneration(args) {
         const fieldDefinitions = await getBlueprintFields(blueprintType);
         console.log('Dynamic field definitions loaded for:', blueprintType);
         console.log('Field definitions:', fieldDefinitions);
-        // Step 2: Fetch context configuration
+        // Step 2: Fetch context configuration from system prompts
         const { data: contextConfig, error: contextError } = await getSupabaseClient()
-            .rpc('get_ai_context_config', { p_blueprint_type: blueprintType });
+            .rpc('get_ai_context_config_from_prompts', { p_blueprint_type: blueprintType });
         if (contextError) {
-            console.warn('Failed to fetch context config:', contextError);
+            console.warn('Failed to fetch context config from prompts:', contextError);
             // Continue without context - not fatal
         }
-        console.log('Context config found:', contextConfig?.length || 0, 'mappings');
+        console.log('=== CONTEXT CONFIGURATION ===');
+        console.log('Context config found:', contextConfig?.length || 0, 'mappings for', blueprintType);
+        if (contextConfig && contextConfig.length > 0) {
+            console.log('Context blueprints:', contextConfig.map((c) => ({
+                blueprint: c.context_blueprint,
+                maxCards: c.max_cards,
+                strategy: c.inclusion_strategy,
+                weight: c.weight,
+                description: c.description
+            })));
+        }
+        console.log('=== END CONTEXT CONFIGURATION ===');
         // Gather context if strategyId available (provided or detected)
         let contextSummary = '';
         let contextCards = [];
@@ -379,9 +368,12 @@ async function performGeneration(args) {
             contextSummary = context.summary;
             contextCards = context.cards;
         }
+        console.log('=== CONTEXT GATHERING RESULTS ===');
         console.log('Context gathered:', {
+            strategyId: detectedStrategyId,
             contextLength: contextSummary.length,
-            contextCardsCount: contextCards.length
+            contextCardsCount: contextCards.length,
+            contextConfigMappings: contextConfig?.length || 0
         });
         if (contextSummary.length > 0) {
             console.log('=== CONTEXT SUMMARY ===');
@@ -484,16 +476,22 @@ async function gatherContext(strategyId, userId, contextConfig) {
     console.log('Context config:', contextConfig);
     for (const config of contextConfig) {
         const { context_blueprint, max_cards, inclusion_strategy, summarization_required, summarization_prompt } = config;
-        console.log(`Processing context config: ${context_blueprint}, max_cards: ${max_cards}, strategy: ${inclusion_strategy}`);
+        console.log(`🔍 Processing context config: ${context_blueprint}, max_cards: ${max_cards}, strategy: ${inclusion_strategy}`);
         // Skip if inclusion strategy is 'if_exists' and no strategyId
-        if (inclusion_strategy === 'if_exists' && !strategyId)
+        if (inclusion_strategy === 'if_exists' && !strategyId) {
+            console.log(`⏭️  Skipping ${context_blueprint} - inclusion strategy requires strategyId`);
             continue;
+        }
+        // Convert camelCase context_blueprint to kebab-case for database query
+        const dbBlueprintType = camelCaseToKebabCase(context_blueprint);
+        console.log(`🔄 Blueprint mapping: ${context_blueprint} → ${dbBlueprintType}`);
         // Fetch cards based on blueprint type
         let query = getSupabaseClient()
             .from('cards')
-            .select('id, title, description, card_type, card_data')
-            .eq('user_id', userId)
-            .eq('card_type', context_blueprint);
+            .select('id, title, description, card_type, card_data, strategy_id')
+            .eq('created_by', userId)
+            .eq('card_type', dbBlueprintType);
+        console.log(`🔍 Query details: created_by=${userId}, card_type=${dbBlueprintType}, strategy_id=${strategyId || 'any'}`);
         if (strategyId) {
             query = query.eq('strategy_id', strategyId);
         }
@@ -502,14 +500,19 @@ async function gatherContext(strategyId, userId, contextConfig) {
         }
         const { data: cards, error } = await query;
         if (error) {
-            console.log(`Error fetching ${context_blueprint} cards:`, error);
+            console.log(`❌ Error fetching ${context_blueprint} (${dbBlueprintType}) cards:`, error);
             continue;
         }
         if (!cards || cards.length === 0) {
-            console.log(`No ${context_blueprint} cards found`);
+            console.log(`❌ No ${context_blueprint} (${dbBlueprintType}) cards found for user ${userId} ${strategyId ? `in strategy ${strategyId}` : '(global)'}`);
             continue;
         }
-        console.log(`Found ${cards.length} ${context_blueprint} cards:`, cards.map(c => c.title));
+        console.log(`✅ Found ${cards.length} ${context_blueprint} (${dbBlueprintType}) cards:`, cards.map((c) => ({
+            title: c.title,
+            id: c.id,
+            strategy_id: c.strategy_id,
+            hasDescription: !!c.description
+        })));
         contextCards.push(...cards);
         // Handle summarization if needed
         if (summarization_required && cards.length > 3) {
@@ -518,11 +521,19 @@ async function gatherContext(strategyId, userId, contextConfig) {
         }
         else {
             // Add individual cards to context
-            cards.forEach(card => {
+            cards.forEach((card) => {
                 contextSummaries.push(`${card.card_type}: ${card.title} - ${card.description || 'No description'}`);
             });
         }
     }
+    console.log('=== CONTEXT GATHERING COMPLETE ===');
+    console.log(`📋 Total context cards gathered: ${contextCards.length}`);
+    console.log(`📝 Context summary length: ${contextSummaries.join('\n\n').length} characters`);
+    console.log(`🎯 Context cards by type:`, contextCards.reduce((acc, card) => {
+        acc[card.card_type] = (acc[card.card_type] || 0) + 1;
+        return acc;
+    }, {}));
+    console.log('=== END CONTEXT GATHERING ===');
     return {
         summary: contextSummaries.join('\n\n'),
         cards: contextCards
