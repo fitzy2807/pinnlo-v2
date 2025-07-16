@@ -6,6 +6,7 @@ import { useAgentCards } from '@/hooks/useAgentCards'
 import { useAgentGroups, AgentGroup } from '@/hooks/useAgentGroups'
 import AgentConfigurationPanel from './AgentConfigurationPanel'
 import AutomationDashboard from '../intelligence/AutomationDashboard'
+import SystemPromptManager from './agents/SystemPromptManager'
 import { toast } from 'react-hot-toast'
 
 interface AgentHubProps {
@@ -133,6 +134,7 @@ export default function AgentHub({ onClose }: AgentHubProps) {
     { id: 'automation', label: 'Automation', icon: Zap, count: 1 },
     { id: 'integration', label: 'Integration', icon: GitBranch, count: 0 },
     { id: 'utilities', label: 'Utilities', icon: Wrench, count: 0 },
+    { id: 'system-management', label: 'System Management', icon: Settings, count: 1 },
     { id: 'custom-agents', label: 'Custom Agents', icon: Package, count: 0 },
     { id: 'archived', label: 'Archived', icon: Archive, count: 0 },
   ]
@@ -145,6 +147,7 @@ export default function AgentHub({ onClose }: AgentHubProps) {
     { id: 'version-control', label: 'Version Control' },
     { id: 'permissions', label: 'Permissions' },
     { id: 'automation-rules', label: 'Automation Rules' },
+    { id: 'system-prompt-manager', label: 'System Prompt Manager' },
   ]
 
   const handleSelectAll = () => {
@@ -614,6 +617,8 @@ export default function AgentHub({ onClose }: AgentHubProps) {
             <div className="flex-1 overflow-y-auto">
               {selectedTool === 'automation-rules' ? (
                 <AutomationDashboard />
+              ) : selectedTool === 'system-prompt-manager' ? (
+                <SystemPromptManager />
               ) : (
                 <div className="p-6 text-center text-gray-500">
                   {tools.find(t => t.id === selectedTool)?.label} functionality coming soon...

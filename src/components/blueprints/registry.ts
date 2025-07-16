@@ -59,7 +59,7 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
   
   // Research & Analysis
   'personas': personaConfig,
-  'customerExperience': customerJourneyConfig,
+  'customer-journey': customerJourneyConfig,
   'swot-analysis': swotConfig,
   'competitive-analysis': competitiveAnalysisConfig,
   
@@ -127,7 +127,7 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
 // Blueprint Categories for organization
 export const BLUEPRINT_CATEGORIES: Record<string, string[]> = {
   'Core Strategy': ['strategicContext', 'vision', 'valuePropositions', 'strategic-bet'],
-  'Research & Analysis': ['personas', 'customerExperience', 'swot-analysis', 'competitive-analysis', 'market-insight', 'experiment', 'market-intelligence', 'competitor-intelligence', 'trends-intelligence', 'technology-intelligence', 'stakeholder-intelligence', 'consumer-intelligence', 'risk-intelligence', 'opportunities-intelligence'],
+  'Research & Analysis': ['personas', 'customer-journey', 'swot-analysis', 'competitive-analysis', 'market-insight', 'experiment', 'market-intelligence', 'competitor-intelligence', 'trends-intelligence', 'technology-intelligence', 'stakeholder-intelligence', 'consumer-intelligence', 'risk-intelligence', 'opportunities-intelligence'],
   'Planning & Execution': ['okrs', 'problem-statement', 'workstreams', 'epics', 'features', 'business-model', 'go-to-market', 'gtmPlays', 'risk-assessment', 'roadmap'],
   'User Experience': ['userJourneys', 'experienceSections', 'serviceBlueprints'],
   'Organizational & Technical': ['organisationalCapabilities', 'techStack', 'techRequirements'],
@@ -162,7 +162,6 @@ export function getBlueprintConfig(blueprintId: string): BlueprintConfig | undef
   const mappings: Record<string, string> = {
     'strategic-context': 'strategicContext',
     'value-proposition': 'valuePropositions',
-    'customer-journey': 'customerExperience',
     'personas': 'personas',
     'okrs': 'okrs',
     'kpis': 'kpis',

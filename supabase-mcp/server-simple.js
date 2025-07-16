@@ -189,6 +189,96 @@ ${features.map(f => `- ${f.name}: CRUD operations with validation`).join('\n')}
   }
 });
 
+// Generic edit mode content generation endpoint
+app.post('/api/tools/generate_edit_mode_content', authenticateRequest, async (req, res) => {
+  try {
+    console.log('🚀 Received edit mode content generation request');
+    
+    const { blueprintType, cardTitle, strategyId, userId, existingFields } = req.body;
+    
+    console.log('🎯 Processing request:', { blueprintType, cardTitle, strategyId, userId });
+    
+    // Simple blueprint-specific prompts
+    const blueprintPrompts = {
+      vision: 'You are a strategic vision expert. Create an inspiring, actionable vision statement.',
+      swot: 'You are a strategic analyst. Create a balanced SWOT analysis.',
+      epic: 'You are an agile expert. Create user-centered epic descriptions with clear acceptance criteria.',
+      'technical-requirement': 'You are a technical architect. Create detailed technical requirements.',
+      'business-model': 'You are a business strategist. Create viable business model components.',
+      okr: 'You are an OKR expert. Create measurable objectives and key results.'
+    };
+    
+    const systemPrompt = blueprintPrompts[blueprintType] || 'You are a strategic planning expert.';
+    
+    const userPrompt = `Create comprehensive content for a ${blueprintType} card titled "${cardTitle}".
+    
+Generate relevant fields for this card type with professional, actionable content.
+Keep responses practical and specific to the card title.
+    
+Return response as JSON with field names as keys and content as values.`;
+    
+    console.log('🤖 Calling OpenAI API...');
+    
+    const openaiResult = await callOpenAI(systemPrompt, userPrompt);
+    
+    if (!openaiResult.success) {
+      console.error('❌ OpenAI call failed:', openaiResult.error);
+      
+      // Fallback response
+      const fallbackFields = {
+        description: `Generated content for ${cardTitle} ${blueprintType} card. Please review and customize as needed.`,
+        summary: `This ${blueprintType} focuses on ${cardTitle} and provides strategic guidance.`,
+        notes: 'Generated with fallback template - please customize for your specific needs.'
+      };
+      
+      return res.json({
+        success: true,
+        fields: fallbackFields,
+        model_used: 'fallback',
+        metadata: {
+          blueprintType,
+          cardTitle,
+          generatedWith: 'fallback',
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+    
+    console.log('✅ Generated edit mode content');
+    
+    // Try to parse as JSON, fallback to simple structure
+    let fields;
+    try {
+      fields = JSON.parse(openaiResult.content);
+    } catch {
+      fields = {
+        description: openaiResult.content,
+        summary: `AI-generated ${blueprintType} content for ${cardTitle}`,
+        generated: true
+      };
+    }
+    
+    res.json({
+      success: true,
+      fields,
+      model_used: 'gpt-3.5-turbo',
+      metadata: {
+        blueprintType,
+        cardTitle,
+        generatedWith: 'openai-gpt-3.5',
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error in edit mode content generation:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error'
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 MCP HTTP Server running on port ${PORT}`);

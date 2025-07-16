@@ -34,14 +34,14 @@ export const featureConfig: BlueprintConfig = {
     {
       id: 'userStories',
       name: 'User Stories',
-      type: 'object',
+      type: 'array',
       required: true,
       description: 'User stories in format: As a [user], I want [goal] so that [benefit]'
     },
     {
       id: 'acceptanceCriteria',
       name: 'Acceptance Criteria',
-      type: 'object',
+      type: 'array',
       required: true,
       description: 'Specific criteria that must be met for feature completion'
     },
@@ -96,8 +96,8 @@ export const featureConfig: BlueprintConfig = {
     epicId: '',
     linkedPersona: '',
     problemItSolves: '',
-    userStories: {},
-    acceptanceCriteria: {},
+    userStories: [],
+    acceptanceCriteria: [],
     priorityLevel: 'Should Have',
     estimation: '',
     dependencies: [],

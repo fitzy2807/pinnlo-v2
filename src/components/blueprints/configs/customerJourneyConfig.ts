@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const customerJourneyConfig: BlueprintConfig = {
-  id: 'customerExperience',
+  id: 'customer-journey',
   name: 'Customer Journey',
   description: 'Map the customer experience from awareness to advocacy',
   category: 'Research & Analysis',

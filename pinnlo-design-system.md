@@ -228,22 +228,29 @@ Uses Tailwind's default spacing scale:
 
 #### Sidebar Components
 - **Header**: Title + Close button (X icon)
-- **Intelligence Tools**: Dropdown menu (black bg button)
-  - Profile
-  - Upload Data/Link
-  - Text/Paste
-  - Automation
+- **Agents Section**: Dynamic agent buttons (replaces old Tools dropdown)
+  - Card Creator
+  - URL Analyzer
+  - Text & Paste Processor
+  - Auto-loaded from agent registry
 - **Categories**: Vertical list with counts
   - Dashboard, Market, Competitor, Trends, Technology, Stakeholder, Consumer, Risk, Opportunities, Saved Cards, Archive, Groups
 
 #### Main Content
-- **Header Bar**: Category icon + name, action buttons, card count
-- **Search Bar**: Search input + Sort dropdown + View toggle + Filters
-- **Advanced Filters Panel**: Collapsible with date range, sliders, checkboxes
-- **Card Grid/List**: IntelligenceCardList component
+- **Card Display**: Uses IntelligenceCardGrid component
+- **Preview Cards**: Magazine-style preview cards (IntelligenceCardPreview)
+- **Modal Overlay**: Full detail view (IntelligenceCardModal)
+- **Progressive Disclosure**: Preview → expand → modal pattern
+- **Smart Expandable**: First click expands, second click opens modal
+
+#### Key Features
+- **Instant Loading**: Preview cards render instantly (vs 12-28 second old cards)
+- **Expandable Content**: Key findings, relevance scores, action hints
+- **Smooth Animations**: 200ms expansion with delayed content entrance
+- **Dynamic Agents**: Agents loaded from registry, assignable to hub
 
 #### Icons Used
-X, Search, Filter, Settings, TrendingUp, Eye, BarChart3, Cpu, Crown, Target, AlertTriangle, Lightbulb, Bookmark, Archive, TestTube, Plus, ChevronDown, Grid3X3, List, Trash2, ExternalLink, Upload, Link, Menu, Folder, FolderPlus, Zap
+X, Search, Filter, Settings, TrendingUp, Eye, BarChart3, Cpu, Crown, Target, AlertTriangle, Lightbulb, Bookmark, Archive, TestTube, Plus, ChevronDown, Grid3X3, List, Trash2, ExternalLink, Upload, Link, Menu, Folder, FolderPlus, Zap, Bot
 
 ### 2. Strategy Bank
 
@@ -254,22 +261,25 @@ X, Search, Filter, Settings, TrendingUp, Eye, BarChart3, Cpu, Crown, Target, Ale
 
 #### Sidebar Components
 - **Back Button**: Returns to strategies list
+- **Agents Section**: Dynamic agent buttons
+  - Card Creator (shared from Intelligence Bank)
+  - Other agents as assigned
 - **Tools Section**:
   - Blueprint Manager
-  - Card Creator (Sparkles icon)
 - **Blueprints Section**: Draggable list with counts
 - **Groups Section**: Create button + group list
 
 #### Main Content
-- Dynamic content based on selected tool:
-  - Blueprint Manager
-  - Card Creator
-  - Strategy Bank content
+- **Card Display**: Uses IntelligenceCardGrid component (100% code reuse)
+- **Preview Cards**: Same preview system as Intelligence Bank
+- **Modal Overlay**: Same modal overlay as Intelligence Bank
+- **Data Transformation**: Transforms strategy data to Intelligence format
 
 #### Unique Features
-- Drag & drop blueprint reordering
-- Inline group creation
-- Tool-based content switching
+- **Component Reuse**: Uses exact same components as Intelligence Bank
+- **Data Transformation Layer**: Maps strategy fields to common format
+- **Blueprint Integration**: Dynamic fields from blueprint registry
+- **Drag & Drop**: Blueprint reordering functionality
 
 ### 3. Development Bank
 
@@ -278,23 +288,28 @@ X, Search, Filter, Settings, TrendingUp, Eye, BarChart3, Cpu, Crown, Target, Ale
 - **Structure**: Two-column standard
 
 #### Sidebar Components
-- **Tools Section**:
+- **Agents Section**: Dynamic agent buttons
   - Card Creator
-  - PRD Writer
-  - Tech Stack Diagnostic
-  - TRD Writer
-  - Tool 4, Tool 5
+  - URL Analyzer (if assigned)
+  - Text & Paste Processor (if assigned)
 - **Sections**: PRD, Tech Stack, Technical Requirements, Task Lists, Testing & QA, Deployment, Documentation, Code Review
 - **Groups**: Standard group management
 
 #### Main Content Features
-- **Context-Sensitive Controls**: Different buttons per section
-- **Quick Add Form**: Slides down from controls bar
-- **Specialized Cards**: PRDCard, TechnicalRequirementCard, TaskListCard
-- **View Restrictions**: Some sections force list view
+- **Card Display**: Uses IntelligenceCardGrid component (100% code reuse)
+- **Preview Cards**: Development-specific theming (PRD: blue, TRD: green, Task List: purple)
+- **Modal Overlay**: Same modal system with development-specific fields
+- **Progress Indicators**: Task list progress bars, status indicators
+- **Data Transformation**: Converts dev cards to Intelligence format
+
+#### Special Features
+- **TRUE Code Reuse**: All 280 lines of IntelligenceCardGrid code reused
+- **Development Theming**: Category-specific colors and indicators
+- **Progress Visualization**: Task completion bars and percentages
+- **Owner Display**: Product manager and team assignment
 
 #### Icons Used
-Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, Pin, Upload, Link2, Zap, ArrowUpDown, Sparkles, Edit2, FolderPlus, ChevronDown, User, EyeOff, Layers, MoreHorizontal, X, Users, Folder
+Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, Pin, Upload, Link2, Zap, ArrowUpDown, Sparkles, Edit2, FolderPlus, ChevronDown, User, EyeOff, Layers, MoreHorizontal, X, Users, Folder, Bot
 
 ### 4. Organisation Bank
 
@@ -302,93 +317,222 @@ Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Trash2, Copy,
 - **Type**: Identical to Development Bank
 - **Structure**: Standard two-column
 
-#### Sections
-- Companies
-- Departments
-- Teams
-- People
-- Divisions
-- Business Units
-- Partners
-- Archived
+#### Sidebar Components
+- **Agents Section**: Dynamic agent buttons
+  - Card Creator
+  - Other agents as assigned
+- **Sections**: Companies, Departments, Teams, People, Divisions, Business Units, Partners, Archived
+- **Groups**: Standard group management
+
+#### Main Content Features
+- **Card Display**: Uses IntelligenceCardGrid component (100% code reuse)
+- **Preview Cards**: Same preview system as other hubs
+- **Modal Overlay**: Same modal system with organisation-specific fields
+- **Section-Specific Blueprints**: Company, department, team, person blueprints
+
+#### Special Features
+- **Component Reuse**: Uses exact same components as other hubs
+- **Section-Specific Blueprints**: Different blueprints for different sections
+- **Consistent UX**: Same interaction patterns across all hubs
+- **Data Transformation**: Maps organisation data to common format
 
 #### Card Types
-All sections use standard MasterCard component
+All sections use IntelligenceCardGrid with data transformation
 
-### 5. Agent Hub (New)
+### 5. Agent Hub
 
 #### Layout
-- **Type**: Modal (similar to Intelligence Bank)
+- **Type**: Full-screen modal (Template Bank style)
+- **Structure**: Two-column (sidebar + main content)
 - **Icon**: Bot icon in header navigation
+
+#### Sidebar Components
+- **Header**: "Agent Hub" + Close button
+- **Agent Management**: Tools section
+  - Import Agents
+  - Export Configuration
+  - Reset Registry
+- **Categories**: Agent categories
+  - Content Creation
+  - Data Analysis
+  - Research & Discovery
+  - Automation
+  - Integration
+  - Utilities
+  - Custom Agents
+  - Archived
+- **Groups**: Agent groups with colors
+
+#### Main Content Features
+- **Agent Cards**: Grid of available agents
+- **Configuration Panel**: Agent assignment to hubs
+- **Hub Assignment**: Checkboxes for Intelligence, Strategy, Development, Organisation
+- **Agent Loader**: Dynamic component loading system
+- **Registry Management**: Create, update, delete agents
+
+#### Current Agents
+- **Card Creator**: AI-powered card generation
+- **URL Analyzer**: Web page analysis and intelligence extraction
+- **Text & Paste Processor**: Text analysis and multi-card generation
+
+#### Special Features
+- **Dynamic Assignment**: Agents can be assigned to any hub
+- **Component Loading**: Dynamic React.lazy loading
+- **Registry System**: LocalStorage-based agent registry
+- **Template Bank Architecture**: Follows established bank patterns
 
 ---
 
 ## Card Types & Patterns
 
-### 1. EnhancedMasterCard
+### 1. Universal Card System (Current Architecture)
 
-#### Structure
-- **Header**: Title, ID badge, action buttons
-- **Body**: Dynamic fields based on blueprint configuration
-- **Footer**: Save indicator, timestamps
+#### IntelligenceCardPreview (Preview Cards)
+- **Layout**: Magazine-style preview cards
+- **Features**: 
+  - Instant loading (vs 12-28 second old cards)
+  - Category-colored header dots
+  - Truncated description (3 lines)
+  - Visual metrics (progress bars for scores)
+  - Tag chips display
+  - Hover effects with elevation
+- **Interaction**: First click expands, second click opens modal
+- **Expandable Content**: Key findings, relevance scores, action hints
+- **Animation**: Smooth 200ms expansion with delayed content entrance
 
-#### Features
-- AI-enhanced fields with suggestions
-- Auto-save functionality
-- Undo/redo support
-- Keyboard shortcuts
-- Collapsible sections
-- Real-time validation
+#### IntelligenceCardModal (Detail View)
+- **Layout**: 60% viewport width, centered
+- **Structure**: Simple row-based layout (no collapsible sections)
+- **Features**:
+  - Edit/Save mode toggle
+  - All field types (text, textarea, select, array, multitext)
+  - Smooth open/close animations
+  - ESC key support
+- **Header**: Title + Edit/Save/Close buttons
+- **Body**: Field rows (label + content)
+
+#### IntelligenceCardGrid (Container)
+- **Features**:
+  - Manages card selection state
+  - Handles search/filtering
+  - Controls modal open/close
+  - Supports view density (compact/comfortable/expanded)
+  - Provides grid/list view modes
+- **Used By**: ALL hubs (Intelligence, Strategy, Development, Organisation)
+
+### 2. Data Transformation Pattern
+
+#### Universal Interface
+All hubs transform their data to common CardData format:
+```typescript
+interface CardData {
+  id: string;
+  title: string;
+  description: string;
+  cardType: string;
+  priority: 'High' | 'Medium' | 'Low';
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+  // Hub-specific fields mapped to common structure
+}
+```
+
+#### Hub-Specific Transformations
+- **Intelligence**: Maps `summary` to `description`, adds `intelligence_content`
+- **Strategy**: Maps blueprint fields to common format
+- **Development**: Maps `card_data` structure, adds progress indicators
+- **Organisation**: Maps section-specific blueprints
+
+### 3. Blueprint-Driven Field System
+
+#### Blueprint Configuration
+- **Location**: `/src/components/blueprints/configs/`
+- **Structure**: Field definitions with types and validation
+- **Registry**: Central registry at `/src/components/blueprints/registry.ts`
+- **Naming**: camelCase IDs matching database columns
+
+#### Field Types
+- **Text**: Single line input
+- **Textarea**: Multi-line input
+- **Select**: Dropdown with options
+- **Array**: Tag-based input
+- **Multitext**: Multiple textarea fields
+- **Date**: Date picker
+- **Number**: Numeric input
 
 #### Blueprint ID Prefixes
-- STR (Strategic Context)
-- VIS (Vision)
-- VAL (Value Proposition)
-- PER (Personas)
-- OKR (OKRs)
-- CJO (Customer Journey)
-- COM (Competitive Analysis)
-- SWO (SWOT Analysis)
-- BUS (Business Model)
-- GTM (Go-to-Market)
-- FIN (Financial Projections)
-- RSK (Risk Assessment)
-- ROA (Roadmap)
-- KPI (KPIs)
+- **STR**: Strategic Context
+- **VIS**: Vision
+- **VAL**: Value Proposition
+- **PER**: Personas
+- **OKR**: OKRs
+- **CJO**: Customer Journey
+- **COM**: Competitive Analysis
+- **SWO**: SWOT Analysis
+- **BUS**: Business Model
+- **GTM**: Go-to-Market
+- **FIN**: Financial Projections
+- **RSK**: Risk Assessment
+- **ROA**: Roadmap
+- **KPI**: KPIs
+- **PRD**: Product Requirements
+- **TRD**: Technical Requirements
+- **TSK**: Task Lists
 
-### 2. IntelligenceCard
+### 4. Category Themes and Visual Identity
 
-#### Layout
-- Category-colored header badge
-- Title and key info
-- Expandable content section
-- Metadata footer (date, source, scores)
+#### Intelligence Categories
+- **Market**: Green (bg-green-100, text-green-800, border-green-200)
+- **Competitor**: Blue (bg-blue-100, text-blue-800, border-blue-200)
+- **Trends**: Purple (bg-purple-100, text-purple-800, border-purple-200)
+- **Technology**: Indigo (bg-indigo-100, text-indigo-800, border-indigo-200)
+- **Stakeholder**: Yellow (bg-yellow-100, text-yellow-800, border-yellow-200)
+- **Consumer**: Red (bg-red-100, text-red-800, border-red-200)
+- **Risk**: Orange (bg-orange-100, text-orange-800, border-orange-200)
+- **Opportunities**: Teal (bg-teal-100, text-teal-800, border-teal-200)
 
-#### Interactive Elements
-- Expand/collapse content
-- Action menu (Edit, Save, Archive, Delete)
-- External link button
-- Selection checkbox
+#### Development Categories
+- **PRD**: Blue theme
+- **TRD**: Green theme
+- **Task List**: Purple theme
 
-#### Category-Specific Styling
-Each category has unique color scheme (see Category Colors)
+#### Visual Elements
+- **Category Dots**: Colored circles indicating category
+- **Progress Bars**: Visual representation of scores/progress
+- **Hover States**: Elevation and color changes
+- **Selection States**: Border and background changes
 
-### 3. Specialized Development Cards
+### 5. Legacy Card Components (Deprecated)
 
-#### PRDCard
-- Structured sections for requirements
-- Priority indicators
-- Status tracking
+#### EnhancedMasterCard (Legacy)
+- **Status**: Replaced by universal card system
+- **Performance**: 12-28 second render times
+- **Issues**: Complex nested components, poor performance
+- **Migration**: Replaced with preview + modal pattern
 
-#### TechnicalRequirementCard
-- Technical specifications
-- Dependency tracking
-- Implementation notes
+#### Specialized Development Cards (Legacy)
+- **PRDCard**: Replaced by universal system with PRD blueprint
+- **TechnicalRequirementCard**: Replaced by universal system with TRD blueprint
+- **TaskListCard**: Replaced by universal system with Task List blueprint
 
-#### TaskListCard
-- Task items with checkboxes
-- Progress indicators
-- Due date tracking
+### 6. Smart Expandable Cards
+
+#### Progressive Disclosure Pattern
+1. **Scanning Phase**: Lightweight preview cards
+2. **Decision Phase**: Expand to see key findings
+3. **Action Phase**: Click through to full modal editor
+
+#### Expansion Behavior
+- **First Click**: Expands card to show key findings (+60px height)
+- **Second Click**: Opens full modal editor
+- **Animation**: 200ms expansion with delayed content entrance
+- **Content**: Key findings, relevance score, action hints
+
+#### Visual Indicators
+- **Chevron Icons**: Down/up for expand/collapse
+- **Hover States**: Preserved during expansion
+- **Quick Actions**: Hidden when expanded to reduce clutter
 
 ---
 
@@ -521,60 +665,141 @@ Each category has unique color scheme (see Category Colors)
 ### Component Usage by Hub
 
 #### Intelligence Bank
-- Primary: Search, Filter, Grid/List toggle
-- Categories: All category icons
-- Actions: Save, Archive, Delete, Edit
-- Tools: Upload, Link, Menu, Zap
+- **Primary**: Search, Filter, Grid/List toggle
+- **Categories**: All category icons (TrendingUp, Eye, BarChart3, etc.)
+- **Actions**: Save, Archive, Delete, Edit
+- **Agents**: Bot icon + dynamic agent buttons
+- **Cards**: IntelligenceCardPreview with expandable content
+- **Modal**: IntelligenceCardModal with edit/save functionality
 
 #### Strategy Bank
-- Primary: Sparkles (AI), drag handles
-- Actions: FolderPlus for groups
-- Minimal icon usage
+- **Primary**: Sparkles (AI), drag handles
+- **Actions**: FolderPlus for groups
+- **Agents**: Bot icon + assigned agents
+- **Cards**: IntelligenceCardPreview (100% code reuse)
+- **Modal**: IntelligenceCardModal (100% code reuse)
+- **Data**: Transformation layer to common format
 
 #### Development Bank
-- Primary: FileText, Database, Settings
-- Actions: Full action set
-- Views: Grid/List, Filter
-- Specialized: Layers, Pin
+- **Primary**: FileText, Database, Settings
+- **Actions**: Full action set
+- **Views**: Grid/List, Filter
+- **Agents**: Bot icon + assigned agents
+- **Cards**: IntelligenceCardPreview with dev theming
+- **Modal**: IntelligenceCardModal with dev fields
+- **Special**: Progress bars, status indicators
 
 #### Organisation Bank
-- Primary: Users, User, Building2
-- Standard action set
-- Groups: Folder icons
+- **Primary**: Users, User, Building2
+- **Actions**: Standard action set
+- **Groups**: Folder icons
+- **Agents**: Bot icon + assigned agents
+- **Cards**: IntelligenceCardPreview (100% code reuse)
+- **Modal**: IntelligenceCardModal (100% code reuse)
+- **Blueprints**: Section-specific configurations
 
 #### Agent Hub
-- Primary: Bot icon
-- (Full implementation pending)
+- **Primary**: Bot icon in header
+- **Layout**: Template Bank architecture
+- **Cards**: Agent cards with assignment checkboxes
+- **Features**: Dynamic loading, registry management
+- **Assignment**: Hub checkboxes for dynamic assignment
 
 ---
 
 ## Implementation Notes
 
 ### CSS Architecture
-- Uses Tailwind CSS utility classes
-- Custom components defined in globals.css
-- Component-specific styles in component files
-- Consistent use of @apply for complex patterns
+- **Framework**: Tailwind CSS utility classes
+- **Custom Components**: Defined in globals.css
+- **Component Styles**: Component-specific styles in component files
+- **Patterns**: Consistent use of @apply for complex patterns
+- **Animations**: CSS-in-JS for complex animations in card components
 
 ### Responsive Design
-- Mobile-first approach
-- Breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
-- Sidebar collapses on mobile
-- Grid columns adjust based on screen size
+- **Approach**: Mobile-first design
+- **Breakpoints**: sm (640px), md (768px), lg (1024px), xl (1280px)
+- **Sidebar**: Collapses on mobile
+- **Grid**: Columns adjust based on screen size
+- **Cards**: Responsive layout with auto-fit columns
 
 ### Performance Considerations
-- Lazy loading for modals
-- Virtualization for long lists
-- Debounced search inputs
-- Optimistic UI updates
+- **Card Loading**: Instant preview card rendering (vs 12-28 second legacy)
+- **Modal Loading**: Lazy loading for modals
+- **Virtualization**: For long lists (when needed)
+- **Debouncing**: Search inputs and auto-save
+- **Optimistic Updates**: UI updates before server confirmation
+- **Component Reuse**: Single IntelligenceCardGrid serves all hubs
+
+### Universal Card System Benefits
+- **Performance**: 100% shared code reduces bundle size
+- **Consistency**: Identical UX across all hubs
+- **Maintainability**: Single component to maintain
+- **Scalability**: Easy to add new hubs or card types
+- **Testing**: Single component to test thoroughly
+
+### Data Transformation Architecture
+- **Pattern**: Each hub transforms data to common CardData format
+- **Benefits**: Enables component reuse while preserving data integrity
+- **Implementation**: Transformation happens at component level
+- **Flexibility**: Supports different database schemas per hub
+
+### Agent System Architecture
+- **Registry**: LocalStorage-based agent registry
+- **Loading**: Dynamic React.lazy component loading
+- **Assignment**: Agents can be assigned to any hub
+- **Extension**: Easy to add new agents
+- **Consistency**: Template Bank architecture pattern
 
 ### Accessibility
-- Focus management
-- Keyboard navigation
-- ARIA labels
-- Color contrast compliance
-- Screen reader support
+- **Focus Management**: Proper focus handling in modals
+- **Keyboard Navigation**: Arrow keys, Enter, ESC support
+- **ARIA Labels**: Screen reader support
+- **Color Contrast**: WCAG AA compliance
+- **Screen Reader**: Proper semantic markup
+
+### Migration Strategy
+- **Legacy Components**: Marked as deprecated but kept for reference
+- **Performance**: New system provides instant loading
+- **User Experience**: Progressive disclosure pattern
+- **Code Quality**: Reduced complexity through component unification
+
+### Future Considerations
+- **Virtualization**: For datasets with 1000+ cards
+- **Offline Support**: Enhanced offline capabilities
+- **Real-time**: Multi-user collaboration features
+- **Performance**: Bundle size optimization
+- **Accessibility**: Enhanced keyboard navigation
 
 ---
 
-This design system documentation provides a comprehensive reference for creating a Figma design system for Pinnlo. All measurements, colors, and patterns are based on the actual implementation in the codebase.
+## Change Log (v2.5.0 Updates)
+
+### Major Architecture Changes
+1. **Universal Card System**: All hubs now use IntelligenceCardGrid
+2. **Agent System**: Dynamic agent assignment and loading
+3. **Preview Cards**: Magazine-style instant-loading cards
+4. **Modal System**: Unified modal overlay across all hubs
+5. **Data Transformation**: Common interface for all card types
+
+### Performance Improvements
+- **Render Time**: From 12-28 seconds to instant loading
+- **Code Reuse**: 100% component sharing across hubs
+- **Bundle Size**: Reduced through component unification
+- **Memory**: Optimized rendering and cleanup
+
+### UX Enhancements
+- **Progressive Disclosure**: Preview → expand → modal pattern
+- **Smart Expansion**: Two-click interaction model
+- **Smooth Animations**: 200ms transitions throughout
+- **Consistent Patterns**: Identical UX across all hubs
+
+### Technical Debt Reduction
+- **Legacy Components**: Replaced with universal system
+- **Code Duplication**: Eliminated through component reuse
+- **Complexity**: Simplified through unified architecture
+- **Maintainability**: Single component to maintain
+
+---
+
+This design system documentation provides a comprehensive reference for creating a Figma design system for Pinnlo. All measurements, colors, and patterns are based on the actual implementation in the codebase and reflect the current v2.5.0 architecture with universal card system and agent integration.
