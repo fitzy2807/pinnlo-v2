@@ -422,7 +422,7 @@ ${cardDetails}
 
   public start() {
     try {
-      const server = this.app.listen(this.port, '127.0.0.1', () => {
+      const server = this.app.listen(this.port, '0.0.0.0', () => {
         console.log(`🚀 HTTP MCP Server running on port ${this.port}`);
         console.log(`📋 Available at: http://localhost:${this.port}`);
         console.log(`🏥 Health check: http://localhost:${this.port}/health`);
