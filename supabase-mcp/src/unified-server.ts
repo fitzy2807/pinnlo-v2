@@ -43,6 +43,25 @@ import {
   editModeGeneratorTools, 
   handleGenerateEditModeContent 
 } from './tools/edit-mode-generator.js';
+import { 
+  elevenLabsTools,
+  handleGetElevenLabsVoices,
+  handleGetElevenLabsVoice,
+  handleElevenLabsTextToSpeech,
+  handleElevenLabsSpeechToText,
+  handleGetElevenLabsModels,
+  handleGetElevenLabsUser,
+  handleGetElevenLabsSubscription
+} from './tools/elevenlabs-tools.js';
+import { 
+  elevenLabsConversationalTools,
+  handleElevenLabsCreateTool,
+  handleElevenLabsGetTools,
+  handleElevenLabsCreateAgent,
+  handleElevenLabsGetAgents,
+  handleElevenLabsCreatePinnloIntegration
+} from './tools/elevenlabs-conversational-ai.js';
+import { setupElevenLabsWebhookRoutes } from './tools/elevenlabs-webhook-handlers.js';
 
 interface SupabaseConfig {
   url: string;
@@ -132,7 +151,9 @@ class UnifiedMcpServer {
       ...developmentBankTools,
       ...batchedDevelopmentBankTools,
       ...terminalTools,
-      ...editModeGeneratorTools
+      ...editModeGeneratorTools,
+      ...elevenLabsTools,
+      ...elevenLabsConversationalTools
     ];
 
     // Register list tools handler
@@ -178,6 +199,9 @@ class UnifiedMcpServer {
     this.httpApp.get('/health', (req, res) => {
       res.json({ status: 'healthy', timestamp: new Date().toISOString() });
     });
+
+    // Setup ElevenLabs webhook routes
+    setupElevenLabsWebhookRoutes(this.httpApp, this.supabase);
 
     // Authentication middleware (backward compatible)
     const authenticateRequest = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -464,7 +488,9 @@ ${cardDetails}
         ...developmentBankTools,
         ...batchedDevelopmentBankTools,
         ...terminalTools,
-        ...editModeGeneratorTools
+        ...editModeGeneratorTools,
+        ...elevenLabsTools,
+        ...elevenLabsConversationalTools
       ];
       res.json({
         tools: allTools.map(tool => ({
@@ -510,7 +536,7 @@ ${cardDetails}
         case 'generate_technical_requirement':
           return await handleGenerateTechnicalRequirement(args);
         case 'analyze_url':
-          return await handleAnalyzeUrl(args);
+          return await handleAnalyzeUrl(args, this.supabase);
         case 'process_intelligence_text':
           return await handleProcessIntelligenceText(args, this.supabase);
         case 'generate_automation_intelligence':
@@ -523,6 +549,30 @@ ${cardDetails}
           return await handleGetProjectStatus(args);
         case 'generate_edit_mode_content':
           return await handleGenerateEditModeContent(args);
+        case 'get_elevenlabs_voices':
+          return await handleGetElevenLabsVoices(args);
+        case 'get_elevenlabs_voice':
+          return await handleGetElevenLabsVoice(args);
+        case 'elevenlabs_text_to_speech':
+          return await handleElevenLabsTextToSpeech(args);
+        case 'elevenlabs_speech_to_text':
+          return await handleElevenLabsSpeechToText(args);
+        case 'get_elevenlabs_models':
+          return await handleGetElevenLabsModels(args);
+        case 'get_elevenlabs_user':
+          return await handleGetElevenLabsUser(args);
+        case 'get_elevenlabs_subscription':
+          return await handleGetElevenLabsSubscription(args);
+        case 'elevenlabs_create_tool':
+          return await handleElevenLabsCreateTool(args);
+        case 'elevenlabs_get_tools':
+          return await handleElevenLabsGetTools(args);
+        case 'elevenlabs_create_agent':
+          return await handleElevenLabsCreateAgent(args);
+        case 'elevenlabs_get_agents':
+          return await handleElevenLabsGetAgents(args);
+        case 'elevenlabs_create_pinnlo_integration':
+          return await handleElevenLabsCreatePinnloIntegration(args);
         default:
           throw new Error(`Unknown tool: ${toolName}`);
       }
