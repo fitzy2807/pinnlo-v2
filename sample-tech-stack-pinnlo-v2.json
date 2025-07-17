@@ -1,0 +1,84 @@
+{
+  "stack_name": "Pinnlo V2 Strategy Platform",
+  "stack_type": "Full-Stack Web Application",
+  "architecture_pattern": "Jamstack",
+  "primary_use_case": "Strategy management and collaborative planning platform for organizations to create, manage, and execute strategic initiatives through AI-powered tools and structured methodologies",
+  "last_updated": "2025-01-17",
+  "frontend": [
+    "Next.js-14",
+    "React-18",
+    "TypeScript",
+    "Tailwind-CSS",
+    "Headless-UI",
+    "Lucide-React",
+    "Framer-Motion",
+    "React-Hot-Toast"
+  ],
+  "backend": [
+    "Next.js-API-Routes",
+    "Node.js",
+    "Supabase-Auth",
+    "REST-APIs",
+    "Edge-Functions",
+    "MCP-Protocol",
+    "HTTP-Server-3001"
+  ],
+  "database": [
+    "PostgreSQL",
+    "Supabase",
+    "Row-Level-Security",
+    "Real-time-subscriptions",
+    "JSONB-fields",
+    "UUID-primary-keys",
+    "Triggers-and-functions"
+  ],
+  "infrastructure": [
+    "Vercel",
+    "CDN",
+    "Edge-Functions",
+    "Git-Deployment",
+    "Environment-Variables",
+    "Railway-MCP-Server",
+    "Serverless-Functions"
+  ],
+  "platforms": [
+    "GitHub",
+    "Supabase-Platform",
+    "Vercel-Platform",
+    "Railway-Deployment",
+    "OpenAI-Platform",
+    "Claude-API"
+  ],
+  "ai": [
+    "OpenAI-GPT-4o-mini",
+    "Claude-3",
+    "MCP-Protocol",
+    "AI-Generation-Tools",
+    "Context-Builder",
+    "Prompt-Engineering",
+    "Fallback-Logic"
+  ],
+  "development": [
+    "npm",
+    "TypeScript",
+    "Jest",
+    "ESLint",
+    "Git",
+    "VS-Code",
+    "Testing-Library",
+    "Prettier",
+    "Autoprefixer",
+    "PostCSS"
+  ],
+  "integrations": [
+    "Supabase-Auth",
+    "OpenAI-API",
+    "Claude-API",
+    "MCP-Server",
+    "Real-time-subscriptions",
+    "Webhook-processing",
+    "Email-integration"
+  ],
+  "key_decisions": "Chose Supabase over Firebase for better PostgreSQL support and Row Level Security. Selected Next.js 14 for its App Router and excellent TypeScript support. Implemented MCP (Model Context Protocol) for AI tool orchestration to enable sophisticated AI-powered features. Used Tailwind CSS for rapid UI development while maintaining design consistency. Chose Lucide React for comprehensive, lightweight icon library.",
+  "migration_notes": "Plan to migrate from Next.js 14 to 15 in Q2 2025 for improved performance. Considering migration from OpenAI GPT-4o-mini to GPT-4o for enhanced AI capabilities. Evaluating Supabase Edge Functions for better performance. May implement Redis for caching in high-traffic scenarios. Considering addition of Stripe for payment processing in future releases."
+}
