@@ -10,7 +10,6 @@ import { customerJourneyConfig } from './configs/customerJourneyConfig'
 import { swotConfig } from './configs/swotConfig'
 import { competitiveAnalysisConfig } from './configs/competitiveAnalysisConfig'
 import { businessModelConfig } from './configs/businessModelConfig'
-import { goToMarketConfig } from './configs/goToMarketConfig'
 import { financialProjectionsConfig } from './configs/financialProjectionsConfig'
 import { riskAssessmentConfig } from './configs/riskAssessmentConfig'
 import { roadmapConfig } from './configs/roadmapConfig'
@@ -22,12 +21,11 @@ import { problemStatementConfig } from './configs/problemStatementConfig'
 import { workstreamConfig } from './configs/workstreamConfig'
 import { epicConfig } from './configs/epicConfig'
 import { featureConfig } from './configs/featureConfig'
-import { userJourneyConfig } from './configs/userJourneyConfig'
-import { experienceSectionConfig } from './configs/experienceSectionConfig'
 import { serviceBlueprintConfig } from './configs/serviceBlueprintConfig'
 import { organisationalCapabilityConfig } from './configs/organisationalCapabilityConfig'
 import { gtmPlayConfig } from './configs/gtmPlayConfig'
 import { techStackConfig } from './configs/techStackConfig'
+import { techStackEnhancedConfig } from './configs/techStackEnhancedConfig'
 import { technicalRequirementConfig } from './configs/technicalRequirementConfig'
 import { costDriverConfig } from './configs/costDriverConfig'
 import { revenueDriverConfig } from './configs/revenueDriverConfig'
@@ -70,7 +68,6 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
   // Planning & Execution
   'okrs': okrConfig,
   'business-model': businessModelConfig,
-  'go-to-market': goToMarketConfig,
   'risk-assessment': riskAssessmentConfig,
   'roadmap': roadmapConfig,
   
@@ -85,12 +82,12 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
   'workstreams': workstreamConfig,
   'epics': epicConfig,
   'features': featureConfig,
-  'userJourneys': userJourneyConfig,
-  'experienceSections': experienceSectionConfig,
   'serviceBlueprints': serviceBlueprintConfig,
   'organisationalCapabilities': organisationalCapabilityConfig,
   'gtmPlays': gtmPlayConfig,
   'techStack': techStackConfig,
+  'tech-stack': techStackConfig,
+  'tech-stack-enhanced': techStackEnhancedConfig,
   'techRequirements': technicalRequirementConfig,
   'market-insight': marketInsightConfig,
   'experiment': experimentConfig,
@@ -138,9 +135,9 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
 export const BLUEPRINT_CATEGORIES: Record<string, string[]> = {
   'Core Strategy': ['strategicContext', 'vision', 'valuePropositions', 'strategic-bet'],
   'Research & Analysis': ['personas', 'customer-journey', 'swot-analysis', 'competitive-analysis', 'market-insight', 'experiment', 'market-intelligence', 'competitor-intelligence', 'trends-intelligence', 'technology-intelligence', 'stakeholder-intelligence', 'consumer-intelligence', 'risk-intelligence', 'opportunities-intelligence'],
-  'Planning & Execution': ['okrs', 'problem-statement', 'workstreams', 'epics', 'features', 'prd', 'trd', 'business-model', 'go-to-market', 'gtmPlays', 'risk-assessment', 'roadmap'],
-  'User Experience': ['userJourneys', 'experienceSections', 'serviceBlueprints'],
-  'Organizational & Technical': ['organisationalCapabilities', 'techStack', 'techRequirements'],
+  'Planning & Execution': ['okrs', 'problem-statement', 'workstreams', 'epics', 'features', 'prd', 'trd', 'business-model', 'gtmPlays', 'risk-assessment', 'roadmap'],
+  'User Experience': ['serviceBlueprints'],
+  'Organizational & Technical': ['organisationalCapabilities', 'techStack', 'tech-stack', 'tech-stack-enhanced', 'techRequirements'],
   'Measurement': ['cost-driver', 'revenue-driver', 'kpis', 'financial-projections'],
   'Template': ['template'],
   'Organisation': ['organisation', 'company', 'department', 'team', 'person']
@@ -178,8 +175,6 @@ export function getBlueprintConfig(blueprintId: string): BlueprintConfig | undef
     'workstream': 'workstreams',
     'epic': 'epics',
     'feature': 'features',
-    'user-journey': 'userJourneys',
-    'experience-section': 'experienceSections',
     'service-blueprint': 'serviceBlueprints',
     'organisational-capability': 'organisationalCapabilities',
     'gtm-play': 'gtmPlays',
@@ -189,7 +184,10 @@ export function getBlueprintConfig(blueprintId: string): BlueprintConfig | undef
     'technical-requirements': 'trd',
     'technical-requirement': 'trd',
     'technical-requirement-structured': 'trd',
-    'task-list': 'features'
+    'task-list': 'features',
+    // Tech stack mappings
+    'tech-stack': 'tech-stack',
+    'tech-stack-enhanced': 'tech-stack-enhanced'
   }
   
   if (mappings[blueprintId] && BLUEPRINT_REGISTRY[mappings[blueprintId]]) {

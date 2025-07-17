@@ -192,8 +192,8 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
           <div className="space-y-1">
             {Object.entries(value).map(([key, val]) => (
               <div key={key} className="text-sm">
-                <span className="font-medium text-gray-600">{key}:</span>{' '}
-                <span>{String(val)}</span>
+                <span className="font-medium text-black">{key}:</span>{' '}
+                <span className="text-black">{String(val)}</span>
               </div>
             ))}
           </div>
@@ -209,10 +209,10 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
         )
       
       case 'textarea':
-        return <div className="whitespace-pre-wrap">{value}</div>
+        return <div className="whitespace-pre-wrap text-black">{value}</div>
       
       default:
-        return <span>{String(value)}</span>
+        return <span className="text-black">{String(value)}</span>
     }
   }
 
@@ -232,7 +232,7 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
       {/* Blueprint-Specific Fields Section */}
       <div className={`rounded-lg border-l-4 ${getFieldSectionColor(0)} p-4`}>
         <div className="flex items-center space-x-2 mb-3">
-          <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+          <span className="text-sm font-semibold text-black uppercase tracking-wide">
             {blueprintConfig.name} Details
           </span>
         </div>
@@ -240,7 +240,7 @@ export function BlueprintFields({ cardType, cardData, isEditing, onChange }: Blu
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {blueprintConfig.fields.map((field, index) => (
             <div key={field.id} className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-black">
                 {field.name}
                 {field.required && <span className="text-red-500 ml-1">*</span>}
               </label>

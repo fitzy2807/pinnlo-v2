@@ -8,8 +8,9 @@
   color: #000000;
 }
 
+/* Ensure text is always black for readability */
 .masterCard * {
-  color: inherit;
+  color: #000000 !important;
 }
 
 /* Header with gradient background */

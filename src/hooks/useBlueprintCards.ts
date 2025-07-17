@@ -57,9 +57,7 @@ export function useBlueprintCards(strategyId?: string) {
           'test-scenario': 'features',
           
           // User experience mappings
-          'user-journey': 'userJourneys',
           'customer-journey': 'customer-journey',
-          'experience-section': 'experienceSections',
           'service-blueprint': 'serviceBlueprints',
           
           // Strategy mappings

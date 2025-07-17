@@ -23,6 +23,14 @@ export default function IntelligenceGroups({
   const [showCreator, setShowCreator] = useState(false)
   const [editingGroup, setEditingGroup] = useState<IntelligenceGroup | null>(null)
   
+  console.log('🔍 IntelligenceGroups render:', { 
+    groups: groups.length, 
+    loading, 
+    error, 
+    searchTerm,
+    viewMode 
+  })
+  
   // Selection state for cards within groups
   const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set())
   const [isSelectionMode, setIsSelectionMode] = useState(false)

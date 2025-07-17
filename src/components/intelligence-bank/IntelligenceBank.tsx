@@ -208,6 +208,9 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupDescription, setNewGroupDescription] = useState('')
   const [newGroupColor, setNewGroupColor] = useState('blue')
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false)
+  const [groupCards, setGroupCards] = useState<CardData[]>([])
+  const [loadingGroupCards, setLoadingGroupCards] = useState(false)
   
   // Refresh key for forcing component re-mount
   const [refreshKey, setRefreshKey] = useState(0)
@@ -227,7 +230,7 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
     toggleSaved,
     toggleArchived
   } = useIntelligenceBankCards()
-  const { groups } = useIntelligenceGroups()
+  const { groups, createGroup, getGroupCards } = useIntelligenceGroups()
   
   const categoryCounts = getCategoryCounts()
   const statusCounts = getStatusCounts()
@@ -291,32 +294,91 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
   }
 
   // Handlers
-  const handleGroupClick = (groupId: string) => {
+  const handleGroupClick = async (groupId: string) => {
     setSelectedGroup(groupId)
     setSelectedCategory('') // Clear category selection
     setViewType('group')
     setSelectedCardIds(new Set())
+    
+    // Load group cards
+    setLoadingGroupCards(true)
+    try {
+      const groupCardsData = await getGroupCards(groupId)
+      console.log('Group cards loaded:', groupCardsData)
+      
+      // Transform the data to match CardData interface
+      const transformedCards = groupCardsData.map(item => {
+        const card = item.intelligence_cards
+        return {
+          ...card,
+          cardType: card.category, // Use category as cardType
+          card_type: card.category, // Use category as card_type
+          description: card.summary, // Map summary to description
+          tags: card.tags || [],
+          relationships: [], // Intelligence cards don't have relationships
+          strategicAlignment: card.strategic_implications || '',
+          createdDate: card.created_at,
+          lastModified: card.updated_at,
+          creator: '',
+          owner: '',
+          priority: 'Medium',
+          confidenceLevel: 'Medium',
+          priorityRationale: '',
+          confidenceRationale: '',
+          // Intelligence-specific fields
+          intelligence_content: card.intelligence_content,
+          key_findings: card.key_findings || [],
+          credibility_score: card.credibility_score || 5,
+          relevance_score: card.relevance_score || 5,
+          source_reference: card.source_reference || '',
+          recommended_actions: card.recommended_actions || ''
+        }
+      })
+      
+      setGroupCards(transformedCards)
+    } catch (error) {
+      console.error('Error loading group cards:', error)
+      toast.error('Failed to load group cards')
+      setGroupCards([])
+    } finally {
+      setLoadingGroupCards(false)
+    }
   }
   
   const handleCreateGroupSubmit = async () => {
     if (!newGroupName.trim()) {
-      alert('Please enter a group name')
+      toast.error('Please enter a group name')
       return
     }
 
+    setIsCreatingGroup(true)
+    
     try {
-      // Using the existing groups hook - needs to be extended with createGroup method
-      // For now, just show a message
-      alert('Group creation will be implemented with the groups hook')
+      const newGroup = await createGroup({
+        name: newGroupName.trim(),
+        description: newGroupDescription.trim(),
+        color: newGroupColor
+      })
       
-      // Reset form
-      setNewGroupName('')
-      setNewGroupDescription('')
-      setNewGroupColor('blue')
-      setShowCreateGroupForm(false)
+      if (newGroup) {
+        toast.success('Group created successfully!')
+        
+        // Reset form
+        setNewGroupName('')
+        setNewGroupDescription('')
+        setNewGroupColor('blue')
+        setShowCreateGroupForm(false)
+        
+        // Refresh the component to show updated counts
+        globalRefresh()
+      } else {
+        toast.error('Failed to create group. Please try again.')
+      }
     } catch (error) {
       console.error('Failed to create group:', error)
-      alert('Failed to create group. Please try again.')
+      toast.error('Failed to create group. Please try again.')
+    } finally {
+      setIsCreatingGroup(false)
     }
   }
   
@@ -450,17 +512,17 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
   
   // Helper function to get currently visible and filtered cards
   const getVisibleCards = () => {
-    // Get cards based on selected category
-    const categoryCards = 
+    // Get cards based on view type
+    const currentCards = viewType === 'group' ? groupCards : 
       selectedCategory === 'saved' ? getCardsByStatus('saved') :
       selectedCategory === 'archive' ? getCardsByStatus('archived') :
       getCardsByCategory(selectedCategory)
     
     // Apply same search filtering as IntelligenceCardGrid
-    if (!searchQuery) return categoryCards
+    if (!searchQuery) return currentCards
     
     const query = searchQuery.toLowerCase()
-    return categoryCards.filter(card => 
+    return currentCards.filter(card => 
       card.title.toLowerCase().includes(query) ||
       (card.description && card.description.toLowerCase().includes(query)) ||
       (card.card_data?.intelligence_content && card.card_data.intelligence_content.toLowerCase().includes(query)) ||
@@ -564,27 +626,31 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
           <h3 className="text-[10px] font-semibold text-black uppercase tracking-wider mb-2">Agent Tools</h3>
           
           <div className="space-y-1">
-            <button
-              onClick={() => setSelectedCategory('profile')}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors text-black hover:bg-gray-100 text-xs"
-            >
-              <span className="flex items-center gap-2">
-                <Settings className="w-3 h-3" />
-                Intelligence Profile
-              </span>
-            </button>
                 
                 
             {/* Dynamic Agents */}
-            {intelligenceAgents.map((agent) => (
-              <button
-                key={agent.id}
-                onClick={() => setSelectedCategory(`agent-${agent.id}`)}
-                className="w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors text-black hover:bg-gray-100 text-xs"
-              >
-                <span>{agent.name}</span>
-              </button>
-            ))}
+            {intelligenceAgents.map((agent) => {
+              const isSelected = selectedCategory === `agent-${agent.id}` && viewType === 'category'
+              
+              return (
+                <button
+                  key={agent.id}
+                  onClick={() => {
+                    setSelectedCategory(`agent-${agent.id}`)
+                    setViewType('category')
+                    setSelectedGroup(null)
+                    setSelectedCardIds(new Set())
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors text-xs ${
+                    isSelected 
+                      ? 'bg-black bg-opacity-50 text-white' 
+                      : 'text-black hover:bg-gray-100'
+                  }`}
+                >
+                  <span>{agent.name}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -595,12 +661,17 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
               <div className="space-y-1">
                 {categoriesWithCounts.map((category) => {
                   const Icon = category.icon
-                  const isSelected = selectedCategory === category.id
+                  const isSelected = selectedCategory === category.id && viewType === 'category'
                   
                   return (
                     <button
                       key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
+                      onClick={() => {
+                        setSelectedCategory(category.id)
+                        setViewType('category')
+                        setSelectedGroup(null)
+                        setSelectedCardIds(new Set())
+                      }}
                       className={`w-full flex items-center justify-between px-3 py-1.5 text-left rounded-md transition-colors text-xs ${
                         isSelected 
                           ? 'bg-black bg-opacity-50 text-white' 
@@ -658,9 +729,10 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
               <div className="flex gap-1">
                 <button
                   onClick={handleCreateGroupSubmit}
-                  className="px-2 py-0.5 text-xs text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
+                  disabled={isCreatingGroup || !newGroupName.trim()}
+                  className="px-2 py-0.5 text-xs text-black hover:bg-black hover:bg-opacity-10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Create
+                  {isCreatingGroup ? 'Creating...' : 'Create'}
                 </button>
                 <button
                   onClick={() => {
@@ -669,7 +741,8 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
                     setNewGroupDescription('')
                     setNewGroupColor('blue')
                   }}
-                  className="px-2 py-0.5 text-xs text-gray-700 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
+                  disabled={isCreatingGroup}
+                  className="px-2 py-0.5 text-xs text-black hover:bg-black hover:bg-opacity-10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -1056,6 +1129,7 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
             <AgentsSection 
               selectedAgentId={selectedCategory.replace('agent-', '')}
               onClose={() => setSelectedCategory('dashboard')} 
+              onCardsCreated={refreshCards}
             />
           ) : selectedCategory === 'dashboard' ? (
             <div className="flex-1 p-6 overflow-y-auto">
@@ -1071,10 +1145,18 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
               <IntelligenceProfile />
             </div>
           ) : selectedCategory === 'groups' ? (
-            <IntelligenceGroups />
+            <>
+              {console.log('🔍 Rendering IntelligenceGroups component')}
+              <IntelligenceGroups />
+            </>
+          ) : viewType === 'group' && loadingGroupCards ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
           ) : (
             <IntelligenceCardList
               cards={
+                viewType === 'group' ? groupCards :
                 selectedCategory === 'saved' ? getCardsByStatus('saved') :
                 selectedCategory === 'archive' ? getCardsByStatus('archived') :
                 getCardsByCategory(selectedCategory)
@@ -1117,6 +1199,11 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
           setSelectedCardIds(new Set())
           setShowGroupSelector(false)
           globalRefresh()
+          
+          // If we're viewing a group, refresh the group cards
+          if (viewType === 'group' && selectedGroup) {
+            handleGroupClick(selectedGroup)
+          }
         }}
       />
     )}

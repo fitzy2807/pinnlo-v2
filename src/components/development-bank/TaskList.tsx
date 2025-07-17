@@ -5,6 +5,8 @@ import { ChevronDown, ChevronRight, CheckCircle, Clock, User, Target, ArrowRight
 import { useCards } from '@/hooks/useCards'
 import { supabase } from '@/lib/supabase'
 import TaskEditModal from '@/components/modals/TaskEditModal'
+import CategoryEditModal from '@/components/modals/CategoryEditModal'
+import TaskCreateModal from '@/components/modals/TaskCreateModal'
 
 interface TaskListProps {
   strategyId: string
@@ -41,8 +43,10 @@ function TaskListItem({
   onCategoryEdit,
   onCategoryDelete
 }: TaskListItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [isExpanded, setIsExpanded] = useState(true)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(taskList.card_data?.categories?.map((cat: any) => cat.id) || [])
+  )
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set())
   
   const toggleCategory = (categoryId: string) => {
@@ -578,6 +582,13 @@ export default function TaskList({ strategyId }: TaskListProps) {
   const [error, setError] = useState('')
   const [editingTask, setEditingTask] = useState<any>(null)
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<any>(null)
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
+  const [categoryModalMode, setCategoryModalMode] = useState<'add' | 'edit'>('add')
+  const [categoryTaskListId, setCategoryTaskListId] = useState<string>('')
+  const [isTaskCreateModalOpen, setIsTaskCreateModalOpen] = useState(false)
+  const [taskCreateTaskListId, setTaskCreateTaskListId] = useState<string>('')
+  const [taskCreateCategoryId, setTaskCreateCategoryId] = useState<string>('')
 
   // Filter for task list cards with proper error handling - check multiple possible card types
   const taskListCards = cards?.filter(card => card.cardType === 'task-list') || []
@@ -623,6 +634,14 @@ export default function TaskList({ strategyId }: TaskListProps) {
             // Tasks might reference the parent task list in different ways
             const taskListTasks = (tasks || []).filter(task => {
               const cardData = task.card_data || {}
+              const roadmapTaskIds = taskListCard.card_data?.implementationRoadmap?.taskIds || []
+              
+              // Check if task is explicitly listed in the task list's roadmap
+              if (roadmapTaskIds.includes(task.id)) {
+                return true
+              }
+              
+              // Check traditional parent-child relationships
               return (
                 cardData.task_list_id === taskListCard.id ||
                 cardData.parentTaskListId === taskListCard.id ||
@@ -767,8 +786,9 @@ export default function TaskList({ strategyId }: TaskListProps) {
   }
 
   const handleTaskAdd = (taskListId: string, categoryId?: string) => {
-    // TODO: Implement add task
-    console.log('Add task to list:', taskListId, 'category:', categoryId)
+    setTaskCreateTaskListId(taskListId)
+    setTaskCreateCategoryId(categoryId || '')
+    setIsTaskCreateModalOpen(true)
   }
 
   const handleTaskDelete = async (taskId: string) => {
@@ -786,23 +806,265 @@ export default function TaskList({ strategyId }: TaskListProps) {
   }
 
   const handleTaskDuplicate = async (taskId: string) => {
-    // TODO: Implement task duplication
-    console.log('Duplicate task:', taskId)
+    try {
+      // Find the original task across all task lists
+      const originalTask = taskLists
+        .flatMap(tl => tl.tasks)
+        .find(t => t.id === taskId)
+      
+      if (!originalTask) {
+        alert('Original task not found')
+        return
+      }
+      
+      // Create duplicate task data
+      const duplicateTaskData = {
+        ...originalTask,
+        id: undefined, // Let database generate new ID
+        title: `${originalTask.title} (Copy)`,
+        created_at: undefined,
+        updated_at: undefined,
+        card_data: {
+          ...originalTask.card_data,
+          taskId: `${originalTask.card_data?.taskId || 'TASK'}-COPY-${Date.now().toString().slice(-6)}`,
+          metadata: {
+            ...originalTask.card_data?.metadata,
+            status: 'Not Started',
+            completionPercentage: 0,
+            assignee: '',
+            taskId: `${originalTask.card_data?.taskId || 'TASK'}-COPY-${Date.now().toString().slice(-6)}`
+          },
+          acceptanceCriteria: originalTask.card_data?.acceptanceCriteria?.map((ac: any) => ({
+            ...ac,
+            status: 'Not Started'
+          })) || [],
+          definitionOfDone: originalTask.card_data?.definitionOfDone?.map((dod: any) => ({
+            ...dod,
+            status: 'Not Started'
+          })) || [],
+          technicalImplementation: {
+            ...originalTask.card_data?.technicalImplementation,
+            filesToCreate: originalTask.card_data?.technicalImplementation?.filesToCreate?.map((file: any) => ({
+              ...file,
+              status: 'Not Started'
+            })) || []
+          }
+        }
+      }
+      
+      const { error } = await supabase
+        .from('cards')
+        .insert(duplicateTaskData)
+      
+      if (error) throw error
+      
+      await loadTaskLists()
+    } catch (err) {
+      console.error('Error duplicating task:', err)
+      alert('Failed to duplicate task')
+    }
   }
 
   const handleCategoryAdd = (taskListId: string) => {
-    // TODO: Implement add category
-    console.log('Add category to task list:', taskListId)
+    setCategoryTaskListId(taskListId)
+    setCategoryModalMode('add')
+    setEditingCategory(null)
+    setIsCategoryModalOpen(true)
   }
 
   const handleCategoryEdit = (taskListId: string, categoryName: string) => {
-    // TODO: Implement edit category
-    console.log('Edit category:', categoryName, 'in task list:', taskListId)
+    const taskList = taskLists.find(tl => tl.id === taskListId)
+    if (!taskList) return
+    
+    const category = taskList.card_data?.categories?.find((cat: any) => cat.name === categoryName)
+    if (!category) return
+    
+    setCategoryTaskListId(taskListId)
+    setCategoryModalMode('edit')
+    setEditingCategory(category)
+    setIsCategoryModalOpen(true)
   }
 
-  const handleCategoryDelete = (taskListId: string, categoryName: string) => {
-    // TODO: Implement delete category
-    console.log('Delete category:', categoryName, 'from task list:', taskListId)
+  const handleCategoryDelete = async (taskListId: string, categoryName: string) => {
+    const taskList = taskLists.find(tl => tl.id === taskListId)
+    if (!taskList) return
+    
+    const category = taskList.card_data?.categories?.find((cat: any) => cat.name === categoryName)
+    if (!category) return
+    
+    if (confirm(`Are you sure you want to delete the "${categoryName}" category? This will also delete all tasks in this category.`)) {
+      try {
+        // Delete all tasks in this category first
+        const { error: tasksError } = await supabase
+          .from('cards')
+          .delete()
+          .eq('strategy_id', strategyId)
+          .eq('card_type', 'task')
+          .eq('card_data->category', category.id)
+        
+        if (tasksError) throw tasksError
+        
+        // Remove category from task list
+        const updatedCategories = taskList.card_data.categories.filter((cat: any) => cat.id !== category.id)
+        
+        const { error: updateError } = await supabase
+          .from('cards')
+          .update({
+            card_data: {
+              ...taskList.card_data,
+              categories: updatedCategories
+            }
+          })
+          .eq('id', taskListId)
+        
+        if (updateError) throw updateError
+        
+        await loadTaskLists()
+      } catch (err) {
+        console.error('Error deleting category:', err)
+        setError('Failed to delete category')
+      }
+    }
+  }
+
+  const handleCategorySave = async (categoryData: any) => {
+    try {
+      const taskList = taskLists.find(tl => tl.id === categoryTaskListId)
+      if (!taskList) throw new Error('Task list not found')
+      
+      let updatedCategories
+      if (categoryModalMode === 'add') {
+        // Add new category
+        updatedCategories = [...(taskList.card_data.categories || []), categoryData]
+      } else {
+        // Update existing category
+        updatedCategories = taskList.card_data.categories.map((cat: any) => 
+          cat.id === categoryData.id ? categoryData : cat
+        )
+      }
+      
+      const { error } = await supabase
+        .from('cards')
+        .update({
+          card_data: {
+            ...taskList.card_data,
+            categories: updatedCategories
+          }
+        })
+        .eq('id', categoryTaskListId)
+      
+      if (error) throw error
+      
+      await loadTaskLists()
+      setIsCategoryModalOpen(false)
+    } catch (err) {
+      console.error('Error saving category:', err)
+      throw err
+    }
+  }
+
+  const handleCategoryModalDelete = async (categoryId: string) => {
+    try {
+      const taskList = taskLists.find(tl => tl.id === categoryTaskListId)
+      if (!taskList) throw new Error('Task list not found')
+      
+      const category = taskList.card_data.categories.find((cat: any) => cat.id === categoryId)
+      if (!category) throw new Error('Category not found')
+      
+      // Delete all tasks in this category first
+      const { error: tasksError } = await supabase
+        .from('cards')
+        .delete()
+        .eq('strategy_id', strategyId)
+        .eq('card_type', 'task')
+        .eq('card_data->category', categoryId)
+      
+      if (tasksError) throw tasksError
+      
+      // Remove category from task list
+      const updatedCategories = taskList.card_data.categories.filter((cat: any) => cat.id !== categoryId)
+      
+      const { error: updateError } = await supabase
+        .from('cards')
+        .update({
+          card_data: {
+            ...taskList.card_data,
+            categories: updatedCategories
+          }
+        })
+        .eq('id', categoryTaskListId)
+      
+      if (updateError) throw updateError
+      
+      await loadTaskLists()
+    } catch (err) {
+      console.error('Error deleting category:', err)
+      throw err
+    }
+  }
+
+  const handleTaskCreate = async (taskData: any) => {
+    try {
+      const taskList = taskLists.find(tl => tl.id === taskCreateTaskListId)
+      if (!taskList) throw new Error('Task list not found')
+      
+      // Add additional task data
+      const completeTaskData = {
+        ...taskData,
+        strategy_id: parseInt(strategyId),
+        created_by: taskList.created_by,
+        card_data: {
+          ...taskData.card_data,
+          task_list_id: taskCreateTaskListId,
+          trdSource: taskList.card_data?.trdSource || {
+            trdId: '',
+            trdTitle: taskList.title,
+            section: 'Manual Addition'
+          }
+        }
+      }
+      
+      const { error } = await supabase
+        .from('cards')
+        .insert(completeTaskData)
+      
+      if (error) throw error
+      
+      // Update category task count if applicable
+      if (taskData.card_data.category) {
+        const category = taskList.card_data.categories?.find((cat: any) => cat.id === taskData.card_data.category)
+        if (category) {
+          const updatedCategories = taskList.card_data.categories.map((cat: any) => 
+            cat.id === taskData.card_data.category
+              ? { ...cat, taskCount: cat.taskCount + 1, estimatedEffort: cat.estimatedEffort + taskData.card_data.metadata.effort }
+              : cat
+          )
+          
+          await supabase
+            .from('cards')
+            .update({
+              card_data: {
+                ...taskList.card_data,
+                categories: updatedCategories,
+                metadata: {
+                  ...taskList.card_data.metadata,
+                  progress: {
+                    ...taskList.card_data.metadata.progress,
+                    totalTasks: taskList.card_data.metadata.progress.totalTasks + 1
+                  }
+                }
+              }
+            })
+            .eq('id', taskCreateTaskListId)
+        }
+      }
+      
+      await loadTaskLists()
+      setIsTaskCreateModalOpen(false)
+    } catch (err) {
+      console.error('Error creating task:', err)
+      throw err
+    }
   }
 
   if (loading) {
@@ -883,6 +1145,37 @@ export default function TaskList({ strategyId }: TaskListProps) {
         }}
         onSave={handleTaskModalSave}
         onDelete={handleTaskModalDelete}
+      />
+
+      {/* Category Edit Modal */}
+      <CategoryEditModal
+        category={editingCategory}
+        isOpen={isCategoryModalOpen}
+        onClose={() => {
+          setIsCategoryModalOpen(false)
+          setEditingCategory(null)
+          setCategoryTaskListId('')
+        }}
+        onSave={handleCategorySave}
+        onDelete={handleCategoryModalDelete}
+        mode={categoryModalMode}
+      />
+
+      {/* Task Create Modal */}
+      <TaskCreateModal
+        isOpen={isTaskCreateModalOpen}
+        onClose={() => {
+          setIsTaskCreateModalOpen(false)
+          setTaskCreateTaskListId('')
+          setTaskCreateCategoryId('')
+        }}
+        onSave={handleTaskCreate}
+        categories={
+          taskCreateTaskListId
+            ? taskLists.find(tl => tl.id === taskCreateTaskListId)?.card_data?.categories || []
+            : []
+        }
+        selectedCategoryId={taskCreateCategoryId}
       />
     </div>
   )

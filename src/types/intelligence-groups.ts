@@ -13,7 +13,7 @@ export interface IntelligenceGroup {
 export interface IntelligenceGroupCard {
   id: string
   group_id: string
-  intelligence_card_id: string
+  card_id: string
   added_at: string
   added_by?: string
   position: number
@@ -33,7 +33,7 @@ export interface UpdateIntelligenceGroupData {
 
 export interface IntelligenceGroupWithCards extends IntelligenceGroup {
   intelligence_cards?: Array<{
-    intelligence_card_id: string
+    card_id: string
     added_at: string
     position: number
   }>

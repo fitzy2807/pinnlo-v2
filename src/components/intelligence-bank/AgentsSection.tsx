@@ -8,6 +8,7 @@ import AgentLoader from '@/components/shared/agents/AgentLoader'
 interface AgentsSectionProps {
   selectedAgentId?: string
   onClose?: () => void
+  onCardsCreated?: () => void // Callback to refresh cards after creation
 }
 
 // Icon mapping for agent types
@@ -19,7 +20,7 @@ const iconMap: Record<string, any> = {
   'Zap': Zap
 }
 
-export default function AgentsSection({ selectedAgentId, onClose }: AgentsSectionProps) {
+export default function AgentsSection({ selectedAgentId, onClose, onCardsCreated }: AgentsSectionProps) {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(selectedAgentId || null)
   
   // Get agents assigned to Intelligence Hub
@@ -50,7 +51,8 @@ export default function AgentsSection({ selectedAgentId, onClose }: AgentsSectio
         agentId={selectedAgent}
         onClose={handleCloseAgent}
         configuration={{
-          hubContext: 'intelligence'
+          hubContext: 'intelligence',
+          onCardsCreated: onCardsCreated
         }}
       />
     )

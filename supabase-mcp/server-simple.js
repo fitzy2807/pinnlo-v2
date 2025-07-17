@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { GitHubAnalysisOrchestrator } from './dist/tools/github-analysis-agents.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -332,6 +333,159 @@ Return ONLY a JSON object with the field names as keys and appropriate content a
       success: false,
       error: error.message || 'Internal server error'
     });
+  }
+});
+
+// Parse repository URL helper function
+function parseRepositoryUrl(url) {
+  try {
+    let cleanUrl = url.replace(/^https?:\/\/github\.com\//, '');
+    cleanUrl = cleanUrl.replace(/\.git$/, '');
+    
+    const parts = cleanUrl.split('/');
+    if (parts.length >= 2) {
+      return {
+        owner: parts[0],
+        repo: parts[1]
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Simple GitHub Analysis endpoint (fallback)
+app.post('/api/tools/analyze_github_repository', async (req, res) => {
+  try {
+    const { repository_url, github_token, user_id } = req.body;
+    
+    console.log('🔍 GitHub Analysis Request (Simple):', { repository_url, user_id });
+    
+    // Parse repository URL
+    const repoInfo = parseRepositoryUrl(repository_url);
+    if (!repoInfo) {
+      console.error('❌ Invalid repository URL format:', repository_url);
+      return res.status(400).json({ error: 'Invalid repository URL format' });
+    }
+    
+    // Initialize GitHub API client
+    const github = {
+      headers: {
+        'Authorization': `Bearer ${github_token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'PINNLO-MCP-Agent'
+      }
+    };
+
+    // Get repository information
+    const repoResponse = await fetch(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}`, {
+      headers: github.headers
+    });
+
+    if (!repoResponse.ok) {
+      console.error('❌ Failed to fetch repository:', repoResponse.status);
+      return res.status(500).json({ error: `Failed to fetch repository: ${repoResponse.status}` });
+    }
+
+    const repository = await repoResponse.json();
+    
+    // Analyze package.json for dependencies
+    const packageResponse = await fetch(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/contents/package.json`, {
+      headers: github.headers
+    });
+
+    let dependencies = {};
+    let frameworks = [];
+
+    if (packageResponse.ok) {
+      const packageData = await packageResponse.json();
+      const packageContent = JSON.parse(Buffer.from(packageData.content, 'base64').toString());
+      
+      dependencies = {
+        ...(packageContent.dependencies || {}),
+        ...(packageContent.devDependencies || {})
+      };
+
+      // Detect frameworks from dependencies
+      if (dependencies['next']) frameworks.push('Next.js');
+      if (dependencies['react']) frameworks.push('React');
+      if (dependencies['vue']) frameworks.push('Vue.js');
+      if (dependencies['angular']) frameworks.push('Angular');
+      if (dependencies['express']) frameworks.push('Express');
+      if (dependencies['@supabase/supabase-js']) frameworks.push('Supabase');
+      if (dependencies['tailwindcss']) frameworks.push('Tailwind CSS');
+      if (dependencies['typescript']) frameworks.push('TypeScript');
+    }
+
+    // Return analysis results
+    const result = {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          dependencies,
+          frameworks,
+          repository_info: {
+            name: repository.name,
+            full_name: repository.full_name,
+            description: repository.description,
+            language: repository.language,
+            size: repository.size,
+            updated_at: repository.updated_at,
+            default_branch: repository.default_branch
+          },
+          files_analyzed: 1,
+          package_files: packageResponse.ok ? ['package.json'] : [],
+          analysis_method: 'simple'
+        })
+      }]
+    };
+
+    console.log('✅ Simple analysis complete');
+    res.json(result);
+
+  } catch (error) {
+    console.error('❌ GitHub analysis error:', error);
+    res.status(500).json({ error: 'Failed to analyze GitHub repository' });
+  }
+});
+
+// Comprehensive GitHub Analysis (Three-Agent System)
+app.post('/api/tools/analyze_github_repository_comprehensive', async (req, res) => {
+  try {
+    const { repository_url, github_token, analysis_depth = 'standard', focus_areas = [], user_id } = req.body;
+    
+    console.log('🎯 Comprehensive GitHub Analysis Request:', {
+      repository_url,
+      user_id,
+      analysis_depth,
+      focus_areas
+    });
+    
+    // Create orchestrator and run three-agent analysis
+    const orchestrator = new GitHubAnalysisOrchestrator(
+      github_token,
+      repository_url,
+      user_id,
+      analysis_depth,
+      focus_areas
+    );
+
+    const result = await orchestrator.orchestrate();
+
+    const response = {
+      content: [{
+        type: "text",
+        text: JSON.stringify(result, null, 2)
+      }]
+    };
+
+    console.log('✅ Comprehensive analysis complete');
+    res.json(response);
+
+  } catch (error) {
+    console.error('❌ Comprehensive GitHub analysis error:', error);
+    res.status(500).json({ error: 'Failed to analyze GitHub repository comprehensively' });
   }
 });
 

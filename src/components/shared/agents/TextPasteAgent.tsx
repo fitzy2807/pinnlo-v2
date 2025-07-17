@@ -12,6 +12,7 @@ interface TextPasteAgentProps {
     hubContext?: 'intelligence' | 'strategy' | 'development' | 'organisation'
     defaultCategory?: IntelligenceCardCategory
     defaultContentType?: string
+    onCardsCreated?: () => void // Callback to refresh cards after creation
   }
 }
 
@@ -68,6 +69,11 @@ export default function TextPasteAgent({ onClose, configuration }: TextPasteAgen
           : `Successfully created ${result.cardsCreated} intelligence cards from text!\n\nCost: $${result.cost.toFixed(4)}\nTokens used: ${result.tokensUsed}`
         
         alert(message)
+        
+        // Trigger cards refresh if callback is provided
+        if (configuration?.onCardsCreated) {
+          configuration.onCardsCreated()
+        }
         
         // Clear form after successful processing
         setTextContent('')
@@ -135,7 +141,7 @@ export default function TextPasteAgent({ onClose, configuration }: TextPasteAgen
               <select
                 value={contentType}
                 onChange={(e) => setContentType(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={isProcessing}
               >
                 {CONTENT_TYPES.map((type) => (
@@ -153,7 +159,7 @@ export default function TextPasteAgent({ onClose, configuration }: TextPasteAgen
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as IntelligenceCardCategory)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={isProcessing}
               >
                 {Object.values(IntelligenceCardCategory).map((cat) => (
@@ -175,7 +181,7 @@ export default function TextPasteAgent({ onClose, configuration }: TextPasteAgen
               value={context}
               onChange={(e) => setContext(e.target.value)}
               placeholder="e.g., Robotics for train maintenance, Customer feedback analysis..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={isProcessing}
             />
           </div>
@@ -199,7 +205,7 @@ export default function TextPasteAgent({ onClose, configuration }: TextPasteAgen
               value={textContent}
               onChange={(e) => setTextContent(e.target.value)}
               placeholder="Paste your text content, transcript, or document here..."
-              className="w-full h-64 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
+              className="w-full h-64 px-3 py-2 text-sm text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-none"
               disabled={isProcessing}
             />
           </div>

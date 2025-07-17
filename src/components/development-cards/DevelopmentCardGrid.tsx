@@ -17,6 +17,7 @@ interface DevelopmentCardGridProps {
   viewMode?: 'grid' | 'list'
   loading?: boolean
   currentStrategyId?: string
+  onCommitToTasks?: (requirement: any) => Promise<void>
 }
 
 type ViewDensity = 'compact' | 'comfortable' | 'expanded'
@@ -31,7 +32,8 @@ export default function DevelopmentCardGrid({
   onSelectCard,
   viewMode = 'grid',
   loading = false,
-  currentStrategyId
+  currentStrategyId,
+  onCommitToTasks
 }: DevelopmentCardGridProps) {
   const [selectedCard, setSelectedCard] = useState<CardData | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -235,6 +237,7 @@ export default function DevelopmentCardGrid({
         onUpdate={handleCardUpdate}
         onDelete={handleCardDelete}
         currentStrategyId={currentStrategyId}
+        onCommitToTasks={onCommitToTasks}
       />
     </>
   )

@@ -73,8 +73,8 @@ export function useIntelligenceBankCards() {
       // Transform intelligence_cards fields to match CardData interface
       const transformedCards = (data || []).map(card => ({
         ...card,
-        cardType: `${card.category}-intelligence`, // Map category to cardType format
-        card_type: `${card.category}-intelligence`, // Also set card_type for compatibility
+        cardType: card.category, // Use category as-is (e.g., 'stakeholder', 'market')
+        card_type: card.category, // Use category as-is for compatibility
         description: card.summary, // Map summary to description
         tags: card.tags || [],
         relationships: [], // Intelligence cards don't have relationships
@@ -108,14 +108,11 @@ export function useIntelligenceBankCards() {
 
   // Get cards by category (for backward compatibility)
   const getCardsByCategory = (category: string) => {
-    const blueprintType = INTELLIGENCE_BLUEPRINT_MAP[category]
-    const automationType = AUTOMATION_CARD_TYPES[category]
-    if (!blueprintType && !automationType) return []
-    
+    // Since we now store card_type as the category directly (e.g., 'stakeholder'),
+    // we need to match against the category itself, not the mapped blueprint type
     return cards.filter(card => 
-      card.card_type === blueprintType || 
-      card.card_type === automationType ||
-      card.card_type === category // Direct match
+      card.card_type === category || // Direct match (e.g., 'stakeholder')
+      card.category === category     // Also check the original category field
     )
   }
 
@@ -128,8 +125,11 @@ export function useIntelligenceBankCards() {
   const getCategoryCounts = () => {
     const counts: Record<string, number> = {}
     
-    Object.entries(INTELLIGENCE_BLUEPRINT_MAP).forEach(([category, blueprintType]) => {
-      counts[category] = cards.filter(card => card.card_type === blueprintType).length
+    // Count cards by their actual category (not blueprint type)
+    Object.keys(INTELLIGENCE_BLUEPRINT_MAP).forEach(category => {
+      counts[category] = cards.filter(card => 
+        card.card_type === category || card.category === category
+      ).length
     })
     
     return counts
@@ -206,8 +206,10 @@ export function useIntelligenceBankCards() {
       // Determine category from cardType
       let category = 'market' // default
       if (cardType) {
+        // Remove -intelligence suffix if present
         category = cardType.replace('-intelligence', '')
       } else if (card_type) {
+        // Remove -intelligence suffix if present
         category = card_type.replace('-intelligence', '')
       }
 
@@ -242,21 +244,37 @@ export function useIntelligenceBankCards() {
       // Transform the created card to match CardData interface
       const transformedCard = {
         ...data,
-        cardType: data.card_type,
-        tags: data.card_data?.tags || [],
-        relationships: data.card_data?.relationships || [],
-        strategicAlignment: data.card_data?.strategicAlignment || '',
+        cardType: data.category, // Use category as cardType
+        card_type: data.category, // Use category as card_type
+        description: data.summary, // Map summary to description
+        tags: data.tags || [],
+        relationships: [], // Intelligence cards don't have relationships
+        strategicAlignment: data.strategic_implications || '',
         createdDate: data.created_at,
         lastModified: data.updated_at,
-        creator: data.card_data?.creator || '',
-        owner: data.card_data?.owner || '',
-        confidenceLevel: data.card_data?.confidenceLevel || 'Medium',
-        priorityRationale: data.card_data?.priorityRationale || '',
-        confidenceRationale: data.card_data?.confidenceRationale || ''
+        creator: '',
+        owner: '',
+        priority: 'Medium',
+        confidenceLevel: 'Medium',
+        priorityRationale: '',
+        confidenceRationale: '',
+        // Intelligence-specific fields
+        intelligence_content: data.intelligence_content,
+        key_findings: data.key_findings || [],
+        credibility_score: data.credibility_score || 5,
+        relevance_score: data.relevance_score || 5,
+        source_reference: data.source_reference || '',
+        recommended_actions: data.recommended_actions || ''
       }
 
       setCards([transformedCard, ...cards])
       toast.success('Card created successfully')
+      
+      // Also trigger a refetch to ensure we have the latest data
+      setTimeout(() => {
+        fetchCards()
+      }, 100)
+      
       return { success: true, data: transformedCard }
     } catch (error) {
       console.error('Error creating card:', error)
@@ -321,8 +339,7 @@ export function useIntelligenceBankCards() {
       
       // Handle category update from cardType
       if (updates.cardType !== undefined) {
-        const category = updates.cardType.replace('-intelligence', '')
-        dbUpdates.category = category
+        dbUpdates.category = updates.cardType // Use cardType directly as category
       }
       
       console.log('Database updates:', dbUpdates)

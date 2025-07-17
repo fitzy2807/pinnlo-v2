@@ -38,7 +38,9 @@ async function getBlueprintFields(blueprintType: string): Promise<string> {
       'prd': 'prd',
       'trd': 'trd',
       'product-requirements': 'prd',
-      'technical-requirements': 'trd'
+      'technical-requirements': 'trd',
+      'tech-stack': 'techStack',
+      'techStack': 'techStack'
     };
     
     // Get the actual config file name
@@ -374,6 +376,72 @@ ${contextSummary}
 - Ensure consistency across all technical sections
 
 **FINAL CHECK**: Verify all 52+ blueprintFields are populated with substantive technical content before responding.`;
+  }
+
+  // Tech Stack-specific field handling
+  if (targetBlueprint === 'tech-stack' || targetBlueprint === 'techStack') {
+    return `Generate ONE comprehensive Technology Stack card based on the following context.
+
+IMPORTANT: You must return a single JSON object with ALL 15 tech stack fields populated with meaningful, specific technology content.
+
+## Context Summary:
+${contextSummary}
+
+## REQUIRED JSON OUTPUT FORMAT:
+{
+  "title": "Clear, specific tech stack title (e.g., 'Pinnlo V2 Strategy Platform Tech Stack')",
+  "description": "2-3 sentence description of this technology stack's purpose and scope",
+  "priority": "high",
+  "confidence": {
+    "level": "high",
+    "rationale": "Explanation of confidence level based on context quality and technology choices"
+  },
+  "blueprintFields": {
+    // === CORE INFORMATION FIELDS (5 fields) ===
+    "stack_name": "Clear, descriptive name for this technology stack",
+    "stack_type": "Type categorization (e.g., Full-Stack Web Application, Mobile App, API Service)",
+    "architecture_pattern": "High-level architectural approach (e.g., Jamstack, Microservices, Serverless)",
+    "primary_use_case": "Comprehensive business purpose and primary functionality",
+    "last_updated": "Current date (YYYY-MM-DD format)",
+    
+    // === TECHNOLOGY CATEGORIES (8 tag fields) ===
+    "frontend": ["React-18", "Next.js-14", "TypeScript", "Tailwind-CSS"],
+    "backend": ["Node.js", "Express", "REST-APIs", "JWT-Auth"],
+    "database": ["PostgreSQL", "Supabase", "Redis", "JSONB"],
+    "infrastructure": ["Vercel", "CDN", "Docker", "Kubernetes"],
+    "platforms": ["GitHub", "Slack", "Jira", "Analytics"],
+    "ai": ["OpenAI-GPT-4", "Claude-3", "Embeddings", "Vector-DB"],
+    "development": ["npm", "TypeScript", "Jest", "ESLint", "Git"],
+    "integrations": ["Stripe", "SendGrid", "OAuth", "Webhooks"],
+    
+    // === CONTEXT FIELDS (2 fields) ===
+    "key_decisions": "Document major technology choices, architecture decisions, and their rationale",
+    "migration_notes": "Track technology evolution plans, upgrade schedules, and migration strategies"
+  },
+  "tags": ["tech-stack", "technology", "architecture"],
+  "implementation": {
+    "timeline": "Technology implementation and setup timeline",
+    "dependencies": ["Key technical dependencies and prerequisites"],
+    "successCriteria": ["Technology adoption and performance success criteria"]
+  }
+}
+
+**TAG FORMAT GUIDELINES**:
+- Use hyphenated naming (e.g., "Next.js-14", "PostgreSQL-15")
+- Include version numbers when relevant
+- Be specific and descriptive
+- Focus on technologies actually in use or planned
+- Each tag array should contain 3-8 relevant items
+
+**CRITICAL REQUIREMENTS**:
+- ALL 15 fields must be populated with meaningful, specific content
+- NO placeholder text, "TBD", or generic content allowed
+- Technology choices must be realistic and consistent
+- Tag arrays must contain actual technologies, not descriptions
+- Use context to inform realistic technology selections
+- Ensure consistency across all technology categories
+
+**FINAL CHECK**: Verify all 15 blueprintFields are populated with specific technology content before responding.`;
   }
   
   return `Generate ONE ${targetBlueprint} card (#${cardIndex}) based on the following context.

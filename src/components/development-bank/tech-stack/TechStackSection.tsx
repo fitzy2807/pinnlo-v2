@@ -11,7 +11,8 @@ import {
   Sparkles,
   ChevronDown,
   AlertCircle,
-  Loader2
+  Loader2,
+  Github
 } from 'lucide-react'
 import MasterCard from '@/components/cards/MasterCard'
 import { useTechStackComponents } from '@/hooks/useTechStackComponents'
@@ -62,6 +63,12 @@ export default function TechStackSection({ strategyId }: TechStackSectionProps) 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [aiGenerating, setAiGenerating] = useState<string | null>(null)
+  const [showGitHubModal, setShowGitHubModal] = useState(false)
+  const [githubAnalyzing, setGithubAnalyzing] = useState(false)
+  const [githubForm, setGithubForm] = useState({
+    repositoryUrl: '',
+    githubToken: ''
+  })
   
   // Create modal state
   const [newComponent, setNewComponent] = useState({
@@ -231,6 +238,94 @@ export default function TechStackSection({ strategyId }: TechStackSectionProps) 
     }
   }
 
+  // Handle GitHub repository analysis
+  const handleGitHubAnalysis = async (repositoryUrl: string, githubToken: string) => {
+    setGithubAnalyzing(true)
+    
+    try {
+      // Call MCP GitHub analysis tool
+      const analysisResponse = await fetch('http://localhost:3001/api/tools/analyze_github_repository', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repository_url: repositoryUrl,
+          github_token: githubToken,
+          analysis_depth: 'standard',
+          focus_areas: ['frontend', 'backend', 'database', 'devops'],
+          user_id: 'current-user' // TODO: Get from session
+        })
+      })
+      
+      if (!analysisResponse.ok) {
+        throw new Error('Failed to analyze GitHub repository')
+      }
+      
+      const analysisResult = await analysisResponse.json()
+      
+      if (analysisResult.content?.[0]?.text) {
+        const { prompts, repository_info } = JSON.parse(analysisResult.content[0].text)
+        
+        // Generate tech stack cards using AI
+        const openAIResponse = await fetch('/api/openai/complete', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: prompts.system },
+              { role: 'user', content: prompts.user }
+            ],
+            temperature: 0.3,
+            max_tokens: 4000
+          })
+        })
+        
+        if (!openAIResponse.ok) {
+          throw new Error('Failed to generate tech stack cards')
+        }
+        
+        const aiResult = await openAIResponse.json()
+        const generatedContent = JSON.parse(aiResult.choices[0].message.content)
+        
+        // Create tech stack cards from the analysis
+        if (generatedContent.tech_stack_cards) {
+          for (const card of generatedContent.tech_stack_cards) {
+            await createComponent({
+              technology_name: card.technology_name,
+              title: card.technology_name,
+              category: card.category,
+              description: card.description,
+              version: card.version,
+              implementation_status: 'active',
+              strategic_value: card.priority?.toLowerCase() || 'medium',
+              confidence_score: card.confidence_score,
+              detected_from: card.detected_from?.join(', ') || '',
+              github_repository: repository_info.html_url,
+              ai_generated: true,
+              ai_generation_context: {
+                generated_at: new Date().toISOString(),
+                model: 'github-analysis',
+                repository: repository_info.full_name,
+                analysis_depth: 'standard'
+              },
+              ...card.implementation_details
+            })
+          }
+          
+          alert(`Successfully created ${generatedContent.tech_stack_cards.length} tech stack components from ${repository_info.name}!`)
+        }
+      }
+    } catch (error) {
+      console.error('GitHub analysis failed:', error)
+      alert('Failed to analyze GitHub repository. Please check your token and try again.')
+    } finally {
+      setGithubAnalyzing(false)
+      setShowGitHubModal(false)
+    }
+  }
+
   // Loading state
   if (isLoading) {
     return (
@@ -296,6 +391,20 @@ export default function TechStackSection({ strategyId }: TechStackSectionProps) 
               <List className="w-4 h-4" />
             </button>
           </div>
+          
+          {/* GitHub Analysis Button */}
+          <button
+            onClick={() => setShowGitHubModal(true)}
+            disabled={githubAnalyzing}
+            className="px-4 py-1.5 text-sm bg-gray-800 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            {githubAnalyzing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Github className="w-4 h-4" />
+            )}
+            Analyze from GitHub
+          </button>
           
           {/* Add Button */}
           <button
@@ -540,6 +649,79 @@ export default function TechStackSection({ strategyId }: TechStackSectionProps) 
                 className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
               >
                 {isCreating ? 'Creating...' : 'Create Technology'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GitHub Analysis Modal */}
+      {showGitHubModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Github className="w-5 h-5" />
+              Analyze GitHub Repository
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  GitHub Repository URL
+                </label>
+                <input
+                  type="text"
+                  value={githubForm.repositoryUrl}
+                  onChange={(e) => setGithubForm({...githubForm, repositoryUrl: e.target.value})}
+                  placeholder="https://github.com/owner/repo or owner/repo"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-black focus:border-black"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  GitHub Personal Access Token
+                </label>
+                <input
+                  type="password"
+                  value={githubForm.githubToken}
+                  onChange={(e) => setGithubForm({...githubForm, githubToken: e.target.value})}
+                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-black focus:border-black"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Create a token at GitHub → Settings → Developer settings → Personal access tokens
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowGitHubModal(false)
+                  setGithubForm({ repositoryUrl: '', githubToken: '' })
+                }}
+                disabled={githubAnalyzing}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleGitHubAnalysis(githubForm.repositoryUrl, githubForm.githubToken)}
+                disabled={githubAnalyzing || !githubForm.repositoryUrl || !githubForm.githubToken}
+                className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              >
+                {githubAnalyzing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Github className="w-4 h-4" />
+                    Analyze Repository
+                  </>
+                )}
               </button>
             </div>
           </div>

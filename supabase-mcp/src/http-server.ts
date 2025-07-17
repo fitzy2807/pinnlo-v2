@@ -34,6 +34,14 @@ import {
   editModeGeneratorTools, 
   handleGenerateEditModeContent 
 } from './tools/edit-mode-generator.js';
+import { 
+  githubAnalysisTools, 
+  handleAnalyzeGitHubRepository
+} from './tools/github-analysis-tools-simple.js';
+import { 
+  githubAnalysisOrchestratorTool, 
+  handleComprehensiveGitHubAnalysis
+} from './tools/github-analysis-agents.js';
 
 interface SupabaseConfig {
   url: string;
@@ -284,7 +292,7 @@ ${cardDetails}
     // Intelligence processing endpoints
     this.app.post('/api/tools/analyze_url', async (req, res) => {
       try {
-        const result = await handleAnalyzeUrl(req.body);
+        const result = await handleAnalyzeUrl(req.body, this.supabase);
         res.json(result);
       } catch (error) {
         console.error('URL analysis error:', error);
@@ -354,6 +362,57 @@ ${cardDetails}
       }
     });
 
+    // GitHub Analysis endpoints
+    this.app.post('/api/tools/analyze_github_repository', async (req, res) => {
+      try {
+        console.log('🔍 MCP: Received GitHub analysis request:', {
+          repository_url: req.body.repository_url,
+          has_token: !!req.body.github_token,
+          user_id: req.body.user_id
+        });
+        
+        const result = await handleAnalyzeGitHubRepository(req.body);
+        
+        console.log('📊 MCP: Analysis result structure:', {
+          hasContent: !!result.content,
+          contentLength: result.content?.length,
+          contentType: typeof result.content?.[0]?.text
+        });
+        
+        res.json(result);
+      } catch (error) {
+        console.error('❌ MCP: GitHub repository analysis error:', error);
+        res.status(500).json({ error: 'Failed to analyze GitHub repository' });
+      }
+    });
+
+    // Comprehensive GitHub Analysis (Three-Agent System)
+    this.app.post('/api/tools/analyze_github_repository_comprehensive', async (req, res) => {
+      try {
+        console.log('🎯 MCP: Received comprehensive GitHub analysis request:', {
+          repository_url: req.body.repository_url,
+          has_token: !!req.body.github_token,
+          user_id: req.body.user_id,
+          analysis_depth: req.body.analysis_depth || 'standard',
+          focus_areas: req.body.focus_areas || []
+        });
+        
+        const result = await handleComprehensiveGitHubAnalysis(req.body);
+        
+        console.log('📊 MCP: Comprehensive analysis result structure:', {
+          hasContent: !!result.content,
+          contentLength: result.content?.length,
+          analysis_success: JSON.parse(result.content?.[0]?.text || '{}').summary?.analysis_success
+        });
+        
+        res.json(result);
+      } catch (error) {
+        console.error('❌ MCP: Comprehensive GitHub repository analysis error:', error);
+        res.status(500).json({ error: 'Failed to analyze GitHub repository comprehensively' });
+      }
+    });
+
+
     // List available tools
     this.app.get('/api/tools', (req, res) => {
       const allTools = [
@@ -361,10 +420,12 @@ ${cardDetails}
         ...intelligenceTools,
         ...developmentBankTools,
         ...terminalTools,
-        ...editModeGeneratorTools
+        ...editModeGeneratorTools,
+        githubAnalysisTools.analyze_github_repository,
+        githubAnalysisOrchestratorTool
       ];
       res.json({
-        tools: allTools.map(tool => ({
+        tools: allTools.map((tool: any) => ({
           name: tool.name,
           description: tool.description
         }))
@@ -415,6 +476,10 @@ ${cardDetails}
         return await handleGetProjectStatus(args);
       case 'generate_edit_mode_content':
         return await handleGenerateEditModeContent(args);
+      case 'analyze_github_repository':
+        return await handleAnalyzeGitHubRepository(args);
+      case 'analyze_github_repository_comprehensive':
+        return await handleComprehensiveGitHubAnalysis(args);
       default:
         throw new Error(`Unknown tool: ${toolName}`);
     }

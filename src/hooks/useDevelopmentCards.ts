@@ -208,11 +208,7 @@ export function useDevelopmentCards(strategyId?: number) {
       'section1': ['prd'], // Changed from 'feature' to 'prd'
       'section2': ['tech-stack'], 
       'section3': ['technical-requirement-structured', 'technical-requirement', 'trd'],
-      'section4': ['task-list'],
-      'section5': ['technical-requirement-structured', 'technical-requirement', 'trd'],
-      'section6': ['technical-requirement-structured', 'technical-requirement', 'trd'],
-      'section7': ['technical-requirement-structured', 'technical-requirement', 'trd'],
-      'section8': ['technical-requirement-structured', 'technical-requirement', 'trd']
+      'section4': ['task-list']
     }
 
     const cardTypes = sectionTypeMap[section] || []
@@ -234,11 +230,7 @@ export function useDevelopmentCards(strategyId?: number) {
       section3: getCardsByType('technical-requirement-structured').length + 
                getCardsByType('technical-requirement').length + 
                getCardsByType('trd').length,
-      section4: getCardsByType('task-list').length,
-      section5: 0,
-      section6: 0,
-      section7: 0,
-      section8: 0
+      section4: getCardsByType('task-list').length
     }
   }, [getCardsByType])
 

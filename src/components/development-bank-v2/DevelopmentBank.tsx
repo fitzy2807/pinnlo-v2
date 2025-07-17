@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, Pin, Upload, Link2, Zap, ArrowUpDown, Sparkles, Edit2, FolderPlus, ChevronDown, User, EyeOff, Layers, MoreHorizontal, X, Users, Folder, FolderPlus as FolderPlusIcon } from 'lucide-react'
+import { Plus, Search, FileText, Database, Settings, Filter, Grid3X3, List, Trash2, Copy, Pin, Upload, Link2, Zap, ArrowUpDown, Sparkles, Edit2, FolderPlus, ChevronDown, User, EyeOff, Layers, MoreHorizontal, X, Users, Folder, FolderPlus as FolderPlusIcon, Github, Loader2, AlertCircle } from 'lucide-react'
 import { useDevelopmentCards } from '@/hooks/useDevelopmentCards'
 import { useDevelopmentGroups, DevelopmentGroup } from '@/hooks/useDevelopmentGroups'
 import DevelopmentCardGrid from '@/components/development-cards/DevelopmentCardGrid'
@@ -10,6 +10,7 @@ import AgentsSection from './AgentsSection'
 import { GeneratedCard } from '@/components/shared/card-creator/types'
 import { getAgentsForHub } from '@/lib/agentRegistry'
 import AgentLoader from '@/components/shared/agents/AgentLoader'
+import { commitToTaskList, markTrdAsCommitted, triggerTaskListRefresh } from '@/utils/commitToTaskList'
 
 interface DevelopmentBankProps {
   strategy: any
@@ -39,9 +40,44 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
   const [newGroupColor, setNewGroupColor] = useState('blue')
   const [groupCards, setGroupCards] = useState<any[]>([])
   const [showAgents, setShowAgents] = useState(false)
+  const [isCommitting, setIsCommitting] = useState(false)
+  const [showGitHubModal, setShowGitHubModal] = useState(false)
+  const [githubAnalyzing, setGithubAnalyzing] = useState(false)
+  const [githubConnected, setGithubConnected] = useState(false)
+  const [githubRepos, setGithubRepos] = useState<any[]>([])
+  const [selectedRepo, setSelectedRepo] = useState('')
+  const [loadingRepos, setLoadingRepos] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const quickAddRef = useRef<HTMLDivElement>(null)
+  
+  // Check for existing GitHub connection
+  useEffect(() => {
+    const checkGitHubConnection = async () => {
+      const savedToken = sessionStorage.getItem('github_token')
+      if (savedToken) {
+        setGithubConnected(true)
+        // Load repositories if connected
+        try {
+          setLoadingRepos(true)
+          const response = await fetch('/api/github/repos', {
+            headers: {
+              'Authorization': `Bearer ${savedToken}`
+            }
+          })
+          if (response.ok) {
+            const repos = await response.json()
+            setGithubRepos(repos)
+          }
+        } catch (error) {
+          console.error('Failed to load GitHub repos:', error)
+        } finally {
+          setLoadingRepos(false)
+        }
+      }
+    }
+    checkGitHubConnection()
+  }, [])
   
   // Get agents for development hub
   const developmentAgents = getAgentsForHub('development')
@@ -265,10 +301,6 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
     { id: 'section2', label: 'Tech Stack', count: sectionCounts.section2 || 0 },
     { id: 'section3', label: 'Technical Requirements', count: sectionCounts.section3 || 0 },
     { id: 'section4', label: 'Task Lists', count: sectionCounts.section4 || 0 },
-    { id: 'section5', label: 'Testing & QA', count: sectionCounts.section5 || 0 },
-    { id: 'section6', label: 'Deployment', count: sectionCounts.section6 || 0 },
-    { id: 'section7', label: 'Documentation', count: sectionCounts.section7 || 0 },
-    { id: 'section8', label: 'Code Review', count: sectionCounts.section8 || 0 },
   ]
 
 
@@ -336,10 +368,6 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
       'section2': 'tech-stack', // Tech Stack
       'section3': 'technical-requirement', // Technical Requirements
       'section4': 'task-list', // Task Lists
-      'section5': 'test-scenario', // Testing & QA
-      'section6': 'deployment-config', // Deployment
-      'section7': 'documentation', // Documentation
-      'section8': 'code-review' // Code Review
     }
 
     const cardType = sectionCardTypeMap[selectedSection] || 'feature'
@@ -510,10 +538,6 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
         'section2': 'tech-stack', // Tech Stack
         'section3': 'technical-requirement', // Technical Requirements
         'section4': 'task-list', // Task Lists
-        'section5': 'test-scenario', // Testing & QA
-        'section6': 'deployment-config', // Deployment
-        'section7': 'documentation', // Documentation
-        'section8': 'code-review' // Code Review
       }
 
       const cardType = sectionCardTypeMap[selectedSection] || 'feature'
@@ -654,6 +678,317 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
       await loadGroupCards()
     } catch (error) {
       toast.error('Failed to remove card from group')
+    }
+  }
+
+  // Handle commit TRD to task list
+  const handleCommitToTasks = async (requirement: any) => {
+    if (!strategy?.id) {
+      toast.error('Missing strategy ID for task list creation')
+      return
+    }
+
+    setIsCommitting(true)
+    try {
+      console.log('🚀 DEV_BANK: Starting TRD commit to task list')
+      
+      const result = await commitToTaskList({
+        requirementId: requirement.id,
+        requirementTitle: requirement.title,
+        requirementCardData: requirement.card_data || {},
+        strategyId: strategy.id.toString(),
+        userId: requirement.created_by || 'unknown'
+      })
+
+      if (result.success && result.taskList && result.tasks) {
+        // Mark TRD as committed
+        await markTrdAsCommitted(requirement.id, requirement.card_data || {}, result)
+        
+        // Update the card locally
+        await updateCard(requirement.id, {
+          card_data: {
+            ...requirement.card_data,
+            implementationRoadmap: {
+              ...requirement.card_data?.implementationRoadmap,
+              committedToTasks: true,
+              committedAt: new Date().toISOString(),
+              taskListId: result.taskList.id,
+              taskIds: result.tasks.map((task: any) => task.id),
+              totalTasks: result.metadata?.totalTasks || 0,
+              totalEffort: result.metadata?.totalEffort || 0
+            }
+          }
+        })
+        
+        // Trigger task list refresh
+        triggerTaskListRefresh(result)
+        
+        // Show success message
+        toast.success(
+          `Successfully created ${result.metadata?.totalTasks || 0} tasks! Switch to the Task Lists tab to see them.`,
+          { duration: 5000 }
+        )
+        
+        console.log('🎉 DEV_BANK: TRD committed successfully!')
+        console.log(`📋 DEV_BANK: Created ${result.metadata?.totalTasks} tasks across ${result.metadata?.categories} categories`)
+        
+      } else {
+        throw new Error(result.error || 'Failed to create task list')
+      }
+    } catch (error: any) {
+      console.error('❌ DEV_BANK: Error committing TRD to task list:', error)
+      toast.error(`Error creating task list: ${error.message}`)
+    } finally {
+      setIsCommitting(false)
+    }
+  }
+
+  // Deterministic tech stack generation - no AI needed
+  const generateTechStackFromAnalysis = async (analysisData: any) => {
+    console.log('🔧 Generating tech stack deterministically from analysis:', analysisData)
+    
+    const { dependencies, frameworks, repository_info } = analysisData
+    
+    // Frontend technologies (only from actual dependencies)
+    const frontend = []
+    if (dependencies['next']) frontend.push(`Next.js-${dependencies['next'].replace(/[\^\~]/, '')}`)
+    if (dependencies['react']) frontend.push(`React-${dependencies['react'].replace(/[\^\~]/, '')}`)
+    if (dependencies['vue']) frontend.push(`Vue.js-${dependencies['vue'].replace(/[\^\~]/, '')}`)
+    if (dependencies['angular']) frontend.push(`Angular-${dependencies['angular'].replace(/[\^\~]/, '')}`)
+    if (dependencies['svelte']) frontend.push(`Svelte-${dependencies['svelte'].replace(/[\^\~]/, '')}`)
+    if (dependencies['tailwindcss']) frontend.push(`Tailwind-CSS-${dependencies['tailwindcss'].replace(/[\^\~]/, '')}`)
+    if (dependencies['@headlessui/react']) frontend.push(`Headless-UI-${dependencies['@headlessui/react'].replace(/[\^\~]/, '')}`)
+    if (dependencies['framer-motion']) frontend.push(`Framer-Motion-${dependencies['framer-motion'].replace(/[\^\~]/, '')}`)
+    if (dependencies['react-hot-toast']) frontend.push(`React-Hot-Toast-${dependencies['react-hot-toast'].replace(/[\^\~]/, '')}`)
+    if (dependencies['lucide-react']) frontend.push(`Lucide-React-${dependencies['lucide-react'].replace(/[\^\~]/, '')}`)
+    
+    // Backend technologies (only from actual dependencies)
+    const backend = []
+    if (dependencies['@supabase/supabase-js']) backend.push(`Supabase-${dependencies['@supabase/supabase-js'].replace(/[\^\~]/, '')}`)
+    if (dependencies['@supabase/auth-helpers-nextjs']) backend.push(`Supabase-Auth-${dependencies['@supabase/auth-helpers-nextjs'].replace(/[\^\~]/, '')}`)
+    if (dependencies['express']) backend.push(`Express-${dependencies['express'].replace(/[\^\~]/, '')}`)
+    if (dependencies['fastify']) backend.push(`Fastify-${dependencies['fastify'].replace(/[\^\~]/, '')}`)
+    if (dependencies['cors']) backend.push(`CORS-${dependencies['cors'].replace(/[\^\~]/, '')}`)
+    // Only add Next.js API Routes if Next.js is present
+    if (dependencies['next'] && !dependencies['express']) backend.push('Next.js-API-Routes')
+    
+    // Database technologies (only from actual dependencies)
+    const database = []
+    if (dependencies['@supabase/supabase-js']) database.push('PostgreSQL', 'Supabase')
+    if (dependencies['prisma']) database.push(`Prisma-${dependencies['prisma'].replace(/[\^\~]/, '')}`)
+    if (dependencies['pg']) database.push(`PostgreSQL-${dependencies['pg'].replace(/[\^\~]/, '')}`)
+    if (dependencies['mysql2']) database.push(`MySQL-${dependencies['mysql2'].replace(/[\^\~]/, '')}`)
+    if (dependencies['mongodb']) database.push(`MongoDB-${dependencies['mongodb'].replace(/[\^\~]/, '')}`)
+    if (dependencies['redis']) database.push(`Redis-${dependencies['redis'].replace(/[\^\~]/, '')}`)
+    
+    // Infrastructure (only from actual dependencies or known patterns)
+    const infrastructure = []
+    if (dependencies['next']) infrastructure.push('Vercel') // Common for Next.js apps
+    if (dependencies['docker']) infrastructure.push('Docker')
+    if (dependencies['@vercel/analytics']) infrastructure.push('Vercel-Analytics')
+    
+    // Platforms (only from actual dependencies)
+    const platforms = []
+    if (dependencies['@supabase/supabase-js']) platforms.push('Supabase-Platform')
+    if (dependencies['stripe']) platforms.push('Stripe-Platform')
+    if (dependencies['@auth0/auth0-react']) platforms.push('Auth0-Platform')
+    
+    // AI technologies (only from actual dependencies)
+    const ai = []
+    if (dependencies['openai']) ai.push(`OpenAI-${dependencies['openai'].replace(/[\^\~]/, '')}`)
+    if (dependencies['@anthropic-ai/sdk']) ai.push(`Anthropic-${dependencies['@anthropic-ai/sdk'].replace(/[\^\~]/, '')}`)
+    if (dependencies['langchain']) ai.push(`LangChain-${dependencies['langchain'].replace(/[\^\~]/, '')}`)
+    if (dependencies['@modelcontextprotocol/sdk']) ai.push(`MCP-${dependencies['@modelcontextprotocol/sdk'].replace(/[\^\~]/, '')}`)
+    
+    // Development tools (only from actual dependencies)
+    const development = []
+    if (dependencies['typescript']) development.push(`TypeScript-${dependencies['typescript'].replace(/[\^\~]/, '')}`)
+    if (dependencies['eslint']) development.push(`ESLint-${dependencies['eslint'].replace(/[\^\~]/, '')}`)
+    if (dependencies['prettier']) development.push(`Prettier-${dependencies['prettier'].replace(/[\^\~]/, '')}`)
+    if (dependencies['jest']) development.push(`Jest-${dependencies['jest'].replace(/[\^\~]/, '')}`)
+    if (dependencies['vitest']) development.push(`Vitest-${dependencies['vitest'].replace(/[\^\~]/, '')}`)
+    if (dependencies['postcss']) development.push(`PostCSS-${dependencies['postcss'].replace(/[\^\~]/, '')}`)
+    if (dependencies['autoprefixer']) development.push(`Autoprefixer-${dependencies['autoprefixer'].replace(/[\^\~]/, '')}`)
+    
+    // Integrations (only from actual dependencies)
+    const integrations = []
+    if (dependencies['@supabase/auth-helpers-nextjs']) integrations.push('Supabase-Auth')
+    if (dependencies['stripe']) integrations.push('Stripe-Payments')
+    if (dependencies['nodemailer']) integrations.push('Email-Service')
+    if (dependencies['@vercel/analytics']) integrations.push('Vercel-Analytics')
+    
+    return {
+      card_title: `${repository_info.name} Technology Stack`,
+      description: repository_info.description || 'Technology stack analysis from repository',
+      stack_name: repository_info.name,
+      stack_type: 'Web Application',
+      architecture_pattern: dependencies['next'] ? 'Next.js App Router' : 'React SPA',
+      primary_use_case: repository_info.description || 'Web application development',
+      last_updated: repository_info.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+      technologies: {
+        frontend,
+        backend,
+        database,
+        infrastructure,
+        platforms,
+        ai,
+        development,
+        integrations
+      },
+      analysis_metadata: {
+        files_analyzed: analysisData.files_analyzed || 1,
+        dependencies_analyzed: Object.keys(dependencies || {}).length,
+        method: 'Direct dependency analysis',
+        confidence: '100%'
+      }
+    }
+  }
+
+  const handleGitHubAnalysis = async () => {
+    if (!selectedRepo) {
+      toast.error('Please select a repository')
+      return
+    }
+
+    const savedToken = sessionStorage.getItem('github_token')
+    if (!savedToken) {
+      toast.error('No GitHub connection found. Please connect in Agent Hub first.')
+      return
+    }
+
+    setGithubAnalyzing(true)
+    
+    try {
+      const requestPayload = {
+        repository_url: selectedRepo,
+        github_token: savedToken,
+        analysis_depth: 'standard',
+        focus_areas: ['frontend', 'backend', 'database', 'devops'],
+        user_id: 'current-user' // TODO: Get from session
+      }
+      
+      console.log('🔍 GitHub Analysis Request:', requestPayload)
+      
+      // Call MCP comprehensive GitHub analysis tool (Three-Agent System)
+      const analysisResponse = await fetch('http://localhost:3001/api/tools/analyze_github_repository_comprehensive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestPayload)
+      })
+      
+      if (!analysisResponse.ok) {
+        const errorText = await analysisResponse.text()
+        console.error('❌ MCP Analysis Error:', errorText)
+        throw new Error('Failed to analyze GitHub repository')
+      }
+      
+      const analysisResult = await analysisResponse.json()
+      console.log('📋 MCP Analysis Result:', analysisResult)
+      
+      if (analysisResult.content?.[0]?.text) {
+        const analysisData = JSON.parse(analysisResult.content[0].text)
+        
+        console.log('📊 MCP Analysis Data:', analysisData)
+        
+        // Handle comprehensive analysis result structure
+        const { enhanced_tech_stack, stage_1_exploration, stage_2_technology_analysis, stage_3_gap_analysis, summary } = analysisData
+        
+        console.log('📊 Comprehensive Analysis Summary:', summary)
+        console.log('📊 Enhanced Tech Stack:', enhanced_tech_stack)
+        console.log('📊 Gap Analysis:', stage_3_gap_analysis)
+        
+        // Use enhanced tech stack directly from comprehensive analysis
+        const techStackAnalysis = {
+          card_title: `${stage_1_exploration.repository_info.name} Technology Stack (Comprehensive)`,
+          description: `Three-agent comprehensive analysis of ${stage_1_exploration.repository_info.name} repository`,
+          stack_name: stage_1_exploration.repository_info.name,
+          stack_type: 'Web Application',
+          architecture_pattern: 'Modern Web Stack',
+          primary_use_case: stage_1_exploration.repository_info.description || 'Not specified',
+          last_updated: stage_1_exploration.repository_info.updated_at,
+          // Use enhanced tech stack with GAP recommendations
+          technologies: enhanced_tech_stack,
+          key_decisions: stage_3_gap_analysis.key_decisions || [],
+          migration_notes: stage_3_gap_analysis.migration_notes || [],
+          analysis_metadata: {
+            agent_sequence: ['Repository Explorer', 'Technology Analyzer', 'Gap Analysis Engine'],
+            files_scanned: stage_1_exploration.files_scanned,
+            key_files_analyzed: stage_1_exploration.key_files_analyzed,
+            total_technologies: summary.total_technologies_detected,
+            gaps_identified: summary.total_gaps_identified,
+            high_priority_recommendations: summary.high_priority_recommendations,
+            analysis_success: summary.analysis_success
+          }
+        }
+        const generatedCards = [techStackAnalysis]
+        
+        console.log('📦 Generated Cards (Direct):', generatedCards)
+        
+        // Create tech stack card from the analysis
+        if (generatedCards.length > 0) {
+          const techStackAnalysis = generatedCards[0] // Should be a single comprehensive tech stack analysis
+          console.log('⚙️ Tech Stack Analysis:', techStackAnalysis)
+          
+          // Handle both old format (direct fields) and new format (nested technologies)
+          const technologies = techStackAnalysis.technologies || {}
+          
+          console.log('🔍 Technologies Structure:', technologies)
+          console.log('📊 Analysis Metadata:', techStackAnalysis.analysis_metadata)
+          
+          try {
+            await createCard({
+              title: techStackAnalysis.card_title || `${stage_1_exploration.repository_info.name} Technology Stack`,
+              description: techStackAnalysis.description || `Technology stack analysis for ${stage_1_exploration.repository_info.name}`,
+              card_type: 'tech-stack',
+              priority: 'Medium',
+              card_data: {
+                stack_name: techStackAnalysis.stack_name || stage_1_exploration.repository_info.name,
+                stack_type: techStackAnalysis.stack_type || 'Web Application',
+                architecture_pattern: techStackAnalysis.architecture_pattern || 'Not specified',
+                primary_use_case: techStackAnalysis.primary_use_case || 'Not specified',
+                last_updated: techStackAnalysis.last_updated || stage_1_exploration.repository_info.updated_at,
+                // Use enhanced tech stack with GAP recommendations
+                frontend: [...(technologies.frontend || []), ...(technologies.frontend_gaps || [])],
+                backend: [...(technologies.backend || []), ...(technologies.backend_gaps || [])],
+                database: [...(technologies.database || []), ...(technologies.database_gaps || [])],
+                infrastructure: [...(technologies.infrastructure || []), ...(technologies.infrastructure_gaps || [])],
+                platforms: [...(technologies.platforms || [])],
+                ai: [...(technologies.ai || []), ...(technologies.ai_gaps || [])],
+                development: [...(technologies.development || []), ...(technologies.development_gaps || [])],
+                integrations: [...(technologies.integrations || []), ...(technologies.integration_gaps || [])],
+                key_decisions: Array.isArray(techStackAnalysis.key_decisions) 
+                  ? techStackAnalysis.key_decisions.join(', ') 
+                  : techStackAnalysis.key_decisions || 'Not found',
+                migration_notes: Array.isArray(techStackAnalysis.migration_notes) 
+                  ? techStackAnalysis.migration_notes.join(', ') 
+                  : techStackAnalysis.migration_notes || 'Not found',
+                github_repository: stage_1_exploration.repository_info.html_url,
+                ai_generated: true,
+                ai_generation_context: {
+                  generated_at: new Date().toISOString(),
+                  model: 'comprehensive-github-analysis',
+                  repository: stage_1_exploration.repository_info.full_name,
+                  analysis_depth: 'comprehensive',
+                  analysis_metadata: techStackAnalysis.analysis_metadata || {}
+                }
+              }
+            })
+            
+            toast.success(`Successfully created tech stack analysis for ${stage_1_exploration.repository_info.name}!`)
+          } catch (error) {
+            console.error(`Failed to create tech stack card:`, error)
+            toast.error('Failed to create tech stack card')
+          }
+        } else {
+          toast.error('No tech stack cards were generated from the analysis')
+        }
+      }
+    } catch (error) {
+      console.error('GitHub analysis failed:', error)
+      toast.error('Failed to analyze GitHub repository. Please check your token and try again.')
+    } finally {
+      setGithubAnalyzing(false)
+      setShowGitHubModal(false)
     }
   }
 
@@ -1005,6 +1340,22 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
                         </button>
                       ) : (
                         <>
+                          {/* GitHub Analysis button for Tech Stack section */}
+                          {selectedSection === 'section2' && (
+                            <button 
+                              onClick={() => setShowGitHubModal(true)}
+                              disabled={githubAnalyzing}
+                              className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors flex items-center gap-1"
+                            >
+                              {githubAnalyzing ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Github className="w-3 h-3" />
+                              )}
+                              GitHub Analysis
+                            </button>
+                          )}
+
                           <button 
                             onClick={handleCreateCard}
                             className="text-gray-700 hover:bg-black hover:bg-opacity-10 px-1.5 py-0.5 rounded transition-colors"
@@ -1270,6 +1621,7 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
                   viewMode={viewMode}
                   loading={loading || groupsLoading}
                   currentStrategyId={strategy?.id}
+                  onCommitToTasks={handleCommitToTasks}
                 />
               )}
             </div>
@@ -1308,6 +1660,104 @@ export default function DevelopmentBank({ strategy, onBack, onClose }: Developme
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* GitHub Analysis Modal */}
+      {showGitHubModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Github className="w-5 h-5" />
+              Analyze GitHub Repository
+            </h3>
+            
+            {githubConnected ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm text-black bg-green-50 p-2 rounded">
+                  <Github className="w-4 h-4" />
+                  Connected to GitHub
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">
+                    Select Repository
+                  </label>
+                  {loadingRepos ? (
+                    <div className="flex items-center gap-2 text-sm text-black">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading repositories...
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedRepo}
+                      onChange={(e) => setSelectedRepo(e.target.value)}
+                      className="w-full px-3 py-2 text-sm text-black border border-gray-300 rounded-md focus:ring-1 focus:ring-black focus:border-black"
+                    >
+                      <option value="">Select a repository</option>
+                      {githubRepos.map((repo) => (
+                        <option key={repo.id} value={repo.full_name}>
+                          {repo.full_name} {repo.private ? '🔒' : '🌐'}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm text-black bg-orange-50 p-2 rounded">
+                  <AlertCircle className="w-4 h-4" />
+                  Not connected to GitHub
+                </div>
+                <p className="text-sm text-black">
+                  To use GitHub analysis, you need to connect to GitHub first in the Agent Hub.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowGitHubModal(false)
+                    setShowAgents(true)
+                  }}
+                  className="w-full px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Github className="w-4 h-4" />
+                  Go to Agent Hub
+                </button>
+              </div>
+            )}
+            
+            {githubConnected && (
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowGitHubModal(false)
+                    setSelectedRepo('')
+                  }}
+                  disabled={githubAnalyzing}
+                  className="px-4 py-2 text-sm text-black hover:text-gray-700 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleGitHubAnalysis}
+                  disabled={githubAnalyzing || !selectedRepo}
+                  className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  {githubAnalyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Github className="w-4 h-4" />
+                      Analyze Repository
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

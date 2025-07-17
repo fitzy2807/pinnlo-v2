@@ -23,36 +23,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Call OpenAI
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Claude
+    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'claude-3-5-sonnet-20241022',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }
         ],
         temperature: 0.7,
-        max_tokens: isPreview ? 500 : 4000,
-        ...(isPreview ? {} : { response_format: { type: 'json_object' } })
+        max_tokens: isPreview ? 500 : 4000
       })
     })
 
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text()
-      console.error('OpenAI API error:', errorText)
+    if (!claudeResponse.ok) {
+      const errorText = await claudeResponse.text()
+      console.error('Claude API error:', errorText)
       return NextResponse.json(
-        { success: false, error: `OpenAI API error: ${errorText}` },
+        { success: false, error: `Claude API error: ${errorText}` },
         { status: 500 }
       )
     }
 
-    const openaiResult = await openaiResponse.json()
-    const content = openaiResult.choices[0]?.message?.content
+    const claudeResult = await claudeResponse.json()
+    const content = claudeResult.content[0]?.text
 
     if (!content) {
       return NextResponse.json(
@@ -67,20 +66,20 @@ export async function POST(request: NextRequest) {
         success: true,
         preview: content,
         text: content,
-        usage: openaiResult.usage
+        usage: claudeResult.usage
       })
     }
 
     // Parse the JSON response for card generation
-    console.log('🤖 AI raw response:', content.substring(0, 500))
+    console.log('🤖 Claude raw response:', content.substring(0, 500))
     
     let parsed;
     try {
       parsed = JSON.parse(content)
     } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', parseError)
+      console.error('Failed to parse Claude response as JSON:', parseError)
       return NextResponse.json(
-        { success: false, error: 'Invalid JSON response from AI' },
+        { success: false, error: 'Invalid JSON response from Claude' },
         { status: 500 }
       )
     }
@@ -129,14 +128,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       cards,
-      usage: openaiResult.usage,
+      usage: claudeResult.usage,
       debug: {
         requestedCount: userPrompt.match(/exactly (\d+)/)?.[1],
         actualCount: cards.length
       }
     })
   } catch (error) {
-    console.error('Card generation error:', error)
+    console.error('Claude card generation error:', error)
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

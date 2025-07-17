@@ -117,7 +117,7 @@ export default function CardGroupSelector({
                     </div>
 
                     <div className="flex-1">
-                      <div className="font-medium text-sm">{group.name}</div>
+                      <div className="font-medium text-sm text-black">{group.name}</div>
                       {group.description && (
                         <div className="text-xs text-gray-500 mt-0.5">{group.description}</div>
                       )}
@@ -142,7 +142,7 @@ export default function CardGroupSelector({
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="px-4 py-2 text-black hover:bg-gray-100 rounded-lg"
               disabled={loading}
             >
               Cancel

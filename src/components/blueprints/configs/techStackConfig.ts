@@ -1,184 +1,188 @@
 import { BlueprintConfig } from '../types'
 
 export const techStackConfig: BlueprintConfig = {
-  id: 'techStack',
-  name: 'Tech Stack Component',
-  description: 'Document and manage technology architecture components',
-  category: 'Planning & Execution',
+  id: 'tech-stack',
+  name: 'Tech Stack',
+  description: 'Clean, flexible technology stack documentation with tag-based architecture',
+  category: 'Organizational & Technical',
   icon: '⚙️',
   fields: [
-    // === BASIC INFORMATION ===
+    // === CORE INFORMATION FIELDS (5 fields) ===
     {
-      id: 'category',
-      name: 'Category',
+      id: 'stack_name',
+      name: 'Stack Name',
+      type: 'text',
+      required: true,
+      placeholder: 'e.g., Pinnlo V2 Strategy Platform',
+      description: 'Clear identification and reference name for this technology stack',
+      validation: {
+        min: 3,
+        max: 100
+      }
+    },
+    {
+      id: 'stack_type',
+      name: 'Stack Type',
       type: 'enum',
       required: true,
-      options: ['Frontend', 'Backend', 'Database', 'Infrastructure', 'DevOps', 'Analytics', 'Security', 'Integration', 'Mobile'],
-      description: 'Primary technology category'
+      options: [
+        'Full-Stack Web App',
+        'Mobile App',
+        'API Service',
+        'Desktop App',
+        'Microservice',
+        'Serverless Function',
+        'Data Pipeline',
+        'ML/AI Platform',
+        'DevOps Tool',
+        'Other'
+      ],
+      description: 'Categorize the type of system this stack represents'
     },
     {
-      id: 'subcategory',
-      name: 'Subcategory',
+      id: 'architecture_pattern',
+      name: 'Architecture Pattern',
       type: 'text',
-      placeholder: 'e.g., Framework, Library, Tool',
-      description: 'More specific classification'
+      required: true,
+      placeholder: 'e.g., Jamstack, Microservices, Monolithic, Serverless, Hybrid',
+      description: 'High-level architectural approach and design pattern',
+      validation: {
+        min: 3,
+        max: 50
+      }
     },
     {
-      id: 'version_current',
-      name: 'Current Version',
-      type: 'text',
-      placeholder: 'e.g., 18.2.0',
-      description: 'Latest stable version available'
-    },
-    {
-      id: 'vendor',
-      name: 'Vendor/Maintainer',
-      type: 'text',
-      placeholder: 'e.g., Meta, Google, Microsoft',
-      description: 'Company or organization maintaining this technology'
-    },
-    {
-      id: 'license_type',
-      name: 'License',
-      type: 'text',
-      placeholder: 'e.g., MIT, Apache 2.0, Proprietary',
-      description: 'Software license type'
-    },
-    {
-      id: 'language_ecosystem',
-      name: 'Language/Ecosystem',
-      type: 'text',
-      placeholder: 'e.g., JavaScript, Python, Java',
-      description: 'Primary programming language or ecosystem'
-    },
-    {
-      id: 'implementation_status',
-      name: 'Implementation Status',
-      type: 'enum',
-      options: ['planned', 'in-progress', 'active', 'deprecated'],
-      description: 'Current status in our tech stack'
-    },
-    
-    // === CAPABILITIES ===
-    {
-      id: 'primary_functions',
-      name: 'Primary Functions',
-      type: 'array',
-      placeholder: 'Add key capabilities...',
-      description: 'Main features and capabilities this technology provides'
-    },
-    
-    // === OUR IMPLEMENTATION ===
-    {
-      id: 'our_implementation.version_used',
-      name: 'Version We Use',
-      type: 'text',
-      placeholder: 'e.g., 18.1.0',
-      description: 'The specific version deployed in our environment'
-    },
-    {
-      id: 'our_implementation.key_features_enabled',
-      name: 'Features Enabled',
-      type: 'array',
-      placeholder: 'Add enabled features...',
-      description: 'Which features we actually use'
-    },
-    {
-      id: 'our_implementation.custom_configurations',
-      name: 'Custom Configurations',
+      id: 'primary_use_case',
+      name: 'Primary Use Case',
       type: 'textarea',
-      placeholder: 'Describe any custom configurations...',
-      description: 'Custom settings and configurations'
+      required: true,
+      placeholder: 'e.g., Strategy management and collaborative planning platform',
+      description: 'Business context and primary purpose of this technology stack',
+      validation: {
+        min: 10,
+        max: 500
+      }
     },
-    
-    // === INTEGRATIONS ===
     {
-      id: 'our_integrations.connects_to',
-      name: 'Connected Systems',
+      id: 'last_updated',
+      name: 'Last Updated',
+      type: 'date',
+      required: true,
+      description: 'Date when the tech stack was last reviewed or updated'
+    },
+
+    // === TECHNOLOGY CATEGORIES (8 tag fields) ===
+    {
+      id: 'frontend',
+      name: 'Frontend',
       type: 'array',
-      placeholder: 'Add connected technologies...',
-      description: 'Other technologies this integrates with'
+      required: false,
+      placeholder: 'Add frontend technologies...',
+      description: 'Client-side technologies and user interface frameworks (e.g., Next.js-14, React-18, TypeScript, Tailwind-CSS, Headless-UI, Lucide-React)'
     },
     {
-      id: 'our_integrations.authentication_implementation',
-      name: 'Authentication Method',
-      type: 'text',
-      placeholder: 'e.g., JWT, OAuth2, API Key',
-      description: 'How authentication is handled'
-    },
-    {
-      id: 'our_integrations.data_flow_patterns',
-      name: 'Data Flow Patterns',
+      id: 'backend',
+      name: 'Backend',
       type: 'array',
-      placeholder: 'e.g., REST API, GraphQL, WebSocket',
-      description: 'How data flows between systems'
-    },
-    
-    // === DEVELOPMENT ===
-    {
-      id: 'our_workflow.build_process',
-      name: 'Build Process',
-      type: 'text',
-      placeholder: 'e.g., Webpack, Vite, Rollup',
-      description: 'Build tools and processes'
+      required: false,
+      placeholder: 'Add backend technologies...',
+      description: 'Server-side logic and APIs (e.g., Next.js-API-Routes, Node.js, Supabase-Auth, REST-APIs, Serverless)'
     },
     {
-      id: 'our_workflow.testing_approach',
-      name: 'Testing Approach',
-      type: 'text',
-      placeholder: 'e.g., Jest, Cypress, Playwright',
-      description: 'Testing framework and approach'
-    },
-    
-    // === SUPPORT ===
-    {
-      id: 'our_support.documentation_location',
-      name: 'Documentation Location',
-      type: 'text',
-      placeholder: 'e.g., Confluence URL, GitHub Wiki',
-      description: 'Where to find our internal documentation'
-    },
-    {
-      id: 'our_support.internal_expertise',
-      name: 'Internal Experts',
+      id: 'database',
+      name: 'Database',
       type: 'array',
-      placeholder: 'Add team members...',
-      description: 'Team members with expertise in this technology'
+      required: false,
+      placeholder: 'Add database technologies...',
+      description: 'Data storage and management systems (e.g., PostgreSQL, Supabase, Row-Level-Security, Real-time-subscriptions)'
     },
     {
-      id: 'common_issues.typical_problems',
-      name: 'Common Issues',
+      id: 'infrastructure',
+      name: 'Infrastructure',
       type: 'array',
-      placeholder: 'Add known issues...',
-      description: 'Typical problems encountered with this technology'
+      required: false,
+      placeholder: 'Add infrastructure technologies...',
+      description: 'Hosting, deployment, and operations tools (e.g., Vercel, CDN, Edge-Functions, Git-Deployment, Docker)'
+    },
+    {
+      id: 'platforms',
+      name: 'Platforms',
+      type: 'array',
+      required: false,
+      placeholder: 'Add enterprise platforms...',
+      description: 'Enterprise software and SaaS platforms (e.g., Salesforce, SAP, Microsoft-365, Slack, Jira, Adobe-Creative-Cloud)'
+    },
+    {
+      id: 'ai',
+      name: 'AI',
+      type: 'array',
+      required: false,
+      placeholder: 'Add AI technologies...',
+      description: 'Artificial Intelligence and ML services (e.g., OpenAI-GPT-4, Claude-3, Anthropic, LangChain, Vector-DB, MCP-Protocol)'
+    },
+    {
+      id: 'development',
+      name: 'Development',
+      type: 'array',
+      required: false,
+      placeholder: 'Add development tools...',
+      description: 'Developer tools and workflow technologies (e.g., npm, TypeScript, Jest, ESLint, Git, VS-Code, GitHub-Actions)'
+    },
+    {
+      id: 'integrations',
+      name: 'Integrations',
+      type: 'array',
+      required: false,
+      placeholder: 'Add integration services...',
+      description: 'External services and APIs (e.g., Supabase-Auth, Stripe, SendGrid, Analytics, Monitoring, Webhooks)'
+    },
+
+    // === ADDITIONAL CONTEXT FIELDS (2 optional) ===
+    {
+      id: 'key_decisions',
+      name: 'Key Decisions',
+      type: 'textarea',
+      required: false,
+      placeholder: 'Document major technology choices and their rationale...',
+      description: 'Major technology choices and rationale (e.g., "Chose Supabase over Firebase for better PostgreSQL support and RLS")',
+      validation: {
+        max: 2000
+      }
+    },
+    {
+      id: 'migration_notes',
+      name: 'Migration Notes',
+      type: 'textarea',
+      required: false,
+      placeholder: 'Track technology evolution and upgrade plans...',
+      description: 'Technology evolution and upgrade plans (e.g., "Plan to migrate from Next.js 14 to 15 in Q2 2025")',
+      validation: {
+        max: 2000
+      }
     }
   ],
   defaultValues: {
-    category: 'Frontend',
-    subcategory: '',
-    version_current: '',
-    vendor: '',
-    license_type: '',
-    language_ecosystem: '',
-    implementation_status: 'planned',
-    primary_functions: [],
-    'our_implementation.version_used': '',
-    'our_implementation.key_features_enabled': [],
-    'our_implementation.custom_configurations': '',
-    'our_integrations.connects_to': [],
-    'our_integrations.authentication_implementation': '',
-    'our_integrations.data_flow_patterns': [],
-    'our_workflow.build_process': '',
-    'our_workflow.testing_approach': '',
-    'our_support.documentation_location': '',
-    'our_support.internal_expertise': [],
-    'common_issues.typical_problems': []
+    stack_name: '',
+    stack_type: 'Full-Stack Web App',
+    architecture_pattern: 'Jamstack',
+    primary_use_case: '',
+    last_updated: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+    frontend: [],
+    backend: [],
+    database: [],
+    infrastructure: [],
+    platforms: [],
+    ai: [],
+    development: [],
+    integrations: [],
+    key_decisions: '',
+    migration_notes: ''
   },
   validation: {
-    required: ['category']
+    required: ['stack_name', 'stack_type', 'architecture_pattern', 'primary_use_case', 'last_updated']
   },
   relationships: {
-    linkedBlueprints: ['technical-requirement', 'feature', 'roadmap'],
+    linkedBlueprints: ['technical-requirement', 'feature', 'roadmap', 'risk-assessment'],
     requiredBlueprints: []
   }
 }

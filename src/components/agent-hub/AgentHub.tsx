@@ -8,6 +8,7 @@ import AgentConfigurationPanel from './AgentConfigurationPanel'
 import AutomationDashboard from '../intelligence/AutomationDashboard'
 import SystemPromptManager from './agents/SystemPromptManager'
 import CardCreatorSystemPrompts from './agents/CardCreatorSystemPrompts'
+import { LocalFolderExplorer } from './LocalFolderExplorer'
 import { toast } from 'react-hot-toast'
 
 interface AgentHubProps {
@@ -645,13 +646,16 @@ export default function AgentHub({ onClose }: AgentHubProps) {
                 </h1>
                 <p className="text-[11px] text-gray-500 mt-0.5">
                   {viewType === 'section' 
-                    ? 'Browse and configure AI agents for your hubs'
+                    ? selectedSection === 'integration' 
+                      ? 'Connect to local folders and repositories for AI-powered code analysis'
+                      : 'Browse and configure AI agents for your hubs'
                     : currentGroup?.description || 'Group collection of agents'
                   }
                 </p>
               </div>
               
               {/* Controls Bar */}
+              {!(selectedSection === 'integration' && viewType === 'section') && (
               <div className="px-4 pb-2">
                 <div className="flex items-center gap-3 text-xs">
                   {/* Search */}
@@ -863,6 +867,7 @@ export default function AgentHub({ onClose }: AgentHubProps) {
                   )}
                 </div>
               </div>
+              )}
             </div>
 
             {/* Quick Add Form */}
@@ -927,7 +932,9 @@ export default function AgentHub({ onClose }: AgentHubProps) {
 
             {/* Cards Content */}
             <div className="flex-1 p-4">
-              {loading || groupsLoading ? (
+              {selectedSection === 'integration' && viewType === 'section' ? (
+                <LocalFolderExplorer />
+              ) : loading || groupsLoading ? (
                 <div className="flex items-center justify-center h-32">
                   <div className="text-sm text-gray-500">Loading agents...</div>
                 </div>

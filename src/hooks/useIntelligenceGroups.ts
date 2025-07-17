@@ -34,18 +34,37 @@ export function useIntelligenceGroups() {
 
   const loadGroups = async () => {
     try {
+      console.log('🔍 Loading intelligence groups...')
       setIsLoading(true)
       setError(null)
+
+      // Get current user for RLS filtering
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      console.log('🔍 Auth user:', user?.id || 'No user')
+      if (authError) {
+        console.error('🔍 Auth error:', authError)
+        throw authError
+      }
+      if (!user) {
+        console.log('🔍 No authenticated user, skipping groups load')
+        setGroups([])
+        return
+      }
 
       const { data, error } = await supabase
         .from('intelligence_groups')
         .select('*')
+        .eq('user_id', user.id)
         .order('last_used_at', { ascending: false })
 
+      console.log('🔍 Groups query result:', { data, error })
       if (error) throw error
-      setGroups(data || [])
+      
+      const groups = data || []
+      console.log('🔍 Setting groups:', groups.length, 'groups found')
+      setGroups(groups)
     } catch (err: any) {
-      console.error('Error loading intelligence groups:', err)
+      console.error('🔍 Error loading intelligence groups:', err)
       setError(err.message)
     } finally {
       setIsLoading(false)
@@ -172,7 +191,7 @@ export function useIntelligenceGroups() {
         .from('intelligence_group_cards')
         .delete()
         .eq('group_id', groupId)
-        .eq('intelligence_card_id', cardId)
+        .eq('card_id', cardId)
 
       if (error) throw error
 
@@ -216,7 +235,7 @@ export function useIntelligenceGroups() {
       // Prepare the insert data
       const insertData = cardIds.map((cardId, index) => ({
         group_id: groupId,
-        intelligence_card_id: cardId,
+        card_id: cardId,
         position: index,
         added_at: new Date().toISOString(),
         added_by: null // We'll get the user ID if needed

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { X, Search, Plus } from 'lucide-react';
-import { blueprintRegistry } from '@/components/blueprints/registry';
+import { BLUEPRINT_REGISTRY, getBlueprintConfig } from '@/components/blueprints/registry';
 
 interface BlueprintManagerToolProps {
   strategyId: number;
@@ -11,106 +11,79 @@ interface BlueprintManagerToolProps {
   onClose: () => void;
 }
 
-// Blueprint data with exact same structure as the image
-const BLUEPRINT_DATA = {
-  'strategic-context': {
-    name: 'Strategic Context',
-    description: 'Define the strategic context and foundation for your strategy',
-    category: 'strategy',
-    tags: ['Required'],
-    isRequired: true
-  },
-  'vision': {
-    name: 'Vision Statement', 
-    description: 'Define your long-term vision and aspirational goals',
-    category: 'strategy'
-  },
-  'value-proposition': {
-    name: 'Value Proposition',
-    description: 'Define the unique value you provide to customers', 
-    category: 'strategy'
-  },
-  'personas': {
-    name: 'Personas',
-    description: 'Define detailed user personas and customer segments',
-    category: 'research',
-    tags: ['Suggested']
-  },
-  'customer-journey': {
-    name: 'Customer Journey',
-    description: 'Map the customer experience from awareness to advocacy',
-    category: 'research'
-  },
-  'swot-analysis': {
-    name: 'SWOT Analysis', 
-    description: 'Analyze strengths, weaknesses, opportunities, and threats',
-    category: 'research'
-  },
-  'competitive-analysis': {
-    name: 'Competitive Analysis',
-    description: 'Analyze competitors and competitive landscape',
-    category: 'research'
-  },
-  'okrs': {
-    name: 'OKRs',
-    description: 'Define objectives and key results for goal tracking',
-    category: 'planning'
-  },
-  'business-model': {
-    name: 'Business Model',
-    description: 'Define how your business creates, delivers, and captures value',
-    category: 'planning'
-  },
-  'go-to-market': {
-    name: 'Go-to-Market Strategy',
-    description: 'Plan how to bring your product or service to market',
-    category: 'planning'
-  },
-  'risk-assessment': {
-    name: 'Risk Assessment',
-    description: 'Identify and analyze potential risks and mitigation strategies',
-    category: 'planning'
-  },
-  'roadmap': {
-    name: 'Roadmap',
-    description: 'Plan timeline and milestones for strategy execution',
-    category: 'planning'
-  },
-  'kpis': {
-    name: 'KPIs & Metrics',
-    description: 'Define key performance indicators and success metrics',
-    category: 'measurement'
-  },
-  'financial-projections': {
-    name: 'Financial Projections',
-    description: 'Create financial forecasts and projections',
-    category: 'measurement'
-  },
-  'workstream': {
-    name: 'Workstream',
-    description: 'Organize work into manageable streams with clear ownership',
-    category: 'planning'
-  },
-  'epic': {
-    name: 'Epic', 
-    description: 'Large initiatives broken down into manageable features',
-    category: 'planning'
-  },
-  'feature': {
-    name: 'Feature',
-    description: 'Product features with detailed specifications and user stories',
-    category: 'planning',
-    tags: ['Suggested']
-  },
-  'user-journey': {
-    name: 'User Journey',
-    description: 'Map user experiences and touchpoints across their lifecycle',
-    category: 'research',
-    tags: ['Suggested']
-  }
+// Strategy Hub specific blueprint configuration
+// This defines which blueprints should be available in the Strategy Hub
+const STRATEGY_HUB_BLUEPRINTS = [
+  // Core Strategy
+  'strategicContext',
+  'vision',
+  'valuePropositions',
+  'strategic-bet',
+  
+  // Research & Analysis
+  'personas',
+  'customer-journey',
+  'swot-analysis',
+  'competitive-analysis',
+  'market-insight',
+  'experiment',
+  
+  // Planning & Execution
+  'okrs',
+  'problem-statement', // This was missing from the hardcoded list!
+  'workstreams',
+  'epics',
+  'features',
+  'prd',
+  'trd',
+  'business-model',
+  'gtmPlays',
+  'risk-assessment',
+  'roadmap',
+  
+  // User Experience
+  
+  // Measurement
+  'kpis',
+  'financial-projections',
+  'cost-driver',
+  'revenue-driver'
+];
+
+// Required blueprints that cannot be deselected
+const REQUIRED_BLUEPRINTS = ['strategicContext'];
+
+// Suggested blueprints to highlight
+const SUGGESTED_BLUEPRINTS = ['features', 'personas'];
+
+// Category mapping for filtering
+const CATEGORY_MAPPING: Record<string, string> = {
+  'Core Strategy': 'strategy',
+  'Research & Analysis': 'research',
+  'Planning & Execution': 'planning',
+  'User Experience': 'research',
+  'Measurement': 'measurement'
 };
 
-const SUGGESTED_BLUEPRINTS = ['user-journey', 'feature', 'personas'];
+// Helper function to get blueprint display data from registry
+function getBlueprintDisplayData(blueprintId: string) {
+  const config = getBlueprintConfig(blueprintId);
+  if (!config) return null;
+  
+  // Map blueprint categories to display categories
+  let displayCategory = 'planning'; // default
+  if (config.category) {
+    displayCategory = CATEGORY_MAPPING[config.category] || 'planning';
+  }
+  
+  return {
+    name: config.name,
+    description: config.description,
+    category: displayCategory,
+    tags: [],
+    isRequired: REQUIRED_BLUEPRINTS.includes(blueprintId)
+  };
+}
 
 export default function BlueprintManagerTool({
   strategyId,
@@ -122,40 +95,45 @@ export default function BlueprintManagerTool({
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
 
-  // Get available blueprints (those defined in BLUEPRINT_DATA)
-  const availableBlueprints = Object.keys(BLUEPRINT_DATA);
+  // Get available blueprints from registry-based configuration
+  const availableBlueprints = STRATEGY_HUB_BLUEPRINTS.filter(blueprintId => {
+    // Only include blueprints that exist in the registry
+    const config = getBlueprintConfig(blueprintId);
+    return config !== undefined;
+  });
   const totalAvailable = availableBlueprints.length;
 
   // Filter blueprints based on search and category
   const filteredBlueprints = useMemo(() => {
     return availableBlueprints.filter(blueprintId => {
-      const blueprint = BLUEPRINT_DATA[blueprintId];
+      const blueprintData = getBlueprintDisplayData(blueprintId);
+      if (!blueprintData) return false;
       
       // Search filter
       if (searchQuery) {
         const searchLower = searchQuery.toLowerCase();
-        if (!blueprint.name.toLowerCase().includes(searchLower) && 
-            !blueprint.description.toLowerCase().includes(searchLower)) {
+        if (!blueprintData.name.toLowerCase().includes(searchLower) && 
+            !blueprintData.description.toLowerCase().includes(searchLower)) {
           return false;
         }
       }
       
       // Category filter
       if (categoryFilter !== 'All') {
-        if (blueprint.category !== categoryFilter.toLowerCase()) {
+        if (blueprintData.category !== categoryFilter.toLowerCase()) {
           return false;
         }
       }
       
       return true;
     });
-  }, [searchQuery, categoryFilter]);
+  }, [searchQuery, categoryFilter, availableBlueprints]);
 
   const handleToggleBlueprint = (blueprintId: string) => {
-    const blueprint = BLUEPRINT_DATA[blueprintId];
+    const blueprintData = getBlueprintDisplayData(blueprintId);
     
     // Don't allow deselecting required blueprints
-    if (blueprint.isRequired && selectedBlueprints.includes(blueprintId)) {
+    if (blueprintData?.isRequired && selectedBlueprints.includes(blueprintId)) {
       return;
     }
     
@@ -171,7 +149,7 @@ export default function BlueprintManagerTool({
   };
 
   const handleResetToRequired = () => {
-    const requiredBlueprints = availableBlueprints.filter(id => BLUEPRINT_DATA[id].isRequired);
+    const requiredBlueprints = availableBlueprints.filter(id => REQUIRED_BLUEPRINTS.includes(id));
     setSelectedBlueprints(requiredBlueprints);
   };
 
@@ -225,8 +203,10 @@ export default function BlueprintManagerTool({
         </div>
         <div className="flex flex-wrap gap-1.5">
           {SUGGESTED_BLUEPRINTS.map(blueprintId => {
-            const blueprint = BLUEPRINT_DATA[blueprintId];
+            const blueprintData = getBlueprintDisplayData(blueprintId);
             const isSelected = selectedBlueprints.includes(blueprintId);
+            
+            if (!blueprintData) return null;
             
             return (
               <button
@@ -240,7 +220,7 @@ export default function BlueprintManagerTool({
                 }`}
               >
                 <Plus className="w-2.5 h-2.5" />
-                {blueprint.name}
+                {blueprintData.name}
               </button>
             );
           })}
@@ -274,26 +254,40 @@ export default function BlueprintManagerTool({
         </div>
       </div>
 
-      {/* Blueprint Grid - 60% smaller */}
+      {/* Blueprint Grid - Card Creator Style */}
       <div className="flex-1 overflow-y-auto p-3">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+        <div className="flex flex-wrap gap-2">
           {filteredBlueprints.map(blueprintId => {
-            const blueprint = BLUEPRINT_DATA[blueprintId];
+            const blueprintData = getBlueprintDisplayData(blueprintId);
+            if (!blueprintData) return null;
+            
             const isSelected = selectedBlueprints.includes(blueprintId);
-            const isRequired = blueprint.isRequired;
-            const isSuggested = blueprint.tags?.includes('Suggested');
+            const isRequired = blueprintData.isRequired;
+            const isSuggested = SUGGESTED_BLUEPRINTS.includes(blueprintId);
+            
+            // Get blueprint config for icon
+            const config = getBlueprintConfig(blueprintId);
+            const icon = config?.icon || '📄';
             
             return (
-              <div
+              <label
                 key={blueprintId}
-                onClick={() => handleToggleBlueprint(blueprintId)}
-                className={`relative p-2 border rounded cursor-pointer transition-all h-20 ${
-                  isSelected
-                    ? 'border-black bg-gray-50 shadow-sm'
-                    : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                } ${isRequired ? 'cursor-default' : ''}`}
+                className={`relative w-[calc(20%-8px)] min-w-[140px] max-w-[180px] h-[80px] rounded-lg cursor-pointer transition-all 
+                  flex flex-col items-center justify-center gap-1 shadow-md hover:shadow-lg
+                  ${isSelected 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'bg-black hover:bg-gray-900 text-white'
+                  } ${isRequired ? 'cursor-default' : ''}`}
               >
-                {/* Tags - smaller */}
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => handleToggleBlueprint(blueprintId)}
+                  disabled={isRequired}
+                  className="sr-only"
+                />
+                
+                {/* Tags - positioned absolutely */}
                 <div className="absolute top-1 right-1 flex gap-0.5">
                   {isRequired && (
                     <span className="px-1 py-0.5 text-[10px] font-medium text-white bg-red-500 rounded">
@@ -307,34 +301,16 @@ export default function BlueprintManagerTool({
                   )}
                 </div>
 
-                {/* Checkbox - smaller */}
-                <div className="absolute top-1 left-1">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => {}}
-                    disabled={isRequired}
-                    className="w-3 h-3 rounded border-gray-300 text-black focus:ring-black"
-                  />
-                </div>
-
-                {/* Content - no icon, reduced height */}
-                <div className="mt-4 space-y-1">
-                  <h3 className="text-[11px] font-medium text-gray-900 leading-tight overflow-hidden">
-                    {blueprint.name}
-                  </h3>
-                  <p className="text-[10px] text-gray-500 leading-tight overflow-hidden">
-                    {blueprint.description}
-                  </p>
-                </div>
-
-                {/* Selection indicator - smaller */}
-                {isSelected && (
-                  <div className="absolute bottom-1 right-1">
-                    <div className="w-1.5 h-1.5 bg-black rounded-full"></div>
-                  </div>
-                )}
-              </div>
+                {/* Icon */}
+                <span className="text-2xl">
+                  {icon}
+                </span>
+                
+                {/* Blueprint Name */}
+                <span className="text-xs font-medium text-center px-2">
+                  {blueprintData.name}
+                </span>
+              </label>
             );
           })}
         </div>
