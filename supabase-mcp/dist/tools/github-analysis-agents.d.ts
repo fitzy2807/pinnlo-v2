@@ -396,7 +396,7 @@ export declare const githubAnalysisOrchestratorTool: {
                 items: {
                     type: string;
                 };
-                default: never[];
+                default: any[];
                 description: string;
             };
             user_id: {

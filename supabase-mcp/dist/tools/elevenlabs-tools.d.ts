@@ -12,7 +12,7 @@ export declare const elevenLabsTools: ({
             audio_url?: undefined;
             language?: undefined;
         };
-        required: never[];
+        required: any[];
     };
 } | {
     name: string;

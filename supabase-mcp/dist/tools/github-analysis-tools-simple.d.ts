@@ -39,8 +39,8 @@ export declare const githubAnalysisTools: {
         handler: ({ repository_url, github_token, analysis_depth, focus_areas, user_id }: {
             repository_url: any;
             github_token: any;
-            analysis_depth?: string | undefined;
-            focus_areas?: never[] | undefined;
+            analysis_depth?: string;
+            focus_areas?: any[];
             user_id: any;
         }) => Promise<{
             content: {
@@ -53,8 +53,8 @@ export declare const githubAnalysisTools: {
 export declare const handleAnalyzeGitHubRepository: ({ repository_url, github_token, analysis_depth, focus_areas, user_id }: {
     repository_url: any;
     github_token: any;
-    analysis_depth?: string | undefined;
-    focus_areas?: never[] | undefined;
+    analysis_depth?: string;
+    focus_areas?: any[];
     user_id: any;
 }) => Promise<{
     content: {

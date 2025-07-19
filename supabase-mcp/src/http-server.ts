@@ -163,8 +163,8 @@ class HttpMcpServer {
         const { blueprintCards, intelligenceCards, intelligenceGroups, strategyName } = req.body;
         
         const contextItems = [
-          ...blueprintCards.map(card => `Blueprint: ${card.title} - ${card.description}`),
-          ...intelligenceCards.map(card => `Intelligence: ${card.title} - ${card.key_findings?.join(', ') || card.description}`)
+          ...blueprintCards.map((card: any) => `Blueprint: ${card.title} - ${card.description}`),
+          ...intelligenceCards.map((card: any) => `Intelligence: ${card.title} - ${card.key_findings?.join(', ') || card.description}`)
         ].join('\n');
 
         const systemPrompt = `You are a strategic analyst. Create a comprehensive context summary for ${strategyName}.`;
@@ -231,7 +231,7 @@ Focus on:
 The summary should feel like it was written by someone who carefully read each card.`;
         
         // Create detailed card context with all available information
-        const cardDetails = cards.map((card, index) => {
+        const cardDetails = cards.map((card: any, index: number) => {
           const details = [
             `**Card ${index + 1}: ${card.title}**`,
             `Description: ${card.description || 'No description provided'}`,
@@ -279,7 +279,7 @@ ${cardDetails}
           metadata: {
             blueprint_type,
             card_count: cards.length,
-            cards_analyzed: cards.map(c => c.title)
+            cards_analyzed: cards.map((c: any) => c.title)
           }
         };
         

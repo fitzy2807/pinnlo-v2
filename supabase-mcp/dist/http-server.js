@@ -124,8 +124,8 @@ class HttpMcpServer {
             try {
                 const { blueprintCards, intelligenceCards, intelligenceGroups, strategyName } = req.body;
                 const contextItems = [
-                    ...blueprintCards.map(card => `Blueprint: ${card.title} - ${card.description}`),
-                    ...intelligenceCards.map(card => `Intelligence: ${card.title} - ${card.key_findings?.join(', ') || card.description}`)
+                    ...blueprintCards.map((card) => `Blueprint: ${card.title} - ${card.description}`),
+                    ...intelligenceCards.map((card) => `Intelligence: ${card.title} - ${card.key_findings?.join(', ') || card.description}`)
                 ].join('\n');
                 const systemPrompt = `You are a strategic analyst. Create a comprehensive context summary for ${strategyName}.`;
                 const userPrompt = `Create a strategic context summary based on:\n\n${contextItems}\n\nGenerate a markdown summary with:\n## Strategic Context\n## Key Themes\n## Strategic Implications\n## Recommended Focus Areas`;
@@ -230,7 +230,7 @@ ${cardDetails}
                     metadata: {
                         blueprint_type,
                         card_count: cards.length,
-                        cards_analyzed: cards.map(c => c.title)
+                        cards_analyzed: cards.map((c) => c.title)
                     }
                 };
                 res.json(result);

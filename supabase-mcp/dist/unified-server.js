@@ -325,7 +325,7 @@ ${cardDetails}
         // Intelligence processing endpoints (backward compatible)
         this.httpApp.post('/api/tools/analyze_url', authenticateRequest, async (req, res) => {
             try {
-                const result = await handleAnalyzeUrl(req.body);
+                const result = await handleAnalyzeUrl(req.body, null);
                 res.json(result);
             }
             catch (error) {

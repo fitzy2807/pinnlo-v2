@@ -115,7 +115,7 @@ export declare const elevenLabsConversationalTools: ({
             mcp_server_url?: undefined;
             voice_id?: undefined;
         };
-        required: never[];
+        required: any[];
     };
 } | {
     name: string;
@@ -189,7 +189,7 @@ export declare const elevenLabsConversationalTools: ({
             language?: undefined;
             first_message?: undefined;
         };
-        required: never[];
+        required: any[];
     };
 })[];
 export declare function handleElevenLabsCreateTool(args: any): Promise<{

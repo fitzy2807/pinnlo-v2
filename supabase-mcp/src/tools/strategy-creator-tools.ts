@@ -1,5 +1,5 @@
 // Tool type will be inferred from the object structure
-import { getSystemPrompt } from '../lib/supabase';
+import { getSystemPrompt } from '../lib/supabase.js';
 import fs from 'fs';
 import path from 'path';
 

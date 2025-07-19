@@ -20,7 +20,7 @@ import {
   handleCommitTrdToTaskList
 } from './tools/development-bank-tools.js';
 import { batchedDevelopmentBankTools, handleCommitTrdToTaskListBatched } from './tools/development-bank-tools-batched.js';
-import { techStackTools } from './tools/tech-stack-tools.js';
+// import { techStackTools } from './tools/tech-stack-tools.js';
 import { 
   terminalTools, 
   handleExecuteCommand, 
@@ -127,7 +127,7 @@ class SupabaseMCPServer {
         // Add all batched development bank tools
         ...batchedDevelopmentBankTools,
         // Add all tech stack tools
-        ...techStackTools,
+        // ...techStackTools,
         // Add all terminal tools
         ...terminalTools,
         // Add edit mode generator tools
@@ -186,10 +186,10 @@ class SupabaseMCPServer {
             return await handleMonitorFileChanges(args);
           
           // Tech Stack Tools
-          case 'generate_tech_stack_component':
-            return await techStackTools.generate_tech_stack_component.handler(args);
-          case 'analyze_tech_stack':
-            return await techStackTools.analyze_tech_stack.handler(args);
+          // case 'generate_tech_stack_component':
+          //   return await techStackTools.generate_tech_stack_component.handler(args);
+          // case 'analyze_tech_stack':
+          //   return await techStackTools.analyze_tech_stack.handler(args);
           
           // Edit Mode Generator Tools
           case 'generate_edit_mode_content':
