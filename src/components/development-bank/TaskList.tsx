@@ -464,7 +464,11 @@ function TaskCard({ task, isExpanded, onToggle, onUpdateStatus, getStatusColor, 
           {/* Description */}
           <div>
             <h5 className="font-medium text-black mb-2">Description</h5>
-            <p className="text-black text-sm">{task.description?.objective || task.description || 'No description provided'}</p>
+            <p className="text-black text-sm">
+              {task.description?.objective || 
+               (typeof task.description === 'string' ? task.description : '') || 
+               'No description provided'}
+            </p>
             {(task.description?.businessValue || task.card_data?.description?.businessValue) && (
               <p className="text-black text-sm mt-1">
                 <strong>Business Value:</strong> {task.description?.businessValue || task.card_data?.description?.businessValue}

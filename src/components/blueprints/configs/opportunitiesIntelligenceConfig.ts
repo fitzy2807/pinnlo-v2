@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const opportunitiesIntelligenceConfig: BlueprintConfig = {
-  id: 'opportunities-intelligence',
+  id: 'opportunitiesIntelligence',
   name: 'Opportunities Intelligence',
   description: 'Strategic opportunities, market gaps, and growth potential',
   category: 'Research & Analysis',

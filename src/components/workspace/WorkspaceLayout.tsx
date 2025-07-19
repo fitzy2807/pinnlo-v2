@@ -3,31 +3,34 @@
 import { useState } from 'react'
 import { Search, Plus, Filter, SortDesc, Settings, ArrowLeft } from 'lucide-react'
 import Header from '@/components/Header'
+import { MANDATORY_BLUEPRINTS, getBlueprintsByCategory } from '@/utils/blueprintConstants'
+import { BLUEPRINT_REGISTRY } from '@/components/blueprints/registry'
 
 interface WorkspaceLayoutProps {
   strategyId: string
 }
 
 export default function WorkspaceLayout({ strategyId }: WorkspaceLayoutProps) {
-  const [activeBlueprint, setActiveBlueprint] = useState('strategic-context')
+  const [activeBlueprint, setActiveBlueprint] = useState(MANDATORY_BLUEPRINTS[0])
 
-  const blueprints = [
-    { id: 'strategic-context', name: 'Strategic Context', icon: '🎯', count: 3 },
-    { id: 'vision', name: 'Vision Statement', icon: '👁️', count: 1 },
-    { id: 'value-propositions', name: 'Value Propositions', icon: '💎', count: 2 },
-    { id: 'personas', name: 'Personas', icon: '👥', count: 4 },
-    { id: 'okrs', name: 'OKRs', icon: '📊', count: 2 }
-  ]
+  // Generate blueprints from registry
+  const strategyBlueprints = getBlueprintsByCategory('Strategy Hub')
+  const blueprints = strategyBlueprints.slice(0, 5).map(id => {
+    const config = BLUEPRINT_REGISTRY[id]
+    return {
+      id,
+      name: config?.name || id,
+      icon: config?.icon || '📋',
+      count: 0 // This would be populated from actual data
+    }
+  })
 
   const getBlueprintInfo = (blueprintId: string) => {
-    const blueprintMap = {
-      'strategic-context': { title: 'Strategic Context', description: 'Define the strategic foundation and context' },
-      'vision': { title: 'Vision Statement', description: 'Create compelling vision and mission statements' },
-      'value-propositions': { title: 'Value Propositions', description: 'Define unique value propositions' },
-      'personas': { title: 'Personas', description: 'Create detailed user and customer personas' },
-      'okrs': { title: 'OKRs', description: 'Set objectives and key results' }
-    }
-    return blueprintMap[blueprintId as keyof typeof blueprintMap] || { title: 'Blueprint', description: '' }
+    const config = BLUEPRINT_REGISTRY[blueprintId]
+    return config ? {
+      title: config.name,
+      description: config.description
+    } : { title: 'Blueprint', description: '' }
   }
 
   const activeInfo = getBlueprintInfo(activeBlueprint)

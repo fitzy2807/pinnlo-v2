@@ -255,7 +255,9 @@ export default function CardDisplay({
                   </div>
                   {card.description && (
                     <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                      {card.description}
+                      {typeof card.description === 'string' 
+                        ? card.description 
+                        : card.description?.objective || 'No description available'}
                     </p>
                   )}
                   <p className="text-xs text-gray-400 mt-1">

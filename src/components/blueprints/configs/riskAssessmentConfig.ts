@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const riskAssessmentConfig: BlueprintConfig = {
-  id: 'risk-assessment',
+  id: 'riskAssessment',
   name: 'Risk Assessment',
   description: 'Identify and analyze potential risks and mitigation strategies',
   category: 'Planning & Execution',

@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const technologyIntelligenceConfig: BlueprintConfig = {
-  id: 'technology-intelligence',
+  id: 'technologyIntelligence',
   name: 'Technology Intelligence',
   description: 'Tech stack evolution, emerging technologies, and technical innovations',
   category: 'Research & Analysis',

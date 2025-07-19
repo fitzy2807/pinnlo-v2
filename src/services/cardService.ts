@@ -156,6 +156,7 @@ export class CardService {
       lastModified: dbCard.updated_at,
       creator: 'User', // TODO: Get actual user name
       owner: 'User',   // TODO: Get actual user name
+      strategy_id: dbCard.strategy_id.toString(), // Add strategy_id for filtering
       // Spread blueprint-specific fields from card_data
       ...dbCard.card_data
     }

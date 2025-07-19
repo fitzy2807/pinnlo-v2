@@ -38,3 +38,7 @@ next-env.d.tstest-api-key.js
 .env
 supabase-mcp/.env
 supabase-mcp/.env.local
+
+# MCP - Exclude traditional MCP server (development only, not for production)
+supabase-mcp/src/index.ts
+supabase-mcp/dist/index.js

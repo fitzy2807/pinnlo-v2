@@ -131,6 +131,19 @@ export default function SourceSelection({
   }
 
   // Group sections by category and filter out sections with 0 cards
+  // Add null safety check for config.sections
+  if (!config || !config.sections || !Array.isArray(config.sections)) {
+    console.error('Config or config.sections is undefined/invalid:', config)
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <h3 className="text-red-800 font-medium">Configuration Error</h3>
+        <p className="text-red-600 text-sm mt-1">
+          Card creator configuration is missing or invalid. Please refresh and try again.
+        </p>
+      </div>
+    )
+  }
+
   const strategySections = config.sections
     .filter(s => s.category === 'strategy')
     .filter(section => {

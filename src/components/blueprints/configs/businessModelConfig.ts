@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const businessModelConfig: BlueprintConfig = {
-  id: 'business-model',
+  id: 'businessModel',
   name: 'Business Model',
   description: 'Define how your business creates, delivers, and captures value',
   category: 'Planning & Execution',

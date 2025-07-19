@@ -62,9 +62,9 @@ export function createCardCreatorConfig(bankType: CardCreatorConfig['bankType'])
         category: 'strategy'
       },
       {
-        id: 'value-proposition',
+        id: 'valuePropositions',
         label: 'Value Proposition',
-        cardTypes: ['value-proposition'],
+        cardTypes: ['valuePropositions'],
         description: 'Define the unique value you provide to customers',
         category: 'strategy'
       },
@@ -96,6 +96,27 @@ export function createCardCreatorConfig(bankType: CardCreatorConfig['bankType'])
         label: 'Competitive Analysis',
         cardTypes: ['competitive-analysis'],
         description: 'Analyze competitors and competitive landscape',
+        category: 'strategy'
+      },
+      {
+        id: 'problem-statement',
+        label: 'Problem Statement',
+        cardTypes: ['problem-statement'],
+        description: 'Define and validate key problems to solve',
+        category: 'strategy'
+      },
+      {
+        id: 'epics',
+        label: 'Epics',
+        cardTypes: ['epics'],
+        description: 'High-level initiatives and project groupings',
+        category: 'strategy'
+      },
+      {
+        id: 'features',
+        label: 'Features',
+        cardTypes: ['features'],
+        description: 'Specific product features and capabilities',
         category: 'strategy'
       },
       {

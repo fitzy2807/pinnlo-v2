@@ -32,7 +32,8 @@ import {
 } from './tools/terminal-tools.js';
 import { 
   editModeGeneratorTools, 
-  handleGenerateEditModeContent 
+  handleGenerateEditModeContent,
+  handleProcessVoiceEditContent 
 } from './tools/edit-mode-generator.js';
 import { 
   githubAnalysisTools, 
@@ -331,6 +332,28 @@ ${cardDetails}
       }
     });
 
+    // Voice Edit Generator endpoint
+    this.app.post('/api/tools/process_voice_edit_content', async (req, res) => {
+      try {
+        console.log('=== MCP VOICE EDIT ENDPOINT CALLED ===');
+        console.log('Request body keys:', Object.keys(req.body));
+        console.log('Blueprint type:', req.body.blueprintType);
+        console.log('Card ID:', req.body.cardId);
+        console.log('Transcript length:', req.body.transcript?.length || 0);
+        
+        const result = await handleProcessVoiceEditContent(req.body);
+        
+        console.log('=== MCP VOICE EDIT RESULT ===');
+        console.log('Result type:', typeof result);
+        console.log('Result keys:', Object.keys(result || {}));
+        
+        res.json(result);
+      } catch (error) {
+        console.error('Voice edit generation error:', error);
+        res.status(500).json({ error: 'Failed to process voice edit content' });
+      }
+    });
+
     // Terminal tools endpoints
     this.app.post('/api/tools/execute_command', async (req, res) => {
       try {
@@ -463,7 +486,7 @@ ${cardDetails}
       case 'generate_technical_requirement':
         return await handleGenerateTechnicalRequirement(args);
       case 'analyze_url':
-        return await handleAnalyzeUrl(args);
+        return await handleAnalyzeUrl(args, this.supabase);
       case 'process_intelligence_text':
         return await handleProcessIntelligenceText(args, this.supabase);
       case 'generate_automation_intelligence':
@@ -476,6 +499,8 @@ ${cardDetails}
         return await handleGetProjectStatus(args);
       case 'generate_edit_mode_content':
         return await handleGenerateEditModeContent(args);
+      case 'process_voice_edit_content':
+        return await handleProcessVoiceEditContent(args);
       case 'analyze_github_repository':
         return await handleAnalyzeGitHubRepository(args);
       case 'analyze_github_repository_comprehensive':

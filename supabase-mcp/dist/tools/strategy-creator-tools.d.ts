@@ -40,6 +40,7 @@ export declare const strategyCreatorTools: ({
             targetBlueprint?: undefined;
             generationOptions?: undefined;
             existingCards?: undefined;
+            preview_only?: undefined;
         };
         required: string[];
     };
@@ -127,6 +128,7 @@ export declare const strategyCreatorTools: ({
             targetBlueprint?: undefined;
             generationOptions?: undefined;
             existingCards?: undefined;
+            preview_only?: undefined;
         };
         required: string[];
     };
@@ -167,6 +169,10 @@ export declare const strategyCreatorTools: ({
                     };
                 };
             };
+            preview_only: {
+                type: string;
+                description: string;
+            };
             cards?: undefined;
             blueprint_type?: undefined;
             blueprintCards?: undefined;
@@ -204,6 +210,19 @@ export declare function handleGenerateContextSummary(args: any): Promise<{
     isError: boolean;
 }>;
 export declare function handleGenerateStrategyCards(args: any): Promise<{
+    content: {
+        type: string;
+        text: string;
+    }[];
+    isError?: undefined;
+} | {
+    content: {
+        type: string;
+        text: string;
+    }[];
+    isError: boolean;
+}>;
+export declare function generateContextPreview(contextSummary: string, targetBlueprint: string, existingCards: any[]): Promise<{
     content: {
         type: string;
         text: string;

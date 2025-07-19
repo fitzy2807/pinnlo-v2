@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const goToMarketConfig: BlueprintConfig = {
-  id: 'go-to-market',
+  id: 'goToMarket',
   name: 'Go-to-Market Strategy',
   description: 'Plan how to bring your product or service to market',
   category: 'Planning & Execution',

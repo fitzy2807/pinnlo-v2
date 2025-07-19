@@ -14,8 +14,8 @@ import { useCards } from '@/hooks/useCards'
 
 export default function WorkspacePage() {
   const params = useParams()
-  const [activeBlueprint, setActiveBlueprint] = useState('strategic-context')
-  const [enabledBlueprints, setEnabledBlueprints] = useState<string[]>(['strategic-context'])
+  const [activeBlueprint, setActiveBlueprint] = useState('strategicContext')
+  const [enabledBlueprints, setEnabledBlueprints] = useState<string[]>(['strategicContext', 'valuePropositions'])
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [loading, setLoading] = useState(false)
   const contentAreaRef = useRef<ContentAreaRef>(null)
@@ -25,15 +25,41 @@ export default function WorkspacePage() {
   // Load actual cards for this strategy
   const { cards: allCards } = useCards(parseInt(params.id as string))
   
-  // Filter cards by active blueprint type
-  const activeCards = allCards.filter(card => card.cardType === activeBlueprint)
+  // Handle mapping between blueprint registry IDs and database card types
+  const getCardTypeForBlueprint = (blueprintId: string): string => {
+    const blueprintToCardTypeMap: Record<string, string> = {
+      'valuePropositions': 'value-proposition',
+      'strategicContext': 'strategic-context',
+      'personas': 'persona',
+      'okrs': 'okr',
+      'kpis': 'kpi',
+      'problem-statement': 'problem-statement',
+      'features': 'feature',
+      'epics': 'epic',
+      'workstreams': 'workstream'
+    }
+    
+    return blueprintToCardTypeMap[blueprintId] || blueprintId
+  }
+  
+  // Filter cards by active blueprint type using mapped cardType
+  const expectedCardType = getCardTypeForBlueprint(activeBlueprint)
+  const activeCards = allCards.filter(card => card.cardType === expectedCardType)
   
   // Debug logging
   console.log('🔍 WorkspacePage Debug:')
   console.log('- Active Blueprint:', activeBlueprint)
+  console.log('- Expected CardType:', expectedCardType)
   console.log('- All Cards Count:', allCards.length)
   console.log('- Active Cards Count:', activeCards.length)
   console.log('- Active Cards:', activeCards.map(c => ({ title: c.title, cardType: c.cardType })))
+  console.log('- All Cards by Type:', allCards.reduce((acc, card) => {
+    acc[card.cardType] = (acc[card.cardType] || 0) + 1
+    return acc
+  }, {} as Record<string, number>))
+  console.log('- Value Proposition Cards (value-proposition):', allCards.filter(c => c.cardType === 'value-proposition').length)
+  console.log('- Value Proposition Cards (valuePropositions):', allCards.filter(c => c.cardType === 'valuePropositions').length)
+  console.log('- Value Proposition Cards (value-propositions):', allCards.filter(c => c.cardType === 'value-propositions').length)
   
   // Create blueprint list with card counts (TODO: get real counts from database)
   const blueprints = enabledBlueprints.map(blueprintId => {
@@ -86,6 +112,16 @@ export default function WorkspacePage() {
     }
   }
 
+  const handleGenerateAI = () => {
+    console.log('🤖 Generate AI button clicked');
+    // TODO: Implement AI card generation
+    // This could open a modal or trigger the card creator
+    if (contentAreaRef.current) {
+      console.log('🎯 Calling generateCards...');
+      // contentAreaRef.current.generateCards();
+    }
+  }
+
 
   return (
     <div className="flex flex-col h-full">
@@ -114,6 +150,7 @@ export default function WorkspacePage() {
               blueprint={currentBlueprint} 
               onAddCard={handleAddCard} 
               onQuickAdd={() => setShowQuickAdd(!showQuickAdd)}
+              onGenerateAI={handleGenerateAI}
             />
             
             {/* Quick Add Panel - slides out from under PageController */}

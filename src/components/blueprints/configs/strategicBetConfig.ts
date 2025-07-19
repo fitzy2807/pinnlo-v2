@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const strategicBetConfig: BlueprintConfig = {
-  id: 'strategic-bet',
+  id: 'strategicBet',
   name: 'Strategic Bet',
   description: 'Document and track high-level strategic decisions and investments',
   category: 'Core Strategy',

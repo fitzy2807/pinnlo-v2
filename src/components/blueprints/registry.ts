@@ -52,46 +52,53 @@ import { opportunitiesIntelligenceConfig } from './configs/opportunitiesIntellig
 import { prdConfig } from './configs/prdConfig'
 import { trdConfig } from './configs/trdConfig'
 
+// Import missing blueprint configurations
+import { userJourneyConfig } from './configs/userJourneyConfig'
+import { experienceSectionConfig } from './configs/experienceSectionConfig'
+import { goToMarketConfig } from './configs/goToMarketConfig'
+
 // Blueprint Registry - Central configuration for all blueprint types
 export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
   // Core Strategy (Mandatory: strategicContext)
   'strategicContext': strategicContextConfig,
   'vision': visionConfig,
   'valuePropositions': valuePropositionConfig,
+  'strategicBet': strategicBetConfig,
   
   // Research & Analysis
   'personas': personaConfig,
-  'customer-journey': customerJourneyConfig,
-  'swot-analysis': swotConfig,
-  'competitive-analysis': competitiveAnalysisConfig,
+  'customerJourney': customerJourneyConfig,
+  'swotAnalysis': swotConfig,
+  'competitiveAnalysis': competitiveAnalysisConfig,
+  'marketInsight': marketInsightConfig,
+  'experiment': experimentConfig,
   
   // Planning & Execution
   'okrs': okrConfig,
-  'business-model': businessModelConfig,
-  'risk-assessment': riskAssessmentConfig,
-  'roadmap': roadmapConfig,
-  
-  // Measurement
-  'kpis': kpiConfig,
-  'financial-projections': financialProjectionsConfig,
-  'cost-driver': costDriverConfig,
-  'revenue-driver': revenueDriverConfig,
-
-  // 20 New Blueprint Configurations
-  'problem-statement': problemStatementConfig,
+  'problemStatement': problemStatementConfig,
   'workstreams': workstreamConfig,
   'epics': epicConfig,
   'features': featureConfig,
-  'serviceBlueprints': serviceBlueprintConfig,
-  'organisationalCapabilities': organisationalCapabilityConfig,
+  'businessModel': businessModelConfig,
   'gtmPlays': gtmPlayConfig,
-  'techStack': techStackConfig,
-  'tech-stack': techStackConfig,
-  'tech-stack-enhanced': techStackEnhancedConfig,
+  'goToMarket': goToMarketConfig,
+  'riskAssessment': riskAssessmentConfig,
+  'roadmap': roadmapConfig,
+  
+  // User Experience
+  'serviceBlueprints': serviceBlueprintConfig,
+  'userJourney': userJourneyConfig,
+  'experienceSection': experienceSectionConfig,
+  
+  // Organizational & Technical
+  'organisationalCapabilities': organisationalCapabilityConfig,
   'techRequirements': technicalRequirementConfig,
-  'market-insight': marketInsightConfig,
-  'experiment': experimentConfig,
-  'strategic-bet': strategicBetConfig,
+  
+  // Measurement
+  'kpis': kpiConfig,
+  'financialProjections': financialProjectionsConfig,
+  'costDriver': costDriverConfig,
+  'revenueDriver': revenueDriverConfig,
   
   // Template blueprint for testing
   'template': templateConfig,
@@ -104,43 +111,91 @@ export const BLUEPRINT_REGISTRY: Record<string, BlueprintConfig> = {
   'person': personConfig,
   
   // Intelligence blueprints
-  'market-intelligence': marketIntelligenceConfig,
-  'competitor-intelligence': competitorIntelligenceConfig,
-  'trends-intelligence': trendsIntelligenceConfig,
-  'technology-intelligence': technologyIntelligenceConfig,
-  'stakeholder-intelligence': stakeholderIntelligenceConfig,
-  'consumer-intelligence': consumerIntelligenceConfig,
-  'risk-intelligence': riskIntelligenceConfig,
-  'opportunities-intelligence': opportunitiesIntelligenceConfig,
+  'marketIntelligence': marketIntelligenceConfig,
+  'competitorIntelligence': competitorIntelligenceConfig,
+  'trendsIntelligence': trendsIntelligenceConfig,
+  'technologyIntelligence': technologyIntelligenceConfig,
+  'stakeholderIntelligence': stakeholderIntelligenceConfig,
+  'consumerIntelligence': consumerIntelligenceConfig,
+  'riskIntelligence': riskIntelligenceConfig,
+  'opportunitiesIntelligence': opportunitiesIntelligenceConfig,
   
   // Development blueprints
   'prd': prdConfig,
-  'product-requirements': prdConfig,
   'trd': trdConfig,
-  'technical-requirements': trdConfig,
+  'techStack': techStackConfig,
+  'techStackEnhanced': techStackEnhancedConfig,
   
   // TODO: Add remaining blueprint configs when needed
-  // 'stakeholder-map': stakeholderMapConfig,
-  // 'strategy-analytics': strategyAnalyticsConfig,
-  // 'business-requirements': businessRequirementsConfig,
-  // 'implementation-plan': implementationPlanConfig,
-  // 'resource-plan': resourcePlanConfig,
-  // 'communication-plan': communicationPlanConfig,
-  // 'change-management': changeManagementConfig,
-  // 'performance-review': performanceReviewConfig,
-  // 'workspace-settings': workspaceSettingsConfig,
+  // 'stakeholderMap': stakeholderMapConfig,
+  // 'strategyAnalytics': strategyAnalyticsConfig,
+  // 'businessRequirements': businessRequirementsConfig,
+  // 'implementationPlan': implementationPlanConfig,
+  // 'resourcePlan': resourcePlanConfig,
+  // 'communicationPlan': communicationPlanConfig,
+  // 'changeManagement': changeManagementConfig,
+  // 'performanceReview': performanceReviewConfig,
+  // 'workspaceSettings': workspaceSettingsConfig,
 }
 
-// Blueprint Categories for organization
+// Priority-ordered Strategy Hub blueprints (user's preferred sequence)
+export const STRATEGY_HUB_PRIORITY_ORDER = [
+  // Priority blueprints (first 7)
+  'strategicContext',
+  'vision', 
+  'personas',
+  'valuePropositions',
+  'problemStatement',
+  'epics',
+  'features',
+  // Additional core blueprints
+  'strategicBet',
+  'okrs',
+  'businessModel',
+  'workstreams',
+  'roadmap',
+  // Research & Analysis
+  'customerJourney',
+  'swotAnalysis', 
+  'competitiveAnalysis',
+  'marketInsight',
+  'experiment',
+  // User Experience
+  'serviceBlueprints',
+  // Organizational & Technical
+  'organisationalCapabilities',
+  'techRequirements',
+  // Go-to-Market
+  'gtmPlays',
+  'riskAssessment',
+  // Measurement
+  'kpis',
+  'financialProjections',
+  'costDriver',
+  'revenueDriver',
+  // Template
+  'template'
+]
+
+// Blueprint Categories organized by Hub
 export const BLUEPRINT_CATEGORIES: Record<string, string[]> = {
-  'Core Strategy': ['strategicContext', 'vision', 'valuePropositions', 'strategic-bet'],
-  'Research & Analysis': ['personas', 'customer-journey', 'swot-analysis', 'competitive-analysis', 'market-insight', 'experiment', 'market-intelligence', 'competitor-intelligence', 'trends-intelligence', 'technology-intelligence', 'stakeholder-intelligence', 'consumer-intelligence', 'risk-intelligence', 'opportunities-intelligence'],
-  'Planning & Execution': ['okrs', 'problem-statement', 'workstreams', 'epics', 'features', 'prd', 'trd', 'business-model', 'gtmPlays', 'risk-assessment', 'roadmap'],
-  'User Experience': ['serviceBlueprints'],
-  'Organizational & Technical': ['organisationalCapabilities', 'techStack', 'tech-stack', 'tech-stack-enhanced', 'techRequirements'],
-  'Measurement': ['cost-driver', 'revenue-driver', 'kpis', 'financial-projections'],
-  'Template': ['template'],
-  'Organisation': ['organisation', 'company', 'department', 'team', 'person']
+  'Strategy Hub': STRATEGY_HUB_PRIORITY_ORDER,
+  'Intelligence Hub': [
+    'marketIntelligence', 'competitorIntelligence', 'trendsIntelligence', 'technologyIntelligence', 
+    'stakeholderIntelligence', 'consumerIntelligence', 'riskIntelligence', 'opportunitiesIntelligence'
+  ],
+  'User Experience Hub': [
+    'userJourney', 'experienceSection', 'serviceBlueprints', 'customerJourney'
+  ],
+  'Go-to-Market Hub': [
+    'goToMarket', 'gtmPlays', 'marketInsight', 'competitiveAnalysis'
+  ],
+  'Development Hub': [
+    'prd', 'trd', 'techStack', 'techStackEnhanced'
+  ],
+  'Organisation Hub': [
+    'organisation', 'company', 'department', 'team', 'person'
+  ]
 }
 
 // Mandatory blueprints (always enabled)
@@ -165,29 +220,64 @@ export function getBlueprintConfig(blueprintId: string): BlueprintConfig | undef
     return BLUEPRINT_REGISTRY[camelCaseId]
   }
   
-  // Try some specific mappings for inconsistent naming
+  // Try some specific mappings for inconsistent naming (legacy support)
   const mappings: Record<string, string> = {
+    // Legacy kebab-case to camelCase mappings
     'strategic-context': 'strategicContext',
     'value-proposition': 'valuePropositions',
-    'personas': 'personas',
-    'okrs': 'okrs',
-    'kpis': 'kpis',
-    'workstream': 'workstreams',
-    'epic': 'epics',
-    'feature': 'features',
+    'value-propositions': 'valuePropositions',
+    'customer-journey': 'customerJourney',
+    'swot-analysis': 'swotAnalysis',
+    'competitive-analysis': 'competitiveAnalysis',
+    'business-model': 'businessModel',
+    'risk-assessment': 'riskAssessment',
+    'financial-projections': 'financialProjections',
+    'problem-statement': 'problemStatement',
+    'strategic-bet': 'strategicBet',
+    'market-insight': 'marketInsight',
+    'cost-driver': 'costDriver',
+    'revenue-driver': 'revenueDriver',
     'service-blueprint': 'serviceBlueprints',
     'organisational-capability': 'organisationalCapabilities',
     'gtm-play': 'gtmPlays',
     'tech-requirements': 'techRequirements',
+    // Intelligence blueprint mappings
+    'market-intelligence': 'marketIntelligence',
+    'competitor-intelligence': 'competitorIntelligence',
+    'trends-intelligence': 'trendsIntelligence',
+    'technology-intelligence': 'technologyIntelligence',
+    'stakeholder-intelligence': 'stakeholderIntelligence',
+    'consumer-intelligence': 'consumerIntelligence',
+    'risk-intelligence': 'riskIntelligence',
+    'opportunities-intelligence': 'opportunitiesIntelligence',
     // Development card type mappings
     'product-requirements': 'prd',
     'technical-requirements': 'trd',
     'technical-requirement': 'trd',
     'technical-requirement-structured': 'trd',
     'task-list': 'features',
+    // User Experience mappings
+    'user-journey': 'userJourney',
+    'experience-section': 'experienceSection',
+    // Go-to-Market mappings
+    'go-to-market': 'goToMarket',
+    // Legacy task mappings
+    'task': 'features',
+    'test-scenario': 'features',
     // Tech stack mappings
-    'tech-stack': 'tech-stack',
-    'tech-stack-enhanced': 'tech-stack-enhanced'
+    'tech-stack': 'techStack',
+    'tech-stack-enhanced': 'techStackEnhanced',
+    // Customer Experience aliases
+    'customerExperience': 'customerJourney',
+    'experienceSections': 'experienceSection',
+    'user-journeys': 'userJourney',
+    // Singular/plural variations
+    'persona': 'personas',
+    'okr': 'okrs',
+    'kpi': 'kpis',
+    'workstream': 'workstreams',
+    'epic': 'epics',
+    'feature': 'features'
   }
   
   if (mappings[blueprintId] && BLUEPRINT_REGISTRY[mappings[blueprintId]]) {
@@ -202,10 +292,43 @@ export function getAllBlueprints(): BlueprintConfig[] {
   return Object.values(BLUEPRINT_REGISTRY)
 }
 
-// Get blueprints by category
+// Get blueprints by category (hub)
 export function getBlueprintsByCategory(category: string): BlueprintConfig[] {
   const blueprintIds = BLUEPRINT_CATEGORIES[category] || []
   return blueprintIds.map(id => BLUEPRINT_REGISTRY[id]).filter(Boolean)
+}
+
+// Get blueprints by hub (alias for getBlueprintsByCategory)
+export function getBlueprintsByHub(hubName: string): BlueprintConfig[] {
+  const hubKey = `${hubName.charAt(0).toUpperCase()}${hubName.slice(1)} Hub`
+  return getBlueprintsByCategory(hubKey)
+}
+
+// Get Strategy Hub blueprints in priority order
+export function getStrategyHubBlueprintsInOrder(): BlueprintConfig[] {
+  return STRATEGY_HUB_PRIORITY_ORDER
+    .map(id => BLUEPRINT_REGISTRY[id])
+    .filter(Boolean)
+}
+
+// Get default Strategy Hub blueprint selections (first 7 priority blueprints)
+export function getDefaultStrategyHubSelections(): string[] {
+  return STRATEGY_HUB_PRIORITY_ORDER.slice(0, 7)
+}
+
+// Get default Intelligence Hub blueprint selections
+export function getDefaultIntelligenceHubSelections(): string[] {
+  return ['marketIntelligence', 'competitorIntelligence', 'trendsIntelligence']
+}
+
+// Get default Development Hub blueprint selections
+export function getDefaultDevelopmentHubSelections(): string[] {
+  return ['prd', 'trd', 'techStack']
+}
+
+// Get default Organisation Hub blueprint selections
+export function getDefaultOrganisationHubSelections(): string[] {
+  return ['company', 'team', 'person']
 }
 
 // Validate blueprint dependencies

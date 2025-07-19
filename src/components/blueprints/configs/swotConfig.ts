@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const swotConfig: BlueprintConfig = {
-  id: 'swot-analysis',
+  id: 'swotAnalysis',
   name: 'SWOT Analysis',
   description: 'Analyze strengths, weaknesses, opportunities, and threats',
   category: 'Research & Analysis',

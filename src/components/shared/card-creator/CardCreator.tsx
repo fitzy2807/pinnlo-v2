@@ -26,6 +26,27 @@ export default function CardCreator({
   onClose,
   onCardsCreated 
 }: CardCreatorProps) {
+  // Early safety check for config
+  if (!config || !config.sections || !Array.isArray(config.sections)) {
+    console.error('CardCreator: Invalid config received:', config)
+    return (
+      <div className="p-8 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h3 className="text-red-800 font-medium text-lg mb-2">Configuration Error</h3>
+          <p className="text-red-600">
+            The card creator configuration is missing or invalid. Please close this dialog and try again.
+          </p>
+          <button 
+            onClick={onClose}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // Step state management - 3 steps + preview
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedSections, setSelectedSections] = useState<string[]>([])

@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const consumerIntelligenceConfig: BlueprintConfig = {
-  id: 'consumer-intelligence',
+  id: 'consumerIntelligence',
   name: 'Consumer Intelligence',
   description: 'User research findings, behavior patterns, and customer feedback',
   category: 'Research & Analysis',

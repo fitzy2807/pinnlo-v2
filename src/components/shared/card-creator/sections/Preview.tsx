@@ -92,7 +92,11 @@ export default function Preview({
                   />
                   <div className="flex-1">
                     <h4 className="text-sm font-medium text-gray-900">{card.title}</h4>
-                    <p className="text-xs text-gray-600 mt-1">{card.description}</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {typeof card.description === 'string' 
+                        ? card.description 
+                        : card.description?.objective || 'No description available'}
+                    </p>
                     
                     {/* Show blueprint fields */}
                     {card.card_data && Object.keys(card.card_data).length > 0 && (

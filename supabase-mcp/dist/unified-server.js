@@ -12,6 +12,7 @@ import express from 'express';
 import cors from 'cors';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { createClient } from '@supabase/supabase-js';
 // Import all existing tool handlers
 import { strategyCreatorTools, handleGenerateContextSummary, handleGenerateStrategyCards } from './tools/strategy-creator-tools.js';
@@ -20,6 +21,9 @@ import { developmentBankTools, handleGenerateTechnicalRequirement, handleCommitT
 import { batchedDevelopmentBankTools, handleCommitTrdToTaskListBatched } from './tools/development-bank-tools-batched.js';
 import { terminalTools, handleExecuteCommand, handleReadFileContent, handleGetProjectStatus } from './tools/terminal-tools.js';
 import { editModeGeneratorTools, handleGenerateEditModeContent } from './tools/edit-mode-generator.js';
+import { elevenLabsTools, handleGetElevenLabsVoices, handleGetElevenLabsVoice, handleElevenLabsTextToSpeech, handleElevenLabsSpeechToText, handleGetElevenLabsModels, handleGetElevenLabsUser, handleGetElevenLabsSubscription } from './tools/elevenlabs-tools.js';
+import { elevenLabsConversationalTools, handleElevenLabsCreateTool, handleElevenLabsGetTools, handleElevenLabsCreateAgent, handleElevenLabsGetAgents, handleElevenLabsCreatePinnloIntegration } from './tools/elevenlabs-conversational-ai.js';
+import { setupElevenLabsWebhookRoutes } from './tools/elevenlabs-webhook-handlers.js';
 /**
  * Unified MCP Server that supports both STDIO and HTTP transports
  * Maintains backward compatibility with existing server implementations
@@ -84,13 +88,42 @@ class UnifiedMcpServer {
             ...developmentBankTools,
             ...batchedDevelopmentBankTools,
             ...terminalTools,
-            ...editModeGeneratorTools
+            ...editModeGeneratorTools,
+            ...elevenLabsTools,
+            ...elevenLabsConversationalTools
         ];
-        // Register each tool with the MCP server
-        allTools.forEach(tool => {
-            this.mcpServer.setRequestHandler(tool, async (request) => {
-                return await this.handleMcpTool(tool.name, request.params);
-            });
+        // Register list tools handler
+        this.mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
+            return { tools: allTools };
+        });
+        // Register call tool handler
+        this.mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
+            const { name, arguments: args } = request.params;
+            try {
+                const result = await this.handleMcpTool(name, args);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(result)
+                        }
+                    ]
+                };
+            }
+            catch (error) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify({
+                                success: false,
+                                error: error.message || 'Unknown error'
+                            })
+                        }
+                    ],
+                    isError: true
+                };
+            }
         });
         console.log(`✅ Registered ${allTools.length} MCP tools for STDIO transport`);
     }
@@ -99,6 +132,8 @@ class UnifiedMcpServer {
         this.httpApp.get('/health', (req, res) => {
             res.json({ status: 'healthy', timestamp: new Date().toISOString() });
         });
+        // Setup ElevenLabs webhook routes
+        setupElevenLabsWebhookRoutes(this.httpApp, this.supabase);
         // Authentication middleware (backward compatible)
         const authenticateRequest = (req, res, next) => {
             const authHeader = req.headers.authorization;
@@ -125,16 +160,6 @@ class UnifiedMcpServer {
             }
         });
         // Strategy Creator endpoints (backward compatible)
-        this.httpApp.post('/api/tools/generate_context_summary', authenticateRequest, async (req, res) => {
-            try {
-                const result = await handleGenerateContextSummary(req.body);
-                res.json(result);
-            }
-            catch (error) {
-                console.error('Context summary error:', error);
-                res.status(500).json({ error: 'Failed to generate context summary' });
-            }
-        });
         this.httpApp.post('/api/tools/generate_strategy_cards', authenticateRequest, async (req, res) => {
             try {
                 const result = await handleGenerateStrategyCards(req.body);
@@ -378,7 +403,9 @@ ${cardDetails}
                 ...developmentBankTools,
                 ...batchedDevelopmentBankTools,
                 ...terminalTools,
-                ...editModeGeneratorTools
+                ...editModeGeneratorTools,
+                ...elevenLabsTools,
+                ...elevenLabsConversationalTools
             ];
             res.json({
                 tools: allTools.map(tool => ({
@@ -419,7 +446,7 @@ ${cardDetails}
                 case 'generate_technical_requirement':
                     return await handleGenerateTechnicalRequirement(args);
                 case 'analyze_url':
-                    return await handleAnalyzeUrl(args);
+                    return await handleAnalyzeUrl(args, this.supabase);
                 case 'process_intelligence_text':
                     return await handleProcessIntelligenceText(args, this.supabase);
                 case 'generate_automation_intelligence':
@@ -432,6 +459,30 @@ ${cardDetails}
                     return await handleGetProjectStatus(args);
                 case 'generate_edit_mode_content':
                     return await handleGenerateEditModeContent(args);
+                case 'get_elevenlabs_voices':
+                    return await handleGetElevenLabsVoices(args);
+                case 'get_elevenlabs_voice':
+                    return await handleGetElevenLabsVoice(args);
+                case 'elevenlabs_text_to_speech':
+                    return await handleElevenLabsTextToSpeech(args);
+                case 'elevenlabs_speech_to_text':
+                    return await handleElevenLabsSpeechToText(args);
+                case 'get_elevenlabs_models':
+                    return await handleGetElevenLabsModels(args);
+                case 'get_elevenlabs_user':
+                    return await handleGetElevenLabsUser(args);
+                case 'get_elevenlabs_subscription':
+                    return await handleGetElevenLabsSubscription(args);
+                case 'elevenlabs_create_tool':
+                    return await handleElevenLabsCreateTool(args);
+                case 'elevenlabs_get_tools':
+                    return await handleElevenLabsGetTools(args);
+                case 'elevenlabs_create_agent':
+                    return await handleElevenLabsCreateAgent(args);
+                case 'elevenlabs_get_agents':
+                    return await handleElevenLabsGetAgents(args);
+                case 'elevenlabs_create_pinnlo_integration':
+                    return await handleElevenLabsCreatePinnloIntegration(args);
                 default:
                     throw new Error(`Unknown tool: ${toolName}`);
             }

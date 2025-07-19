@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const problemStatementConfig: BlueprintConfig = {
-  id: 'problem-statement',
+  id: 'problemStatement',
   name: 'Problem Statement',
   description: 'Define and validate key problems to solve',
   category: 'Planning & Execution',

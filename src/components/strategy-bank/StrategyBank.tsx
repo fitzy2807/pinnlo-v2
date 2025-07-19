@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCards } from '@/hooks/useCards';
 import { supabase } from '@/lib/supabase';
+import { MANDATORY_BLUEPRINTS, DEFAULT_STRATEGY_HUB_BLUEPRINTS } from '@/utils/blueprintConstants';
 import { FolderPlus, Sparkles } from 'lucide-react';
 import StrategyBankContent from './StrategyBankContent';
 import BlueprintManagerTool from './BlueprintManagerTool';
@@ -29,9 +30,9 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
   const [groupsLoading, setGroupsLoading] = useState(true);
   
   const [activeTool, setActiveTool] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<string>('strategic-context');
+  const [activeSection, setActiveSection] = useState<string>(MANDATORY_BLUEPRINTS[0]);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
-  const [enabledBlueprints, setEnabledBlueprints] = useState<string[]>(['strategic-context']);
+  const [enabledBlueprints, setEnabledBlueprints] = useState<string[]>(DEFAULT_STRATEGY_HUB_BLUEPRINTS as any);
   const [viewType, setViewType] = useState<'section' | 'group'>('section');
   const [showCreateGroupForm, setShowCreateGroupForm] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -63,7 +64,7 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
         setActiveSection(config.enabledBlueprints[0]);
       }
     }
-    // If no config exists, keep the default ['strategic-context']
+    // If no config exists, keep the default mandatory blueprints
   }, [strategy]);
 
   // Load groups for this strategy
@@ -106,7 +107,7 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
         .update({
           blueprint_config: {
             enabledBlueprints: newBlueprints,
-            mandatoryBlueprints: ['strategic-context'],
+            mandatoryBlueprints: MANDATORY_BLUEPRINTS,
             lastUpdated: new Date().toISOString()
           }
         })
@@ -231,7 +232,7 @@ export default function StrategyBank({ strategy, onBack }: StrategyBankProps) {
         .update({
           blueprint_config: {
             enabledBlueprints: newBlueprints,
-            mandatoryBlueprints: ['strategic-context'],
+            mandatoryBlueprints: MANDATORY_BLUEPRINTS,
             lastUpdated: new Date().toISOString()
           }
         })

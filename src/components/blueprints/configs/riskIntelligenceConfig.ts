@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const riskIntelligenceConfig: BlueprintConfig = {
-  id: 'risk-intelligence',
+  id: 'riskIntelligence',
   name: 'Risk Intelligence',
   description: 'Threat assessments, regulatory changes, and risk factors',
   category: 'Research & Analysis',

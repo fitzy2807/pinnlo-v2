@@ -40,7 +40,8 @@ async function getBlueprintFields(blueprintType: string): Promise<string> {
       'product-requirements': 'prd',
       'technical-requirements': 'trd',
       'tech-stack': 'techStack',
-      'techStack': 'techStack'
+      'techStack': 'techStack',
+      'problem-statement': 'problemStatement'
     };
     
     // Get the actual config file name

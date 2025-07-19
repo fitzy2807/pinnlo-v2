@@ -11,7 +11,7 @@ export default function StrategyBankPage() {
   const [creating, setCreating] = useState(false);
 
   const handleSelectStrategy = (strategyId: number) => {
-    router.push(`/strategies/bank/${strategyId}`);
+    router.push(`/strategies/${strategyId}/workspace`);
   };
 
   const handleCreateStrategy = async (title: string, client: string, description: string) => {
@@ -25,7 +25,7 @@ export default function StrategyBankPage() {
       });
       
       if (newStrategy) {
-        router.push(`/strategies/bank/${newStrategy.id}`);
+        router.push(`/strategies/${newStrategy.id}/workspace`);
       }
     } catch (error) {
       console.error('Error creating strategy:', error);

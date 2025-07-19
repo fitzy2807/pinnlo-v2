@@ -69,7 +69,7 @@ export default function QuickAdd({
 
   return (
     <div 
-      className={`absolute left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-lg overflow-hidden transition-all duration-300 ease-out ${
+      className={`absolute left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-lg overflow-hidden transition-all duration-300 ease-out ${
         isVisible ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
       }`}
       style={{ top: '100%' }}

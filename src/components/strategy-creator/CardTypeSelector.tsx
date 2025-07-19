@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { blueprintRegistry } from '@/components/blueprints/registry'
+import { BLUEPRINT_CATEGORIES } from '@/utils/blueprintConstants'
 import { ArrowLeft } from 'lucide-react'
 
 interface CardTypeSelectorProps {
@@ -14,12 +15,8 @@ interface CardTypeSelectorProps {
 export default function CardTypeSelector({ selectedTypes, onSubmit, onBack, loading }: CardTypeSelectorProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedTypes))
 
-  const categories = {
-    'Core Strategy': ['strategicContext', 'vision', 'valuePropositions'],
-    'Research & Analysis': ['personas', 'customerExperience', 'swot-analysis', 'competitive-analysis'],
-    'Planning & Execution': ['okrs', 'business-model', 'go-to-market', 'risk-assessment', 'roadmap'],
-    'Measurement': ['kpis', 'financial-projections']
-  }
+  // Use registry-based categories
+  const categories = BLUEPRINT_CATEGORIES
 
   const toggleType = (type: string) => {
     const newSelected = new Set(selected)

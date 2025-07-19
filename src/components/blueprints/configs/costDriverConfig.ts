@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const costDriverConfig: BlueprintConfig = {
-  id: 'cost-driver',
+  id: 'costDriver',
   name: 'Cost Driver',
   description: 'Analyze and track major cost factors and their scaling impact',
   category: 'Measurement',

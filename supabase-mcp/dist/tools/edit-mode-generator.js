@@ -45,6 +45,26 @@ export const editModeGeneratorTools = [
             },
             required: ['cardId', 'blueprintType', 'cardTitle', 'userId']
         }
+    },
+    {
+        name: 'process_voice_edit_content',
+        description: 'Process voice transcript to update page fields intelligently based on spoken content',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                cardId: { type: 'string', description: 'ID of the card being edited' },
+                blueprintType: { type: 'string', description: 'Blueprint type from registry' },
+                cardTitle: { type: 'string', description: 'Title of the card' },
+                transcript: { type: 'string', description: 'Voice transcript content' },
+                userId: { type: 'string', description: 'User ID' },
+                existingFields: {
+                    type: 'object',
+                    description: 'Current field values in the card',
+                    additionalProperties: true
+                }
+            },
+            required: ['cardId', 'blueprintType', 'cardTitle', 'transcript', 'userId']
+        }
     }
 ];
 // Function to get blueprint field definitions
@@ -58,7 +78,6 @@ async function getBlueprintFields(blueprintType) {
             'valuePropositions': 'valueProposition',
             'workstreams': 'workstream',
             'userJourneys': 'userJourney',
-            'experienceSections': 'experienceSection',
             'serviceBlueprints': 'serviceBlueprint',
             'organisationalCapabilities': 'organisationalCapability',
             'gtmPlays': 'gtmPlay',
@@ -74,7 +93,8 @@ async function getBlueprintFields(blueprintType) {
             'kpis': 'kpi',
             'financial-projections': 'financialProjections',
             'cost-driver': 'costDriver',
-            'revenue-driver': 'revenueDriver'
+            'revenue-driver': 'revenueDriver',
+            'problem-statement': 'problemStatement'
         };
         // Get the actual config file name
         const configFileName = blueprintFileMap[blueprintType] || blueprintType;
@@ -236,8 +256,6 @@ function mapBlueprintType(blueprintType) {
         'workstream': 'workstreams',
         'epic': 'epics',
         'feature': 'features',
-        'user-journey': 'userJourneys',
-        'experience-section': 'experienceSections',
         'service-blueprint': 'serviceBlueprints',
         'organisational-capability': 'organisationalCapabilities',
         'gtm-play': 'gtmPlays',
@@ -261,8 +279,6 @@ function camelCaseToKebabCase(camelCaseType) {
         'workstreams': 'workstream',
         'epics': 'epic',
         'features': 'feature',
-        'userJourneys': 'user-journey',
-        'experienceSections': 'experience-section',
         'serviceBlueprints': 'service-blueprint',
         'organisationalCapabilities': 'organisational-capability',
         'gtmPlays': 'gtm-play',
@@ -639,5 +655,204 @@ async function getCachedContext(cacheKey, fetchFn) {
         contextCache.delete(oldestKey);
     }
     return data;
+}
+// Handler function for voice edit processing
+export async function handleProcessVoiceEditContent(args) {
+    const { cardId, blueprintType, cardTitle, transcript, userId, existingFields = {} } = args;
+    console.log('=== handleProcessVoiceEditContent START ===');
+    console.log('Arguments:', { cardId, blueprintType, cardTitle, transcript: transcript.substring(0, 100) + '...', userId });
+    // Map blueprint type to match database naming
+    const mappedBlueprintType = mapBlueprintType(blueprintType);
+    console.log('Blueprint type mapping:', { original: blueprintType, mapped: mappedBlueprintType });
+    // Check if request already in progress
+    const requestKey = `${userId}-${cardId}-voice`;
+    if (activeRequests.has(requestKey)) {
+        console.log('Voice edit request already in progress, returning existing promise');
+        return activeRequests.get(requestKey);
+    }
+    // Create new request promise with mapped blueprint type
+    const requestPromise = performVoiceEditGeneration({ ...args, blueprintType: mappedBlueprintType });
+    activeRequests.set(requestKey, requestPromise);
+    try {
+        const result = await requestPromise;
+        return result;
+    }
+    finally {
+        activeRequests.delete(requestKey);
+    }
+}
+// Voice edit generation function
+async function performVoiceEditGeneration(args) {
+    const { cardId, blueprintType, cardTitle, transcript, userId, existingFields = {} } = args;
+    try {
+        const startTime = Date.now();
+        console.log('=== VOICE EDIT GENERATION START ===');
+        // Get dynamic field definitions from blueprint registry
+        const fieldDefinitions = await getBlueprintFields(blueprintType);
+        console.log('Dynamic field definitions loaded for:', blueprintType);
+        // Build the voice edit system prompt
+        const voiceEditSystemPrompt = `You are a strategic business analyst and content specialist tasked with updating page fields based on voice transcripts. Your role is to be AGGRESSIVE and PROACTIVE in interpreting voice input to make meaningful updates to fields, even when the connection isn't perfectly direct.
+
+## Core Responsibilities
+
+1. **Aggressive Interpretation**: Extract maximum value from voice transcripts, making intelligent inferences and connections
+2. **Proactive Field Updates**: Look for ANY way the transcript content can enhance, expand, or improve existing fields
+3. **Creative Enhancement**: Use the transcript as inspiration to generate better, more detailed content
+4. **Strategic Expansion**: Build upon transcript hints to create comprehensive field content
+
+## MANDATORY Field Update Approach
+
+### Voice-First Philosophy
+- **ALWAYS make changes**: The user spoke for a reason - find ways to incorporate their voice input
+- **Be Interpretive**: If they mention something tangentially related to a field, use it as inspiration to enhance that field
+- **Fill Gaps Aggressively**: Use voice context to populate empty fields, even with reasonable inferences
+- **Expand Everything**: Voice input should trigger expansion and improvement of ALL relevant fields
+
+### For ANY Field Mentioned in Transcript
+- **Immediate Updates**: If transcript mentions anything remotely related to a field, update that field significantly
+- **Contextual Enhancement**: Use transcript context to make ALL fields more specific and detailed
+- **Voice-Inspired Content**: Let the voice transcript inspire better, more comprehensive field content
+
+### For Existing Content
+- **Enhance Dramatically**: Don't just preserve - actively improve existing content using voice insights
+- **Expand Significantly**: Make existing content much more detailed and specific
+- **Voice-Informed Improvements**: Use the transcript to add depth, specificity, and strategic insight
+
+### For Empty Fields
+- **Aggressive Population**: Use ANY transcript content as inspiration to populate empty fields
+- **Contextual Generation**: Generate content that fits the field purpose, inspired by voice context
+- **Strategic Inference**: Make reasonable business inferences from voice input to create field content
+
+## Content Enhancement Guidelines
+
+### Voice-to-Field Transformation
+- **Maximum Extraction**: Get the most possible value from every word in the transcript
+- **Strategic Interpretation**: Turn casual voice input into professional, strategic content
+- **Comprehensive Enhancement**: Use voice input as a catalyst to improve ALL fields
+- **Detailed Expansion**: Make content significantly more detailed and actionable
+
+### Quality Standards
+- **Substantial Changes**: Every voice edit should result in noticeable, meaningful improvements
+- **Strategic Depth**: Transform simple voice input into strategically valuable content
+- **Comprehensive Updates**: Multiple fields should be enhanced from single voice input
+- **Professional Polish**: Convert voice input into polished, business-ready content
+
+FIELD REQUIREMENTS:
+Generate a JSON response with these specific fields for the ${blueprintType} blueprint:
+
+${fieldDefinitions}
+
+Also include these common card fields:
+- description: Clear description of this card (string)
+- strategicAlignment: How this aligns with strategic objectives (string)
+- tags: Array of relevant tags (array of strings)
+
+**CRITICAL MANDATE**: You MUST make meaningful changes based on the voice transcript. Even if the transcript seems only tangentially related to a field, use it as inspiration to enhance that field with better, more detailed content. The user expects to see substantial improvements after voice input. DO NOT return unchanged content - that is a failure. Always enhance, expand, and improve based on voice context.`;
+        // Build the user prompt with transcript and existing content
+        const userPrompt = `VOICE EDIT MANDATE: The user recorded voice input expecting significant improvements to their page. You MUST make substantial, meaningful changes based on the transcript below.
+
+VOICE TRANSCRIPT:
+"${transcript}"
+
+EXISTING FIELD CONTENT:
+${JSON.stringify(existingFields, null, 2)}
+
+MANDATORY INSTRUCTIONS:
+1. **AGGRESSIVELY interpret** the transcript to enhance ALL relevant fields - don't be conservative
+2. **SUBSTANTIALLY improve** existing content using voice insights - make it significantly better
+3. **POPULATE empty fields** using voice context and strategic inference
+4. **EXPAND everything** - use transcript as inspiration to create comprehensive, detailed content
+5. **ENHANCE multiple fields** - even tangential voice content should improve several fields
+6. **MAKE MEANINGFUL CHANGES** - returning similar content is a failure
+7. Return a complete JSON with dramatically improved field content
+
+CRITICAL SUCCESS CRITERIA:
+- Multiple fields must be noticeably enhanced from the voice input
+- Content must be significantly more detailed and strategic than before  
+- Empty fields should be populated with voice-inspired content
+- Existing content should be substantially expanded and improved
+- The user should clearly see the value of their voice input reflected in the fields
+
+Generate the SUBSTANTIALLY IMPROVED field content as a JSON object.`;
+        console.log('=== VOICE EDIT PROMPT ===');
+        console.log('System prompt length:', voiceEditSystemPrompt.length);
+        console.log('User prompt length:', userPrompt.length);
+        console.log('Transcript preview:', transcript.substring(0, 200) + '...');
+        // Generate content using OpenAI
+        const completion = await getOpenAIClient().chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                { role: 'system', content: voiceEditSystemPrompt },
+                { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 4000,
+            response_format: { type: 'json_object' }
+        });
+        const updatedFields = JSON.parse(completion.choices[0].message.content || '{}');
+        console.log('Voice edit generation completed:', {
+            tokensUsed: completion.usage?.total_tokens || 0,
+            fieldsUpdated: Object.keys(updatedFields).length,
+            generationTimeMs: Date.now() - startTime
+        });
+        // Track generation in history  
+        await trackVoiceGeneration(userId, cardId, blueprintType, transcript, voiceEditSystemPrompt, updatedFields, completion.usage?.total_tokens || 0, Date.now() - startTime, 'gpt-4o-mini');
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify({
+                        success: true,
+                        fields: updatedFields,
+                        metadata: {
+                            tokensUsed: completion.usage?.total_tokens || 0,
+                            transcriptLength: transcript.length,
+                            generationTimeMs: Date.now() - startTime
+                        }
+                    })
+                }
+            ]
+        };
+    }
+    catch (error) {
+        console.error('Voice edit generation error:', error);
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify({
+                        success: false,
+                        error: error.message || 'Voice edit processing failed'
+                    })
+                }
+            ],
+            isError: true
+        };
+    }
+}
+// Track voice generation in history
+async function trackVoiceGeneration(userId, cardId, blueprintType, transcript, promptUsed, fieldsGenerated, tokensUsed, generationTimeMs, modelUsed) {
+    try {
+        await getSupabaseClient().from('ai_generation_history').insert({
+            user_id: userId,
+            card_id: cardId,
+            blueprint_type: blueprintType,
+            context_used: [{
+                    type: 'voice_transcript',
+                    length: transcript.length,
+                    preview: transcript.substring(0, 100) + '...'
+                }],
+            prompt_used: promptUsed,
+            fields_generated: fieldsGenerated,
+            total_tokens_used: tokensUsed,
+            generation_time_ms: generationTimeMs,
+            model_used: modelUsed,
+            success: true
+        });
+    }
+    catch (error) {
+        console.error('Failed to track voice generation:', error);
+        // Non-fatal, continue
+    }
 }
 //# sourceMappingURL=edit-mode-generator.js.map

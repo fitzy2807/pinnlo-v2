@@ -13,9 +13,10 @@ interface PageControllerProps {
   blueprint?: Blueprint
   onAddCard?: () => void
   onQuickAdd?: () => void
+  onGenerateAI?: () => void
 }
 
-export default function PageController({ blueprint, onAddCard, onQuickAdd }: PageControllerProps) {
+export default function PageController({ blueprint, onAddCard, onQuickAdd, onGenerateAI }: PageControllerProps) {
   if (!blueprint) return null
 
   return (
@@ -27,7 +28,7 @@ export default function PageController({ blueprint, onAddCard, onQuickAdd }: Pag
           <h1 className="text-xl font-bold text-gray-900">{blueprint.name}</h1>
         </div>
         <p className="text-gray-600 text-sm max-w-2xl">
-          {blueprint.id === 'strategic-context' && 'Define the strategic foundation and context for your strategy'}
+          {blueprint.id === 'strategicContext' && 'Define the strategic foundation and context for your strategy'}
           {blueprint.id === 'vision-statement' && 'Craft your compelling vision statement that guides your organization'}
           {blueprint.id === 'value-propositions' && 'Define your unique value propositions that differentiate you from competitors'}
           {blueprint.id === 'personas' && 'Create detailed user personas to understand your target audience'}
@@ -63,7 +64,13 @@ export default function PageController({ blueprint, onAddCard, onQuickAdd }: Pag
             <span>Sort</span>
           </button>
 
-          <button className="flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          <button 
+            className="flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => {
+              console.log('⚡ PageController: Generate Card clicked');
+              onGenerateAI && onGenerateAI();
+            }}
+          >
             <Settings size={14} />
             <span>Generate Card</span>
           </button>

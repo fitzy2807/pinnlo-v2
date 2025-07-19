@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const marketInsightConfig: BlueprintConfig = {
-  id: 'market-insight',
+  id: 'marketInsight',
   name: 'Market Insight',
   description: 'Capture and analyze market intelligence and competitive insights',
   category: 'Research & Analysis',

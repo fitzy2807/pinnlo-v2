@@ -21,6 +21,9 @@ export interface CardData {
   creator: string
   owner: string
   group_ids?: string[]
+  strategy_id?: string // Link to strategy
+  created_at?: string // Alternative naming for backend compatibility
+  updated_at?: string // Alternative naming for backend compatibility
   // Blueprint-specific fields
   [key: string]: any
 }

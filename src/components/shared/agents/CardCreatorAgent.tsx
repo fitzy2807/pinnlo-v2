@@ -22,6 +22,11 @@ export default function CardCreatorAgent({ onClose, configuration }: CardCreator
   // Create configuration based on hub context
   const config = createCardCreator(hubContext as any)
   
+  // Debug logging
+  console.log('CardCreatorAgent - Hub context:', hubContext)
+  console.log('CardCreatorAgent - Config created:', config)
+  console.log('CardCreatorAgent - Config sections length:', config?.sections?.length)
+  
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Agent Header */}

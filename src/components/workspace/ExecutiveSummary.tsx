@@ -24,7 +24,7 @@ export default function ExecutiveSummary({
   blueprintType, 
   cards = [] 
 }: ExecutiveSummaryProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true)
   const [summary, setSummary] = useState<SummaryData | null>(null)
   const [loading, setLoading] = useState(false)
 

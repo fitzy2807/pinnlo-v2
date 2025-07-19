@@ -1,19 +1,17 @@
 {
   "name": "supabase-mcp",
   "version": "1.0.0",
-  "description": "MCP server for Supabase database management",
-  "main": "dist/index.js",
+  "description": "HTTP MCP server for PINNLO application integration",
+  "main": "dist/http-server.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node server-simple.js",
+    "start": "node dist/http-server.js",
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/http-server.ts",
-    "http": "node dist/http-server.js",
-    "server": "node server.js",
+    "dev:desktop": "tsx src/index.ts",
     "railway": "node dist/http-server.js",
-    "unified": "node unified-server.js",
-    "unified:dev": "tsx src/unified-server.ts"
+    "http": "node dist/http-server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
@@ -32,6 +30,6 @@
     "typescript": "^5.0.0"
   },
   "bin": {
-    "supabase-mcp": "./dist/index.js"
+    "supabase-mcp": "./dist/http-server.js"
   }
 }

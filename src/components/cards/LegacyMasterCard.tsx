@@ -16,7 +16,8 @@ import {
   Target,
   Hash,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  Mic
 } from 'lucide-react'
 import TagEditor from './editors/TagEditor'
 import RelationshipEditor from './editors/RelationshipEditor'
@@ -368,9 +369,21 @@ export default function LegacyMasterCard({
         </div>
       </div>
 
-      {/* PINNLO AI Button - Only shows in Edit Mode */}
+      {/* Edit Mode Buttons - Only show in Edit Mode */}
       {isEditing && (
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-2">
+          <button
+            onClick={() => {
+              // TODO: Implement voice editor functionality
+              console.log('Voice editing clicked')
+            }}
+            className="flex items-center space-x-2 px-4 py-2 text-xs font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-md transition-colors"
+            type="button"
+            title="Voice editing"
+          >
+            <Mic size={14} />
+            <span>Voice</span>
+          </button>
           <button
             onClick={handleAIEnhance}
             disabled={isEnhancing}

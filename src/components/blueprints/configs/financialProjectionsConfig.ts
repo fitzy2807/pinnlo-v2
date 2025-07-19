@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const financialProjectionsConfig: BlueprintConfig = {
-  id: 'financial-projections',
+  id: 'financialProjections',
   name: 'Financial Projections',
   description: 'Create financial forecasts and projections',
   category: 'Measurement',

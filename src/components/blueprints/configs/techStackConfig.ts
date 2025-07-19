@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const techStackConfig: BlueprintConfig = {
-  id: 'tech-stack',
+  id: 'techStack',
   name: 'Tech Stack',
   description: 'Clean, flexible technology stack documentation with tag-based architecture',
   category: 'Organizational & Technical',

@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const competitiveAnalysisConfig: BlueprintConfig = {
-  id: 'competitive-analysis',
+  id: 'competitiveAnalysis',
   name: 'Competitive Analysis',
   description: 'Analyze competitors and competitive landscape',
   category: 'Research & Analysis',

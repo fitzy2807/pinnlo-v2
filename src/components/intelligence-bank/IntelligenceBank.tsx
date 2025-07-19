@@ -1145,10 +1145,7 @@ export default function IntelligenceBank({ onClose }: IntelligenceBankProps) {
               <IntelligenceProfile />
             </div>
           ) : selectedCategory === 'groups' ? (
-            <>
-              {console.log('🔍 Rendering IntelligenceGroups component')}
-              <IntelligenceGroups />
-            </>
+            <IntelligenceGroups />
           ) : viewType === 'group' && loadingGroupCards ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>

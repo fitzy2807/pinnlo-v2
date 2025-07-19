@@ -96,7 +96,11 @@ export default function StrategyPreview({ cards, onCreate, onBack, loading }: St
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <h5 className="font-medium text-gray-900">{card.title}</h5>
-                            <p className="text-sm text-gray-600 mt-1">{card.description}</p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {typeof card.description === 'string' 
+                                ? card.description 
+                                : card.description?.objective || 'No description available'}
+                            </p>
                           </div>
                           <span className={`px-2 py-1 text-xs rounded-full ${
                             card.priority === 'high' 

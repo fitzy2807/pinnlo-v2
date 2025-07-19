@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const revenueDriverConfig: BlueprintConfig = {
-  id: 'revenue-driver',
+  id: 'revenueDriver',
   name: 'Revenue Driver',
   description: 'Identify and track revenue opportunities and growth factors',
   category: 'Measurement',

@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const stakeholderIntelligenceConfig: BlueprintConfig = {
-  id: 'stakeholder-intelligence',
+  id: 'stakeholderIntelligence',
   name: 'Stakeholder Intelligence',
   description: 'Investor sentiment, partner feedback, and internal stakeholder insights',
   category: 'Research & Analysis',

@@ -1,7 +1,7 @@
 import { BlueprintConfig } from '../types'
 
 export const trendsIntelligenceConfig: BlueprintConfig = {
-  id: 'trends-intelligence',
+  id: 'trendsIntelligence',
   name: 'Trends Intelligence',
   description: 'Industry trends, UX/UI shifts, and emerging patterns',
   category: 'Research & Analysis',

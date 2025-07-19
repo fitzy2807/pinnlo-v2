@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { 
   Copy, Trash2, Sparkles, Pin, Hash, Calendar, User, 
   Tag, Shield, TrendingUp, ChevronDown, ChevronUp,
-  Edit2, Check, X as XIcon
+  Edit2, Check, X as XIcon, Mic
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { CardData } from '@/types/card'
@@ -519,6 +519,16 @@ function EnhancedMasterCardInternal({
                 </button>
               ) : (
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      // TODO: Implement voice editor functionality
+                      toast.info('Voice editing coming soon!')
+                    }}
+                    className={`${styles.actionButton} text-orange-600 hover:text-orange-700`}
+                    title="Voice editing"
+                  >
+                    <Mic /> Voice
+                  </button>
                   <button
                     onClick={handleCancel}
                     className={styles.actionButton}

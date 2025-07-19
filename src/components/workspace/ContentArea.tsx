@@ -45,10 +45,13 @@ const ContentArea = forwardRef<ContentAreaRef, ContentAreaProps>(function Conten
       return;
     }
 
+    // Use the mapped cardType for consistency with filtering
+    const expectedCardType = getCardTypeForBlueprint(blueprint.id);
+    
     const newCardData: Partial<CardData> = {
       title: title || `New ${blueprint.name} Card`,
       description: description || '',
-      cardType: blueprint.id,
+      cardType: expectedCardType,
       priority: 'Medium',
       confidenceLevel: 'Medium',
       tags: [],
@@ -56,6 +59,7 @@ const ContentArea = forwardRef<ContentAreaRef, ContentAreaProps>(function Conten
     }
 
     console.log('📝 Creating card with data:', newCardData);
+    console.log('📝 Using cardType:', expectedCardType, 'for blueprint:', blueprint.id);
     
     try {
       await createCard(newCardData);
@@ -85,7 +89,25 @@ const ContentArea = forwardRef<ContentAreaRef, ContentAreaProps>(function Conten
   if (!blueprint) return null
 
   // Filter cards by blueprint type
-  const blueprintCards = cards.filter(card => card.cardType === blueprint.id)
+  // Handle mapping between blueprint registry IDs and database card types
+  const getCardTypeForBlueprint = (blueprintId: string): string => {
+    const blueprintToCardTypeMap: Record<string, string> = {
+      'valuePropositions': 'value-proposition',
+      'strategicContext': 'strategic-context',
+      'personas': 'persona',
+      'okrs': 'okr',
+      'kpis': 'kpi',
+      'problem-statement': 'problem-statement',
+      'features': 'feature',
+      'epics': 'epic',
+      'workstreams': 'workstream'
+    }
+    
+    return blueprintToCardTypeMap[blueprintId] || blueprintId
+  }
+  
+  const expectedCardType = getCardTypeForBlueprint(blueprint.id)
+  const blueprintCards = cards.filter(card => card.cardType === expectedCardType)
 
   const handleUpdateCard = async (updatedCard: Partial<CardData>) => {
     if (!updateCard || !updatedCard.id) return
